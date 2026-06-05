@@ -198,20 +198,14 @@ function TransactionsPage() {
   const mutation = useMutation({
     mutationFn: (text: string) => parseFn({ data: { text } }),
     onSuccess: (parsed) => {
-      console.log("[SmartInput] parsed:", parsed);
       const tx = buildTransaction(parsed, Date.now());
-      console.log("[SmartInput] built tx:", tx);
-      setTransactions((prev) => {
-        console.log("[SmartInput] prev len:", prev.length);
-        return [tx, ...prev];
-      });
+      setTransactions((prev) => [tx, ...prev]);
       setSmartInput("");
       toast.success("Transação criada", {
         description: `${parsed.description} • R$ ${parsed.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
       });
     },
     onError: (err: Error) => {
-      console.error("[SmartInput] error:", err);
       toast.error("Não foi possível processar", { description: err.message });
     },
   });
