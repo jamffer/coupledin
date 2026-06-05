@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
+import { generateObject } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
@@ -37,9 +37,9 @@ export const parseTransactionFromText = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(key);
 
     try {
-      const { experimental_output } = await generateText({
+      const { object } = await generateObject({
         model: gateway("google/gemini-3-flash-preview"),
-        experimental_output: Output.object({ schema: TransactionSchema }),
+        schema: TransactionSchema,
         system: `Você é um assistente financeiro de um casal (Felipe e Beatriz). Hoje é ${today}.
 Extraia os campos de uma transação a partir da descrição em português.
 Regras:
@@ -53,7 +53,7 @@ Regras:
         prompt: data.text,
       });
 
-      return experimental_output;
+      return object;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("429")) {
