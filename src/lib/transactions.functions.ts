@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateObject } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
@@ -37,23 +37,40 @@ export const parseTransactionFromText = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(key);
 
     try {
-      const { object } = await generateObject({
+      const { text } = await generateText({
         model: gateway("google/gemini-3-flash-preview"),
-        schema: TransactionSchema,
         system: `Você é um assistente financeiro de um casal (Felipe e Beatriz). Hoje é ${today}.
-Extraia os campos de uma transação a partir da descrição em português.
+Extraia os campos de uma transação a partir da descrição em português e responda APENAS com um JSON válido (sem markdown, sem texto extra) com este formato exato:
+{
+  "date": "YYYY-MM-DD",
+  "description": "texto curto",
+  "category": "Alimentação" | "Lazer" | "Transporte" | "Moradia" | "Saúde" | "Renda" | "Outros",
+  "amount": number positivo,
+  "type": "Crédito" | "Débito" | "Entrada",
+  "responsible": "Felipe" | "Beatriz",
+  "division": "Conjunta 50/50" | "Proporcional" | "Individual"
+}
 Regras:
-- "cartão de crédito" ou "no crédito" → type "Crédito"
-- "débito", "pix", "dinheiro" ou "no débito" → type "Débito"
-- "recebi", "salário", "freela", "rendimento" → type "Entrada"
-- Se não disser quem pagou, assuma "Felipe"
-- Padrão de divisão é "Conjunta 50/50"; use "Individual" se for claramente pessoal; "Proporcional" se mencionado
-- date: se disser "hoje" use ${today}; "ontem" subtraia 1 dia; senão use ${today}
-- amount sempre positivo`,
+- "cartão de crédito" / "no crédito" → "Crédito"
+- "débito" / "pix" / "dinheiro" → "Débito"
+- "recebi" / "salário" / "freela" / "rendimento" → "Entrada"
+- Se não disser quem pagou, use "Felipe"
+- Padrão de divisão: "Conjunta 50/50"; "Individual" se claramente pessoal; "Proporcional" se mencionado
+- "hoje" → ${today}; "ontem" → subtraia 1 dia; senão → ${today}`,
         prompt: data.text,
       });
 
-      return object;
+      const cleaned = text
+        .trim()
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "");
+      const jsonStart = cleaned.indexOf("{");
+      const jsonEnd = cleaned.lastIndexOf("}");
+      if (jsonStart === -1 || jsonEnd === -1) {
+        throw new Error("Resposta da IA sem JSON válido");
+      }
+      const parsed = JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1));
+      return TransactionSchema.parse(parsed);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("429")) {
