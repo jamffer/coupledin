@@ -78,14 +78,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "JL-Couple" },
+      { name: "description", content: "Kind Companion is a responsive web app for couples to manage shared finances." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "JL-Couple" },
+      { property: "og:description", content: "Kind Companion is a responsive web app for couples to manage shared finances." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "JL-Couple" },
+      { name: "twitter:description", content: "Kind Companion is a responsive web app for couples to manage shared finances." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/01b0888b-1ce7-4b29-b08c-6f2e69caabd3/id-preview-e6b8ca8b--51739a71-96c3-4b17-8299-c490a181d143.lovable.app-1780629009601.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/01b0888b-1ce7-4b29-b08c-6f2e69caabd3/id-preview-e6b8ca8b--51739a71-96c3-4b17-8299-c490a181d143.lovable.app-1780629009601.png" },
     ],
     links: [
       {
