@@ -54,6 +54,7 @@ import {
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFinanceStore, CATEGORY_ICONS } from "@/hooks/use-finance-store";
+import { useAuth } from "@/hooks/use-auth";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -95,11 +96,18 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [selectedTx, setSelectedTx] = useState<any>(null);
+  const { user, loading: authLoading } = useAuth();
   const { transactions, userAvatars } = useFinanceStore();
   
   // Estados para os painéis laterais
   const [activeSheet, setActiveSheet] = useState<'balance' | 'income' | 'expenses' | 'credit' | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/auth" });
+    }
+  }, [user, authLoading]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1500);

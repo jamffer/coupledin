@@ -51,6 +51,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useFinanceStore } from "@/hooks/use-finance-store";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -109,6 +111,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const [isNewRecordOpen, setIsNewRecordOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { userNames, userAvatars, updateUserProfile } = useFinanceStore();
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<"Jorge" | "Lilian">("Jorge");
   const [tempName, setTempName] = useState("");
   const [tempAvatar, setTempAvatar] = useState("");
@@ -163,6 +167,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (user) {
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+        setProfile(data);
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
     const handleScroll = () => {
       const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
       const currentScroll = window.scrollY;
@@ -186,7 +198,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                 <SidebarTrigger className="md:hidden" />
                 <div>
                   <h2 className="text-xs font-medium text-muted-foreground italic">Bom dia,</h2>
-                  <h1 className="text-lg font-bold text-foreground">{userNames.Jorge} & {userNames.Lilian}</h1>
+                  <h1 className="text-lg font-bold text-foreground">
+                    {profile?.display_name || user?.email?.split('@')[0] || "Usuário"}
+                  </h1>
                 </div>
               </div>
               

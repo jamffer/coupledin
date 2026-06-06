@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useState, useMemo, useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/use-auth";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -62,6 +63,14 @@ const itemVariants = {
 
 function RelatoriosPage() {
   const { transactions, incomeJorge, incomeLilian, userAvatars } = useFinanceStore();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/auth" });
+    }
+  }, [user, authLoading]);
   
   // Cálculo de Despesas Conjuntas e Proporção
   const jointExpenses = transactions.filter(t => t.division !== "Individual");
