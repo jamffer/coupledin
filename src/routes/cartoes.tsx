@@ -187,19 +187,19 @@ function CartoesPage() {
                   <CreditCard size={140} />
                 </div>
                 
-                <CardHeader className="relative z-10 flex flex-row items-center justify-between p-6 pb-0">
+                <div className="relative z-10 flex flex-row items-center justify-between pb-0">
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">
                       {card.type === "conjunto" ? "Conjunto" : `Individual - ${card.owner}`}
                     </span>
-                    <CardTitle className="text-base font-bold leading-tight">{card.name}</CardTitle>
+                    <h2 className="text-base font-bold leading-tight">{card.name}</h2>
                   </div>
                   <div className="bg-white/10 px-2 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm">
                     {card.brand}
                   </div>
-                </CardHeader>
+                </div>
 
-                <CardContent className="relative z-10 p-6 space-y-4">
+                <div className="relative z-10 space-y-4">
                   <div className="flex flex-col gap-0">
                     <span className="text-[10px] uppercase font-bold opacity-60">Fatura Atual</span>
                     <h3 className="text-3xl font-bold tracking-tight">R$ {card.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
@@ -226,7 +226,7 @@ function CartoesPage() {
                       </motion.div>
                     )}
                   </div>
-                </CardContent>
+                </div>
               </Card>
             </motion.div>
           ))}
