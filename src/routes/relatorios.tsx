@@ -201,7 +201,7 @@ function RelatoriosPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Section 2: Análise de Categorias */}
           <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover h-full">
+            <Card className="apple-card apple-card-hover h-full border-2 border-primary/5 dark:border-white/5">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -249,7 +249,7 @@ function RelatoriosPage() {
 
           {/* Section 3: Maiores Gastos */}
           <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover h-full">
+            <Card className="apple-card apple-card-hover h-full border-2 border-primary/5 dark:border-white/5">
               <CardHeader>
                 <CardTitle>Top Maiores Gastos</CardTitle>
                 <CardDescription>As 5 transações mais pesadas do mês</CardDescription>

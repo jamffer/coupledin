@@ -129,7 +129,7 @@ function InvestimentosPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {goals.map((goal) => (
               <motion.div key={goal.id} variants={itemVariants}>
-                <Card className="apple-card apple-card-hover group overflow-hidden">
+                <Card className="apple-card apple-card-hover group overflow-hidden border-2 border-primary/5 dark:border-white/5">
                   <CardHeader className="pb-4">
                     <div className="flex justify-between items-start">
                       <div className={cn("p-3 rounded-2xl", goal.iconColor)}>
