@@ -92,7 +92,15 @@ function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      // Effect will handle redirection or onboarding
+      
+      if (name.trim()) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("profiles")
+            .update({ display_name: name.trim() })
+            .eq("id", user.id);
+        }
+      }
     } catch (error: any) {
       toast.error("Erro ao entrar", { description: error.message });
     } finally {
