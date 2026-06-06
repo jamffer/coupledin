@@ -127,22 +127,33 @@ function Dashboard() {
     }
   }, [user]);
 
+  const fetchTransactions = useCallback(async (coupleId: string) => {
+    try {
+      setLoading(true);
+      setError(false);
+      
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("couple_id", coupleId)
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      
+      if (data) {
+        setTransactions(data as any);
+      }
+    } catch (err: any) {
+      console.error("Error fetching transactions:", err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [setTransactions]);
+
   useEffect(() => {
     if (profile?.couple_id) {
-      const fetchTransactions = async () => {
-        const { data, error } = await supabase
-          .from("transactions")
-          .select("*")
-          .eq("couple_id", profile.couple_id)
-          .order("date", { ascending: false });
-
-        if (!error && data) {
-          setTransactions(data as any);
-        }
-        setLoading(false);
-      };
-
-      fetchTransactions();
+      fetchTransactions(profile.couple_id);
 
       // Subscription for real-time updates
       const subscription = supabase
@@ -155,13 +166,13 @@ function Dashboard() {
         }, (payload) => {
           if (payload.eventType === 'INSERT') {
             const newTx = payload.new as any;
-            setTransactions([newTx, ...transactions]);
+            setTransactions((prev) => [newTx, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
             const updatedTx = payload.new as any;
-            setTransactions(transactions.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
+            setTransactions((prev) => prev.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
           } else if (payload.eventType === 'DELETE') {
             const deletedId = payload.old.id;
-            setTransactions(transactions.filter(tx => tx.id !== deletedId));
+            setTransactions((prev) => prev.filter(tx => tx.id !== deletedId));
           }
         })
         .subscribe();
@@ -169,12 +180,10 @@ function Dashboard() {
       return () => {
         supabase.removeChannel(subscription);
       };
-    } else if (!authLoading && !profile && !loading) {
-        // Still loading profile or no couple_id yet
     } else if (profile && !profile.couple_id) {
       setLoading(false);
     }
-  }, [profile?.couple_id, setTransactions, authLoading]);
+  }, [profile?.couple_id, fetchTransactions]);
 
   useEffect(() => {
     if (!profile) {
