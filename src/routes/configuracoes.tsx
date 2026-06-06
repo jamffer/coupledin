@@ -299,7 +299,7 @@ function ConfiguracoesPage() {
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="incomeA" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal do Jorge</Label>
+                      <Label htmlFor="incomeA" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal de {profile?.display_name?.split(' ')[0] || "Você"}</Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
                         <Input 
