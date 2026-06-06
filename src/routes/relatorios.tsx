@@ -272,7 +272,7 @@ function RelatoriosPage() {
                         <TableRow key={expense.id} className="group border-b border-border/40 hover:bg-muted/10 transition-colors">
                           <TableCell className="pl-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="p-2 bg-muted rounded-xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                              <div className="p-2 bg-primary/10 rounded-xl text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                                 <CategoryIcon size={16} />
                               </div>
                               <div className="min-w-0">
@@ -287,7 +287,7 @@ function RelatoriosPage() {
                               <AvatarFallback>{expense.responsible[0]}</AvatarFallback>
                             </Avatar>
                           </TableCell>
-                          <TableCell className="pr-6 text-right font-black text-sm">
+                          <TableCell className="pr-6 text-right font-black text-sm dark:text-white">
                             R$ {Math.abs(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </TableCell>
                         </TableRow>
