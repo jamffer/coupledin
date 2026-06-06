@@ -40,7 +40,7 @@ import {
   Cell
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { useFinanceStore, CATEGORY_ICONS, type Transaction } from "@/hooks/use-finance-store";
 import { format, subMonths, startOfMonth, isSameMonth } from "date-fns";
@@ -112,7 +112,7 @@ function RelatoriosPage() {
   };
 
   const handleShareSummary = () => {
-    const summary = `Resumo Financeiro\nTotal Gastos Conjuntos: R$ ${totalJoint.toLocaleString('pt-BR')}\nStatus: ${isSettled ? 'Tudo quite!' : (diff < 0 ? "Jorge deve transferir" : "Lilian deve transferir") + " R$ " + settlementAmount.toLocaleString('pt-BR')}`;
+    const summary = `Resumo Financeiro\nTotal Gastos Conjuntos: ${formatCurrency(totalJoint)}\nStatus: ${isSettled ? 'Tudo quite!' : (diff < 0 ? "Jorge deve transferir" : "Lilian deve transferir") + " " + formatCurrency(Math.abs(settlementAmount))}`;
     navigator.clipboard.writeText(summary);
     toast.success("Resumo copiado para a área de transferência!");
   };
@@ -240,7 +240,7 @@ function RelatoriosPage() {
                           "text-3xl font-black text-primary dark:text-white",
                           diff < 0 ? "opacity-90" : "opacity-100"
                         )}>
-                          R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          {formatCurrency(settlementAmount)}
                         </p>
                         <p className="text-sm text-muted-foreground">para {diff < 0 ? "Lilian" : "o Jorge"} para igualar os gastos conjutos.</p>
                       </>
@@ -251,7 +251,7 @@ function RelatoriosPage() {
                 <div className="flex flex-col items-center md:items-end gap-3">
                   <div className="text-center md:text-right">
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Gastos Conjuntos</p>
-                    <p className="text-2xl font-black text-foreground">R$ {totalJoint.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-2xl font-black text-foreground">{formatCurrency(totalJoint)}</p>
                   </div>
                   
                   <div className="flex gap-2">
@@ -334,7 +334,7 @@ function RelatoriosPage() {
                             return (
                               <div className="apple-card p-3 shadow-xl border-none text-xs">
                                 <p className="font-black mb-1 text-primary">{label}</p>
-                                <p className="font-bold">Total: R$ {payload[0].value?.toLocaleString('pt-BR')}</p>
+                                <p className="font-bold">Total: {formatCurrency(payload[0].value)}</p>
                               </div>
                             );
                           }
@@ -393,7 +393,7 @@ function RelatoriosPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-end mb-1">
                             <p className="text-sm font-bold truncate">{category}</p>
-                            <p className="text-sm font-black">R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            <p className="text-sm font-black">{formatCurrency(amount)}</p>
                           </div>
                           <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                             <motion.div 
@@ -436,7 +436,7 @@ function RelatoriosPage() {
                           </div>
                         </div>
                         <p className="text-sm font-black text-rose-600">
-                          - R$ {Math.abs(tx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          - {formatCurrency(Math.abs(tx.amount || 0))}
                         </p>
                       </div>
                     ))}
@@ -457,7 +457,7 @@ function RelatoriosPage() {
           <DialogHeader>
             <DialogTitle>Confirmar Acerto de Contas</DialogTitle>
             <DialogDescription>
-              Isso marcará as contas como resolvidas. Certifique-se de que a transferência de <span className="font-bold">R$ {settlementAmount.toLocaleString('pt-BR')}</span> foi feita.
+              Isso marcará as contas como resolvidas. Certifique-se de que a transferência de <span className="font-bold">{formatCurrency(settlementAmount)}</span> foi feita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
