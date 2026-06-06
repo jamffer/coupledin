@@ -33,10 +33,12 @@ import {
   Coffee,
   Car,
   Home,
+  HelpCircle,
   Smartphone
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useFinanceStore, CATEGORY_ICONS, AVATARS } from "@/hooks/use-finance-store";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
@@ -48,27 +50,11 @@ export const Route = createFileRoute("/relatorios")({
   component: RelatoriosPage,
 });
 
-const categoryComparisonData = [
-  { category: "Alimentação", Jorge: 1200, Beatriz: 850 },
-  { category: "Moradia", Jorge: 1500, Beatriz: 1500 },
-  { category: "Transporte", Jorge: 450, Beatriz: 600 },
-  { category: "Lazer", Jorge: 300, Beatriz: 550 },
-  { category: "Serviços", Jorge: 200, Beatriz: 180 },
-];
-
 const weeklyEvolutionData = [
   { week: "Semana 1", atual: 1200, anterior: 1100 },
   { week: "Semana 2", atual: 950, anterior: 1300 },
   { week: "Semana 3", atual: 1400, anterior: 1050 },
   { week: "Semana 4", atual: 800, anterior: 1200 },
-];
-
-const topExpenses = [
-  { id: 1, description: "Aluguel Apartamento", amount: 3000.00, category: "Moradia", user: "Jorge", date: "01 Jun", icon: Home },
-  { id: 2, description: "Supermercado Semanal", amount: 650.40, category: "Alimentação", user: "Beatriz", date: "15 Jun", icon: ShoppingBag },
-  { id: 3, description: "Restaurante Comemoração", amount: 380.00, category: "Lazer", user: "Beatriz", date: "12 Jun", icon: Coffee },
-  { id: 4, description: "Conserto Geladeira", amount: 350.00, category: "Moradia", user: "Jorge", date: "18 Jun", icon: AlertCircle },
-  { id: 5, description: "Posto de Gasolina", amount: 280.00, category: "Transporte", user: "Jorge", date: "20 Jun", icon: Car },
 ];
 
 const containerVariants = {
@@ -87,7 +73,42 @@ const itemVariants = {
 };
 
 function RelatoriosPage() {
-  const settlementAmount = 250.00;
+  const { transactions, incomeJorge, incomeBeatriz } = useFinanceStore();
+
+  const categories = ["Alimentação", "Moradia", "Transporte", "Lazer", "Saúde", "Outros"];
+  
+  const categoryComparisonData = categories.map(cat => ({
+    category: cat,
+    Jorge: Math.abs(transactions.filter(t => t.category === cat && t.responsible === "Jorge" && t.amount < 0).reduce((acc, t) => acc + t.amount, 0)),
+    Beatriz: Math.abs(transactions.filter(t => t.category === cat && t.responsible === "Beatriz" && t.amount < 0).reduce((acc, t) => acc + t.amount, 0)),
+  }));
+
+  const topExpenses = [...transactions]
+    .filter(t => t.amount < 0)
+    .sort((a, b) => a.amount - b.amount)
+    .slice(0, 5);
+
+  // Lógica de Acerto de Contas
+  const jointExpenses = transactions.filter(t => t.division !== "Individual" && t.amount < 0);
+  const totalJoint = jointExpenses.reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  
+  // Proporção configurada
+  const totalIncome = incomeJorge + incomeBeatriz;
+  const jorgeShare = incomeJorge / totalIncome;
+  const beatrizShare = incomeBeatriz / totalIncome;
+  
+  const jorgeShouldPay = jointExpenses.reduce((acc, t) => {
+    const share = t.division === "Conjunta 50/50" ? 0.5 : jorgeShare;
+    return acc + (Math.abs(t.amount) * share);
+  }, 0);
+  
+  const beatrizShouldPay = totalJoint - jorgeShouldPay;
+  
+  const jorgePaid = jointExpenses.filter(t => t.responsible === "Jorge").reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const beatrizPaid = totalJoint - jorgePaid;
+  
+  const diff = jorgePaid - jorgeShouldPay; // Se positivo, Jorge pagou a mais. Se negativo, Jorge deve.
+  const settlementAmount = Math.abs(diff);
 
   return (
     <DashboardLayout>
