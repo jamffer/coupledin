@@ -151,7 +151,7 @@ function ConfiguracoesPage() {
                   <Label
                     htmlFor="fixed"
                     className={cn(
-                      "flex flex-col items-center justify-between rounded-2xl border-2 border-muted bg-white p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full",
+                      "flex flex-col items-center justify-between rounded-2xl border-2 border-muted apple-glass p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full",
                       divisionModel === "fixed" && "border-primary bg-primary/5"
                     )}
                   >
@@ -170,7 +170,7 @@ function ConfiguracoesPage() {
                   <Label
                     htmlFor="proportional"
                     className={cn(
-                      "flex flex-col items-center justify-between rounded-2xl border-2 border-muted bg-white p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full",
+                      "flex flex-col items-center justify-between rounded-2xl border-2 border-muted apple-glass p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full",
                       divisionModel === "proportional" && "border-primary bg-primary/5"
                     )}
                   >
