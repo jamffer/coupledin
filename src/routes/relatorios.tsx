@@ -172,8 +172,8 @@ function RelatoriosPage() {
                           {diff < 0 ? "Jorge, você deve transferir" : "Lilian, você deve transferir"}
                         </h3>
                         <p className={cn(
-                          "text-3xl font-black",
-                          diff < 0 ? "text-rose-600" : "text-emerald-600"
+                          "text-3xl font-black text-gradient-scroll",
+                          diff < 0 ? "opacity-90" : "opacity-100"
                         )}>
                           R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
