@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/sheet";
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { 
@@ -143,6 +144,14 @@ function AssetTable({ data, onSelect }: { data: any[], onSelect: (asset: any) =>
 
 function InvestimentosPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/auth" });
+    }
+  }, [user, authLoading]);
   const [acoes, setAcoes] = useState(initialAcoes);
   const [fiis, setFiis] = useState(initialFIIs);
   const [cripto, setCripto] = useState(initialCripto);
