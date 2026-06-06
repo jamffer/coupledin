@@ -27,6 +27,8 @@ export type Transaction = {
 type FinanceStore = {
   transactions: Transaction[];
   addTransaction: (tx: Transaction) => void;
+  updateTransaction: (id: number, tx: Partial<Transaction>) => void;
+  deleteTransaction: (id: number) => void;
   incomeJorge: number;
   incomeLilian: number;
   setIncomes: (jorge: number, lilian: number) => void;
@@ -73,6 +75,12 @@ export const useFinanceStore = create<FinanceStore>()(
       incomeJorge: 6000,
       incomeLilian: 4000,
       addTransaction: (tx) => set((state) => ({ transactions: [tx, ...state.transactions] })),
+      updateTransaction: (id, updatedTx) => set((state) => ({
+        transactions: state.transactions.map((tx) => tx.id === id ? { ...tx, ...updatedTx } : tx)
+      })),
+      deleteTransaction: (id) => set((state) => ({
+        transactions: state.transactions.filter((tx) => tx.id !== id)
+      })),
       setIncomes: (jorge, lilian) => set({ incomeJorge: jorge, incomeLilian: lilian }),
       userNames: { Jorge: "Jorge", Lilian: "Lilian" },
       userAvatars: { 
