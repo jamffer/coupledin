@@ -293,6 +293,79 @@ function RelatoriosPage() {
           </Card>
         </motion.div>
 
+        {/* Section: Gráficos Interativos */}
+        <motion.div variants={itemVariants}>
+          <Card className="apple-card border-none shadow-sm overflow-hidden bg-white/50 dark:bg-black/20">
+            <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-0">
+              <div>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <TrendingUp size={20} className="text-primary" />
+                  Evolução de Gastos
+                </CardTitle>
+                <CardDescription>Acompanhe o ritmo dos gastos no período selecionado.</CardDescription>
+              </div>
+              <Tabs 
+                value={selectedPeriod} 
+                onValueChange={(val) => setSelectedPeriod(val as any)}
+                className="w-full md:w-auto"
+              >
+                <TabsList className="grid grid-cols-3 apple-glass p-1 rounded-xl">
+                  <TabsTrigger value="Este Mês" className="rounded-lg text-xs font-bold">Mês</TabsTrigger>
+                  <TabsTrigger value="Últimos 3 Meses" className="rounded-lg text-xs font-bold">3 Meses</TabsTrigger>
+                  <TabsTrigger value="Este Ano" className="rounded-lg text-xs font-bold">Ano</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyEvolutionData[selectedPeriod]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
+                    />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
+                    />
+                    <RechartsTooltip 
+                      cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="apple-card p-3 shadow-xl border-none text-xs">
+                              <p className="font-black mb-1 text-primary">{label}</p>
+                              <p className="font-bold">Total: R$ {payload[0].value?.toLocaleString('pt-BR')}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar 
+                      dataKey="total" 
+                      radius={[6, 6, 0, 0]} 
+                      animationDuration={1500}
+                    >
+                      {weeklyEvolutionData[selectedPeriod].map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill="hsl(var(--primary))" 
+                          fillOpacity={0.8 + (index * 0.05)} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Section 2: Resumo por Categoria */}
           <motion.div variants={itemVariants} className="lg:col-span-1 space-y-6">
