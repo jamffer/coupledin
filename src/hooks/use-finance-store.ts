@@ -31,7 +31,7 @@ type FinanceStore = {
   addTransaction: (tx: Transaction) => void;
   updateTransaction: (id: string, tx: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
-  setTransactions: (txs: Transaction[]) => void;
+  setTransactions: (txs: Transaction[] | ((prev: Transaction[]) => Transaction[])) => void;
   incomeJorge: number;
   incomeLilian: number;
   setIncomes: (jorge: number, lilian: number) => void;
@@ -54,7 +54,9 @@ export const useFinanceStore = create<FinanceStore>()(
       deleteTransaction: (id) => set((state) => ({
         transactions: state.transactions.filter((tx) => tx.id !== id)
       })),
-      setTransactions: (transactions) => set({ transactions }),
+      setTransactions: (transactions) => set((state) => ({ 
+        transactions: typeof transactions === 'function' ? transactions(state.transactions) : transactions 
+      })),
       setIncomes: (jorge, lilian) => set({ incomeJorge: jorge, incomeLilian: lilian }),
       userNames: { Jorge: "Jorge", Lilian: "Lilian" },
       userAvatars: { 
