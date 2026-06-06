@@ -55,6 +55,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useFinanceStore, CATEGORY_ICONS } from "@/hooks/use-finance-store";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
