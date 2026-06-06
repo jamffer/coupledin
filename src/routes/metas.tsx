@@ -11,7 +11,7 @@ import {
   Target,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { toast } from "sonner";
 
@@ -104,10 +104,10 @@ function MetasPage() {
                       <CardTitle className="mt-4 text-lg font-bold">{goal.title}</CardTitle>
                       <CardDescription className="flex justify-between items-end mt-1">
                         <span className="text-foreground font-bold text-lg dark:text-white">
-                          R$ {goal.current.toLocaleString('pt-BR')}
+                          {formatCurrency(goal.current)}
                         </span>
                         <span className="text-xs dark:text-white/60">
-                          alvo: R$ {goal.target.toLocaleString('pt-BR')}
+                          alvo: {formatCurrency(goal.target)}
                         </span>
                       </CardDescription>
                     </CardHeader>

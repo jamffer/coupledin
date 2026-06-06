@@ -70,6 +70,11 @@ export const useFinanceStore = create<FinanceStore>()(
     }),
     {
       name: "finance-storage",
+      partialize: (state) => ({
+        incomeJorge: state.incomeJorge,
+        incomeLilian: state.incomeLilian,
+        userNames: state.userNames,
+      }),
     }
   )
 );

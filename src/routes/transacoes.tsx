@@ -73,6 +73,7 @@ import { parseTransactionFromText, type ParsedTransaction } from "@/lib/transact
 import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, type Transaction } from "@/hooks/use-finance-store";
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "@/components/empty-state";
+import { formatCurrency } from "@/lib/utils";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -149,51 +150,54 @@ function TransactionsPage() {
   });
 
 
-  // Sync transactions from Supabase
+  // Fetch transactions with React Query
+  const { data: dbTransactions = [], isLoading: isTxsLoading } = useQuery({
+    queryKey: ["transactions", profile?.couple_id],
+    queryFn: async () => {
+      if (!profile?.couple_id) return [];
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("couple_id", profile.couple_id)
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.couple_id,
+  });
+
+  // Keep store in sync with React Query data for other components that might still use the store
+  useEffect(() => {
+    if (dbTransactions.length > 0) {
+      setTransactions(dbTransactions as any);
+    }
+  }, [dbTransactions, setTransactions]);
+
+  // Real-time subscription to invalidate React Query cache
   useEffect(() => {
     if (profile?.couple_id) {
-      const coupleId = profile.couple_id;
-      const fetchTransactions = async () => {
-        const { data, error } = await supabase
-          .from("transactions")
-          .select("*")
-          .eq("couple_id", coupleId)
-          .order("date", { ascending: false });
-
-        if (!error && data) {
-          setTransactions(data as any);
-        }
-      };
-
-      fetchTransactions();
-
-      // Subscription for real-time updates
-      const subscription = supabase
-        .channel("transactions-updates")
-        .on("postgres_changes", {
-          event: "*",
-          schema: "public",
-          table: "transactions",
-          filter: `couple_id=eq.${coupleId}`
-        }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newTx = payload.new as any;
-            setTransactions((prev) => [newTx, ...prev.filter(tx => tx.id !== newTx.id)]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedTx = payload.new as any;
-            setTransactions((prev) => prev.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = payload.old.id;
-            setTransactions((prev) => prev.filter(tx => tx.id !== deletedId));
+      const channel = supabase
+        .channel("transactions-realtime")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "transactions",
+            filter: `couple_id=eq.${profile.couple_id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ["transactions"] });
+            queryClient.invalidateQueries({ queryKey: ["cards"] });
           }
-        })
+        )
         .subscribe();
 
       return () => {
-        supabase.removeChannel(subscription);
+        supabase.removeChannel(channel);
       };
     }
-  }, [profile?.couple_id, setTransactions]);
+  }, [profile?.couple_id, queryClient]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -562,7 +566,7 @@ function TransactionsPage() {
                           </TableCell>
                           <TableCell className="py-5 text-right">
                             <p className={`font-black text-sm ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                              {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {tx.amount > 0 ? '+' : ''} {formatCurrency(Math.abs(tx.amount))}
                             </p>
                           </TableCell>
                           <TableCell className="py-5">
@@ -665,7 +669,7 @@ function TransactionsPage() {
                               </DropdownMenu>
                             )}
                             <p className={`text-sm font-black mt-1 ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                              {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {tx.amount > 0 ? '+' : ''} {formatCurrency(Math.abs(tx.amount))}
                             </p>
                           </div>
                         </div>
@@ -855,7 +859,7 @@ function TransactionsPage() {
               <div className="flex justify-between items-center">
                 <p className="text-sm font-medium text-muted-foreground">Quanto?</p>
                 <p className={`font-black ${parsedData.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'}`}>
-                  R$ {Math.abs(parsedData.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  {formatCurrency(Math.abs(parsedData.amount))}
                 </p>
               </div>
               <div className="flex justify-between items-center">

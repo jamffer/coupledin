@@ -65,7 +65,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { AddCardModal } from "@/components/add-card-modal";
 import { useQuery } from "@tanstack/react-query";
@@ -150,10 +150,16 @@ function CartoesPage() {
 
       if (error) throw error;
       
+      // Calcular faturas atuais em uma única passagem pelas transações
+      const cardBalances = transactions.reduce((acc, tx) => {
+        if (tx.card_id) {
+          acc[tx.card_id] = (acc[tx.card_id] || 0) + Math.abs(tx.amount);
+        }
+        return acc;
+      }, {} as Record<string, number>);
+
       return data.map(card => {
-        // Calcular fatura atual baseada nas transações vinculadas a este cartão
-        const cardTransactions = transactions.filter(tx => tx.card_id === card.id);
-        const currentBill = cardTransactions.reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
+        const currentBill = cardBalances[card.id] || 0;
 
         return {
           id: card.id,
@@ -162,7 +168,7 @@ function CartoesPage() {
           brand: "Mastercard", 
           color: card.color || "card-gradient-blue",
           currentBill: currentBill,
-          limitUsed: currentBill, // Simplificado para este exemplo
+          limitUsed: currentBill,
           totalLimit: Number(card.limit_amount),
           type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
           owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
@@ -212,7 +218,7 @@ function CartoesPage() {
   const handlePayBill = () => {
     if (!selectedCard) return;
     toast.success("Fatura paga com sucesso!", {
-      description: `O pagamento de R$ ${selectedCard.currentBill.toLocaleString('pt-BR')} foi registrado.`,
+      description: `O pagamento de ${formatCurrency(selectedCard.currentBill)} foi registrado.`,
     });
   };
 
@@ -271,7 +277,7 @@ function CartoesPage() {
                     <div className="relative z-10 space-y-4">
                       <div className="flex flex-col gap-0">
                         <span className="text-[10px] uppercase font-bold opacity-60">Fatura Atual</span>
-                        <h3 className="text-3xl font-bold tracking-tight">R$ {card.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                        <h3 className="text-3xl font-bold tracking-tight">{formatCurrency(card.currentBill)}</h3>
                       </div>
                       
                       <div className="space-y-2">
@@ -357,7 +363,7 @@ function CartoesPage() {
                       <div className="p-6 flex flex-col justify-between">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground mb-1">Total da Fatura</p>
-                          <h3 className="text-2xl font-bold tracking-tight">R$ {selectedCard.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                          <h3 className="text-2xl font-bold tracking-tight">{formatCurrency(selectedCard.currentBill)}</h3>
                         </div>
                         {selectedMonth === "june" && (
                           <AlertDialog>
@@ -370,7 +376,7 @@ function CartoesPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Confirmar Pagamento</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Deseja registrar o pagamento desta fatura no valor de <span className="font-bold text-foreground">R$ {selectedCard.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>?
+                                  Deseja registrar o pagamento desta fatura no valor de <span className="font-bold text-foreground">{formatCurrency(selectedCard.currentBill)}</span>?
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -385,11 +391,11 @@ function CartoesPage() {
                       </div>
                       <div className="p-6">
                         <p className="text-sm font-medium text-muted-foreground mb-1">Jorge paga</p>
-                        <h3 className="text-2xl font-bold tracking-tight text-blue-600">R$ {jorgePays.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                        <h3 className="text-2xl font-bold tracking-tight text-blue-600">{formatCurrency(jorgePays)}</h3>
                       </div>
                       <div className="p-6">
                         <p className="text-sm font-medium text-muted-foreground mb-1">Lilian paga</p>
-                        <h3 className="text-2xl font-bold tracking-tight text-rose-600">R$ {lilianPays.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                        <h3 className="text-2xl font-bold tracking-tight text-rose-600">{formatCurrency(lilianPays)}</h3>
                       </div>
                     </div>
 
@@ -420,7 +426,7 @@ function CartoesPage() {
                                     <MoreVertical size={16} />
                                   </Button>
                                 </TableCell>
-                                <TableCell className="text-right font-bold pr-6">R$ {item.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                                <TableCell className="text-right font-bold pr-6">{formatCurrency(item.amount)}</TableCell>
                               </TableRow>
                             ))
                           ) : (

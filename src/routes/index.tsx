@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -402,7 +402,7 @@ function Dashboard() {
             "text-sm font-bold",
             tx.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'
           )}>
-            {tx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(tx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {tx.type === 'Entrada' ? '+' : '-'} {formatCurrency(Math.abs(tx.amount || 0))}
           </p>
           <p className="text-[10px] text-muted-foreground">{tx.category}</p>
         </div>
@@ -439,7 +439,7 @@ function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white/80">Saldo Total</p>
-                  <h3 className="text-2xl font-bold tracking-tight text-white">R$ {totals.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                  <h3 className="text-2xl font-bold tracking-tight text-white">{formatCurrency(totals.balance)}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -459,7 +459,7 @@ function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white/80">Entradas do Mês</p>
-                  <h3 className="text-2xl font-bold tracking-tight text-white">R$ {totals.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                  <h3 className="text-2xl font-bold tracking-tight text-white">{formatCurrency(totals.income)}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -479,7 +479,7 @@ function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white/80">Saídas (Débito)</p>
-                  <h3 className="text-2xl font-bold tracking-tight text-white">R$ {totals.expenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                  <h3 className="text-2xl font-bold tracking-tight text-white">{formatCurrency(totals.expenses)}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -499,7 +499,7 @@ function Dashboard() {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-2xl font-bold tracking-tight text-foreground">R$ {totals.credit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                    <h3 className="text-2xl font-bold tracking-tight text-foreground">{formatCurrency(totals.credit)}</h3>
                   </div>
                   <div className="pt-2 border-t border-border flex justify-between items-center">
                     <span className="text-[10px] font-medium text-muted-foreground uppercase">Tudo de crédito</span>
@@ -628,7 +628,7 @@ function Dashboard() {
                             "text-sm font-bold",
                             tx.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'
                           )}>
-                            {tx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(tx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {tx.type === 'Entrada' ? '+' : '-'} {formatCurrency(Math.abs(tx.amount || 0))}
                           </p>
                           <p className="text-[10px] text-muted-foreground">{tx.category}</p>
                         </div>
@@ -716,7 +716,7 @@ function Dashboard() {
             <div className="flex justify-between items-center mb-4">
               <p className="text-sm font-bold text-muted-foreground uppercase">Resumo do Período</p>
               <p className="text-lg font-black">
-                R$ {filteredTransactions.reduce((acc, tx) => acc + (tx.amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {formatCurrency(filteredTransactions.reduce((acc, tx) => acc + (tx.amount || 0), 0))}
               </p>
             </div>
             <Button variant="secondary" className="w-full rounded-2xl font-bold active:scale-95 transition-all" onClick={() => setActiveSheet(null)}>
@@ -747,7 +747,7 @@ function Dashboard() {
                 </div>
                 <div className="text-right">
                   <p className={cn("text-xl font-black", selectedTx.type === 'Entrada' ? "text-emerald-600" : "text-foreground")}>
-                    {selectedTx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(selectedTx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {selectedTx.type === 'Entrada' ? '+' : '-'} {formatCurrency(Math.abs(selectedTx.amount || 0))}
                   </p>
                   <p className="text-xs text-muted-foreground">{selectedTx.date ? format(new Date(selectedTx.date), "dd MMM, HH:mm", { locale: ptBR }) : ''}</p>
                 </div>
