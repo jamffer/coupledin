@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      cards: {
+        Row: {
+          card_type: string
+          color: string | null
+          couple_id: string | null
+          created_at: string
+          id: string
+          last_four: string | null
+          limit_amount: number
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          card_type: string
+          color?: string | null
+          couple_id?: string | null
+          created_at?: string
+          id?: string
+          last_four?: string | null
+          limit_amount?: number
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          card_type?: string
+          color?: string | null
+          couple_id?: string | null
+          created_at?: string
+          id?: string
+          last_four?: string | null
+          limit_amount?: number
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       couples: {
         Row: {
           created_at: string
@@ -35,42 +82,6 @@ export type Database = {
           invite_code?: string
           name?: string | null
           updated_at?: string
-        }
-        Relationships: []
-      }
-      credit_cards: {
-        Row: {
-          card_type: string
-          color: string | null
-          created_at: string
-          id: string
-          last_digits: string | null
-          name: string
-          total_limit: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          card_type: string
-          color?: string | null
-          created_at?: string
-          id?: string
-          last_digits?: string | null
-          name: string
-          total_limit?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          card_type?: string
-          color?: string | null
-          created_at?: string
-          id?: string
-          last_digits?: string | null
-          name?: string
-          total_limit?: number
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -112,6 +123,7 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          card_id: string | null
           category: string
           couple_id: string
           created_at: string
@@ -125,6 +137,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          card_id?: string | null
           category: string
           couple_id: string
           created_at?: string
@@ -138,6 +151,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          card_id?: string | null
           category?: string
           couple_id?: string
           created_at?: string
@@ -150,6 +164,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_couple_id_fkey"
             columns: ["couple_id"]
