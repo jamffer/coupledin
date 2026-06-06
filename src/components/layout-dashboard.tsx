@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { 
   LayoutDashboard, 
   ReceiptText, 
@@ -9,7 +9,8 @@ import {
   PlusCircle,
   Menu,
   Moon,
-  Sun
+  Sun,
+  Plus
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -27,6 +28,25 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ReactNode, useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -44,7 +64,7 @@ export function AppSidebar() {
   });
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-white/10 bg-transparent backdrop-blur-xl">
+    <Sidebar collapsible="icon" className="border-r border-border/40 bg-sidebar z-50 shadow-xl">
       <SidebarHeader className="h-16 flex items-center px-6 border-b border-white/10">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-primary">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
@@ -82,6 +102,9 @@ export function AppSidebar() {
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isNewRecordOpen, setIsNewRecordOpen] = useState(false);
+  const navigate = useNavigate();
+  
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("theme");
@@ -119,11 +142,12 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full relative bg-background">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0 relative z-10">
-          <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-border/40 bg-white/30 dark:bg-black/20 backdrop-blur-xl sticky top-0 z-20">
+    <TooltipProvider>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full relative bg-background overflow-x-hidden">
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300">
+            <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-border/40 bg-background/80 backdrop-blur-xl sticky top-0 z-40 transition-colors">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
               <div>
@@ -133,32 +157,105 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
             
             <div className="flex items-center gap-3 md:gap-6">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={toggleDarkMode}
-                className="rounded-full apple-interactive border-white/40"
-              >
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={toggleDarkMode}
+                    className="rounded-full apple-interactive border-white/40 active:scale-95 transition-all"
+                  >
+                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Alternar para Modo {isDarkMode ? 'Claro' : 'Escuro'}</p>
+                </TooltipContent>
+              </Tooltip>
 
-              <Button size="sm" className="hidden md:flex gap-2 rounded-full shadow-sm apple-interactive border-white/40">
-                <PlusCircle size={18} />
-                Novo Registro
-              </Button>
-              <Button size="icon" variant="ghost" className="md:hidden rounded-full apple-interactive border-white/40">
-                <PlusCircle size={22} />
-              </Button>
+              <Dialog open={isNewRecordOpen} onOpenChange={setIsNewRecordOpen}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="hidden md:flex gap-2 rounded-full shadow-md apple-interactive border-white/40 active:scale-95 transition-all">
+                        <Plus size={18} />
+                        Novo Registro
+                      </Button>
+                    </DialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Adicionar nova transação</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <DialogContent className="apple-card dark:bg-[#1A1A1A] border-border/40">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold">Novo Registro</DialogTitle>
+                    <DialogDescription>
+                      Adicione uma nova transação rapidamente ou vá para a página detalhada.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="desc" className="text-right font-medium">Descrição</Label>
+                      <Input id="desc" placeholder="Ex: Mercado" className="col-span-3 rounded-xl apple-interactive dark:bg-black/20" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="valor" className="text-right font-medium">Valor</Label>
+                      <Input id="valor" type="number" placeholder="0,00" className="col-span-3 rounded-xl apple-interactive dark:bg-black/20" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="tipo" className="text-right font-medium">Tipo</Label>
+                      <Select defaultValue="saida">
+                        <SelectTrigger id="tipo" className="col-span-3 rounded-xl apple-interactive dark:bg-black/20">
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent className="apple-card">
+                          <SelectItem value="entrada">Entrada</SelectItem>
+                          <SelectItem value="saida">Saída</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button variant="ghost" className="rounded-xl active:scale-95 transition-all" onClick={() => navigate({ to: '/transacoes' })}>
+                      Ir para Lançamentos
+                    </Button>
+                    <Button className="rounded-xl apple-interactive border-none px-8 active:scale-95 transition-all" onClick={() => {
+                      toast.success("Registro adicionado!");
+                      setIsNewRecordOpen(false);
+                    }}>
+                      Salvar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <DialogTrigger asChild className="md:hidden">
+                <Button size="icon" variant="ghost" className="rounded-full apple-interactive border-white/40 active:scale-95 transition-all">
+                  <PlusCircle size={22} />
+                </Button>
+              </DialogTrigger>
               
               <div className="flex -space-x-2">
-                <Avatar className="border-2 border-white/50 w-8 h-8 md:w-10 md:h-10 shadow-sm">
-                  <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
-                  <AvatarFallback>JO</AvatarFallback>
-                </Avatar>
-                <Avatar className="border-2 border-white/50 w-8 h-8 md:w-10 md:h-10 shadow-sm">
-                  <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
-                  <AvatarFallback>LI</AvatarFallback>
-                </Avatar>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm cursor-pointer hover:scale-110 transition-transform z-10">
+                      <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
+                      <AvatarFallback>JO</AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Perfil do Jorge</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm cursor-pointer hover:scale-110 transition-transform">
+                      <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
+                      <AvatarFallback>LI</AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Perfil da Lilian</p></TooltipContent>
+                </Tooltip>
               </div>
             </div>
           </header>
@@ -168,5 +265,6 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
     </SidebarProvider>
-  );
+  </TooltipProvider>
+);
 }
