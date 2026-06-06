@@ -41,7 +41,8 @@ import {
   Clock,
   HelpCircle,
   AlertCircle,
-  RefreshCcw
+  RefreshCcw,
+  Receipt
 } from "lucide-react";
 
 import { 
@@ -63,15 +64,7 @@ import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSpaceOnboardingStore, OnboardingStep } from "@/store/useSpaceOnboardingStore";
 import { LoadingOverlay } from "@/components/onboarding/loading-overlay";
-
-const chartData = [
-  { name: "Jan", entradas: 4500, saidas: 3200 },
-  { name: "Fev", entradas: 5200, saidas: 3800 },
-  { name: "Mar", entradas: 4800, saidas: 4100 },
-  { name: "Abr", entradas: 6100, saidas: 4300 },
-  { name: "Mai", entradas: 5900, saidas: 3900 },
-  { name: "Jun", entradas: 6500, saidas: 4200 },
-];
+import { EmptyState } from "@/components/empty-state";
 
 export const Route = createFileRoute("/")({
  head: () => ({
@@ -271,21 +264,41 @@ function Dashboard() {
 
     // Filtrar pelo mês selecionado
     return baseTransactions
-      .filter(tx => isSameMonth(new Date(tx.date), selectedMonth))
+      .filter(tx => tx && tx.date && isSameMonth(new Date(tx.date), selectedMonth))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [activeSheet, transactions, selectedMonth]);
 
   const totals = useMemo(() => {
     const now = new Date();
-    const currentMonthTxs = transactions.filter(tx => isSameMonth(new Date(tx.date), now));
+    const currentMonthTxs = transactions.filter(tx => tx && tx.date && isSameMonth(new Date(tx.date), now));
     
-    const balance = transactions.reduce((acc, tx) => acc + (tx.type === 'Entrada' ? tx.amount : tx.amount), 0);
-    const income = currentMonthTxs.filter(tx => tx.type === 'Entrada').reduce((acc, tx) => acc + tx.amount, 0);
-    const expenses = currentMonthTxs.filter(tx => tx.type === 'Débito').reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
-    const credit = transactions.filter(tx => tx.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
+    const balance = transactions.reduce((acc, tx) => acc + (tx.amount || 0), 0);
+    const income = currentMonthTxs.filter(tx => tx?.type === 'Entrada').reduce((acc, tx) => acc + (tx?.amount || 0), 0);
+    const expenses = currentMonthTxs.filter(tx => tx?.type === 'Débito' || tx?.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
+    const credit = transactions.filter(tx => tx?.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
 
     return { balance, income, expenses, credit };
   }, [transactions]);
+
+  const dashboardChartData = useMemo(() => {
+    const last6Months = Array.from({ length: 6 }, (_, i) => subMonths(startOfMonth(new Date()), 5 - i));
+    
+    return last6Months.map(month => {
+      const monthTxs = transactions.filter(tx => tx && tx.date && isSameMonth(new Date(tx.date), month));
+      const entradas = monthTxs.filter(tx => tx.type === 'Entrada').reduce((acc, tx) => acc + (tx.amount || 0), 0);
+      const saidas = monthTxs.filter(tx => tx.type === 'Débito' || tx.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx.amount || 0), 0);
+      
+      return {
+        name: format(month, "MMM", { locale: ptBR }),
+        entradas,
+        saidas
+      };
+    });
+  }, [transactions]);
+
+  const hasChartData = useMemo(() => {
+    return dashboardChartData.some(d => d.entradas > 0 || d.saidas > 0);
+  }, [dashboardChartData]);
 
   if (loading) {
     return (
@@ -379,7 +392,7 @@ function Dashboard() {
           <div className="min-w-0">
             <p className="text-sm font-bold truncate">{tx.description}</p>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] text-muted-foreground">{format(new Date(tx.date), "dd MMM, HH:mm", { locale: ptBR })}</span>
+              <span className="text-[10px] text-muted-foreground">{tx.date ? format(new Date(tx.date), "dd MMM, HH:mm", { locale: ptBR }) : ''}</span>
               <div className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
                 <img src={avatar} alt={tx.responsible} className="w-3 h-3 rounded-full" />
                 <span className="text-[10px] font-semibold text-muted-foreground">
@@ -394,7 +407,7 @@ function Dashboard() {
             "text-sm font-bold",
             tx.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'
           )}>
-            {tx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            {tx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(tx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </p>
           <p className="text-[10px] text-muted-foreground">{tx.category}</p>
         </div>
@@ -410,8 +423,6 @@ function Dashboard() {
         progressValue={progressValue} 
       />
       <motion.div 
-
-
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -509,66 +520,78 @@ function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Gráfico */}
           <motion.div variants={itemVariants} className="lg:col-span-2">
-            <Card className="apple-card">
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="apple-card overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div>
                   <CardTitle className="text-lg font-bold">Fluxo de Caixa</CardTitle>
                   <p className="text-xs text-muted-foreground">Visão geral dos últimos 6 meses</p>
                 </div>
               </CardHeader>
-              <CardContent className="h-[350px] w-full pt-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 12, fill: '#888' }}
-                      dy={10}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 12, fill: '#888' }} 
-                    />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-                    />
-                    <Legend verticalAlign="top" height={36} iconType="circle" />
-                    <Area 
-                      name="Entradas"
-                      type="monotone" 
-                      dataKey="entradas" 
-                      stroke="#10b981" 
-                      strokeWidth={3}
-                      fillOpacity={1} 
-                      fill="url(#colorEntradas)" 
-                    />
-                    <Area 
-                      name="Saídas"
-                      type="monotone" 
-                      dataKey="saidas" 
-                      stroke="#f43f5e" 
-                      strokeWidth={3}
-                      fillOpacity={1} 
-                      fill="url(#colorSaidas)" 
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <CardContent className="h-[350px] w-full pt-4 relative">
+                {hasChartData ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={dashboardChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 12, fill: '#888' }}
+                        dy={10}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 12, fill: '#888' }} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                      />
+                      <Legend verticalAlign="top" height={36} iconType="circle" />
+                      <Area 
+                        name="Entradas"
+                        type="monotone" 
+                        dataKey="entradas" 
+                        stroke="#10b981" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorEntradas)" 
+                      />
+                      <Area 
+                        name="Saídas"
+                        type="monotone" 
+                        dataKey="saidas" 
+                        stroke="#f43f5e" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorSaidas)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
+                    <div className="p-4 bg-muted rounded-full">
+                      <TrendingUp size={32} className="text-muted-foreground opacity-20" />
+                    </div>
+                    <p className="text-sm text-muted-foreground max-w-[200px]">
+                      Dados insuficientes para gerar o gráfico. Comece a registrar suas finanças para ver sua evolução.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
+
 
           {/* Transações Recentes */}
           <motion.div variants={itemVariants} id="recent-transactions">
@@ -581,40 +604,51 @@ function Dashboard() {
               </CardHeader>
               <CardContent className="pt-2">
                 <div className="space-y-6">
-                  {transactions.slice(0, 4).map((tx) => (
-                    <div 
-                      key={tx.id} 
-                      onClick={() => setSelectedTx(tx)}
-                      className="flex items-center justify-between group cursor-pointer p-2 -mx-2 rounded-2xl hover:bg-white/10 active:scale-95 transition-all"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-muted rounded-2xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                          {React.createElement(CATEGORY_ICONS[tx.category] || Coffee, { size: 18 })}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold truncate">{tx.description}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] text-muted-foreground">{format(new Date(tx.date), "dd MMM, HH:mm", { locale: ptBR })}</span>
-                            <div className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
-                              <img src={userAvatars[tx.responsible as keyof typeof userAvatars]} alt={tx.responsible} className="w-3 h-3 rounded-full" />
-                              <span className="text-[10px] font-semibold text-muted-foreground">
-                                {tx.responsible}
-                              </span>
+                  {transactions.length > 0 ? (
+                    transactions.slice(0, 4).map((tx) => (
+                      <div 
+                        key={tx.id} 
+                        onClick={() => setSelectedTx(tx)}
+                        className="flex items-center justify-between group cursor-pointer p-2 -mx-2 rounded-2xl hover:bg-white/10 active:scale-95 transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-muted rounded-2xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                            {React.createElement(CATEGORY_ICONS[tx.category] || Coffee, { size: 18 })}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold truncate">{tx.description}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-muted-foreground">{tx.date ? format(new Date(tx.date), "dd MMM, HH:mm", { locale: ptBR }) : ''}</span>
+                              <div className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
+                                <img src={userAvatars[tx.responsible as keyof typeof userAvatars]} alt={tx.responsible} className="w-3 h-3 rounded-full" />
+                                <span className="text-[10px] font-semibold text-muted-foreground">
+                                  {tx.responsible}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <p className={cn(
+                            "text-sm font-bold",
+                            tx.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'
+                          )}>
+                            {tx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(tx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{tx.category}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className={cn(
-                          "text-sm font-bold",
-                          tx.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'
-                        )}>
-                          {tx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">{tx.category}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <EmptyState 
+                      icon={Receipt}
+                      title="Nenhuma transação ainda"
+                      description="Comece a registrar seus gastos para ter controle total."
+                      actionLabel="Adicionar meu primeiro lançamento"
+                      onAction={() => navigate({ to: "/transacoes" })}
+                      className="py-8 bg-transparent border-none"
+                    />
+                  )}
                 </div>
                 <Button variant="ghost" onClick={() => navigate({ to: '/transacoes' })} className="w-full mt-8 text-xs font-bold text-muted-foreground hover:text-primary active:scale-95 transition-all">
                   Ver extrato completo
@@ -687,7 +721,7 @@ function Dashboard() {
             <div className="flex justify-between items-center mb-4">
               <p className="text-sm font-bold text-muted-foreground uppercase">Resumo do Período</p>
               <p className="text-lg font-black">
-                R$ {filteredTransactions.reduce((acc, tx) => acc + (tx.type === 'Entrada' ? tx.amount : -Math.abs(tx.amount)), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {filteredTransactions.reduce((acc, tx) => acc + (tx.amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
             </div>
             <Button variant="secondary" className="w-full rounded-2xl font-bold active:scale-95 transition-all" onClick={() => setActiveSheet(null)}>
@@ -718,9 +752,9 @@ function Dashboard() {
                 </div>
                 <div className="text-right">
                   <p className={cn("text-xl font-black", selectedTx.type === 'Entrada' ? "text-emerald-600" : "text-foreground")}>
-                    {selectedTx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(selectedTx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {selectedTx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(selectedTx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-xs text-muted-foreground">{format(new Date(selectedTx.date), "dd MMM, HH:mm", { locale: ptBR })}</p>
+                  <p className="text-xs text-muted-foreground">{selectedTx.date ? format(new Date(selectedTx.date), "dd MMM, HH:mm", { locale: ptBR }) : ''}</p>
                 </div>
               </div>
 
@@ -749,5 +783,3 @@ function Dashboard() {
     </DashboardLayout>
   );
 }
-
-
