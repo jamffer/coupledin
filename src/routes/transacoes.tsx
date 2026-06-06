@@ -461,6 +461,96 @@ function TransactionsPage() {
             </div>
           </motion.div>
         </div>
+
+        {/* Section 3: Confirmation Modal */}
+        <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+          <DialogContent className="sm:max-w-[425px] rounded-3xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles size={20} className="text-primary" />
+                Confirmar Lançamento
+              </DialogTitle>
+              <DialogDescription>
+                A IA extraiu os seguintes dados do seu texto. Deseja confirmar?
+              </DialogDescription>
+            </DialogHeader>
+            
+            {parsedData && (
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="desc" className="text-right text-xs font-bold uppercase text-muted-foreground">
+                    Descrição
+                  </Label>
+                  <Input
+                    id="desc"
+                    value={parsedData.description}
+                    onChange={(e) => setParsedData({ ...parsedData, description: e.target.value })}
+                    className="col-span-3 rounded-xl h-11"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="amount" className="text-right text-xs font-bold uppercase text-muted-foreground">
+                    Valor
+                  </Label>
+                  <div className="col-span-3 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">R$</span>
+                    <Input
+                      id="amount"
+                      type="number"
+                      value={parsedData.amount}
+                      onChange={(e) => setParsedData({ ...parsedData, amount: Number(e.target.value) })}
+                      className="pl-10 rounded-xl h-11"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="category" className="text-right text-xs font-bold uppercase text-muted-foreground">
+                    Categoria
+                  </Label>
+                  <Select 
+                    value={parsedData.category} 
+                    onValueChange={(val) => setParsedData({ ...parsedData, category: val as any })}
+                  >
+                    <SelectTrigger className="col-span-3 rounded-xl h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(CATEGORY_ICONS).map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="responsible" className="text-right text-xs font-bold uppercase text-muted-foreground">
+                    Quem
+                  </Label>
+                  <Select 
+                    value={parsedData.responsible} 
+                    onValueChange={(val) => setParsedData({ ...parsedData, responsible: val as any })}
+                  >
+                    <SelectTrigger className="col-span-3 rounded-xl h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Felipe">Felipe</SelectItem>
+                      <SelectItem value="Beatriz">Beatriz</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter className="gap-2">
+              <Button variant="ghost" onClick={() => setIsConfirmModalOpen(false)} className="rounded-full">
+                Ajustar
+              </Button>
+              <Button onClick={handleConfirm} className="rounded-full px-8 font-bold shadow-lg">
+                Confirmar e Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </DashboardLayout>
   );
