@@ -13,6 +13,9 @@ import {
   HelpCircle,
   Users,
   Loader2,
+  MoreVertical,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { 
   Select, 
@@ -39,6 +42,22 @@ import {
   DialogDescription, 
   DialogFooter 
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
@@ -59,9 +78,11 @@ export const Route = createFileRoute("/transacoes")({
 
 function formatDate(iso: string): string {
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const [y, m, d] = iso.split("-").map(Number);
-  if (!y || !m || !d) return iso;
-  return `${String(d).padStart(2, "0")} ${months[m - 1]}, ${y}`;
+  const dateObj = new Date(iso);
+  const d = dateObj.getUTCDate();
+  const m = dateObj.getUTCMonth();
+  const y = dateObj.getUTCFullYear();
+  return `${String(d).padStart(2, "0")} ${months[m]}, ${y}`;
 }
 
 function buildTransaction(parsed: ParsedTransaction, id: number): Transaction {
@@ -89,16 +110,41 @@ const itemVariants = {
 
 function TransactionsPage() {
   const [smartInput, setSmartInput] = useState("");
-  const { transactions, addTransaction, userAvatars } = useFinanceStore();
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars } = useFinanceStore();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [txToDelete, setTxToDelete] = useState<number | null>(null);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
+
+  // States for manual form
+  const [formData, setFormData] = useState<Partial<Transaction>>({
+    description: "",
+    amount: 0,
+    date: new Date().toISOString().split('T')[0],
+    category: "Outros",
+    responsible: "Jorge",
+    division: "Conjunta 50/50",
+    type: "Saída"
+  });
+
+  // States for filters
+  const [filters, setFilters] = useState({
+    month: "june",
+    category: "all-cats",
+    type: "all-types",
+    responsible: "both"
+  });
 
   const parseFn = useServerFn(parseTransactionFromText);
   const mutation = useMutation({
     mutationFn: (text: string) => parseFn({ data: { text } }),
     onSuccess: (parsed) => {
-      setParsedData(parsed);
-      setIsConfirmModalOpen(true);
+      setTimeout(() => {
+        setParsedData(parsed);
+        setIsConfirmModalOpen(true);
+      }, 1500);
     },
     onError: (err: Error) => {
       toast.error("Não foi possível processar", { description: err.message });
@@ -120,7 +166,75 @@ function TransactionsPage() {
     setSmartInput("");
     setIsConfirmModalOpen(false);
     setParsedData(null);
-    toast.success("Lançamento adicionado com sucesso!");
+    toast.success("Transação adicionada!");
+  };
+
+  const handleSaveManual = () => {
+    if (!formData.description || !formData.amount) {
+      toast.error("Preencha a descrição e o valor.");
+      return;
+    }
+
+    if (editingTx) {
+      updateTransaction(editingTx.id, {
+        ...formData,
+        amount: (formData.type === "Entrada" ? 1 : -1) * Math.abs(formData.amount || 0)
+      } as Partial<Transaction>);
+      toast.success("Transação atualizada!");
+    } else {
+      const newTx: Transaction = {
+        id: Date.now(),
+        description: formData.description || "",
+        amount: (formData.type === "Entrada" ? 1 : -1) * Math.abs(formData.amount || 0),
+        date: formatDate(formData.date!),
+        category: formData.category || "Outros",
+        responsible: (formData.responsible as "Jorge" | "Lilian") || "Jorge",
+        division: (formData.division as any) || "Conjunta 50/50",
+        type: formData.type || "Saída"
+      };
+      addTransaction(newTx);
+      toast.success("Transação adicionada!");
+    }
+    
+    setIsManualModalOpen(false);
+    setEditingTx(null);
+  };
+
+  const handleEditClick = (tx: Transaction) => {
+    setEditingTx(tx);
+    setFormData({
+      description: tx.description,
+      amount: Math.abs(tx.amount),
+      date: new Date().toISOString().split('T')[0],
+      category: tx.category,
+      responsible: tx.responsible,
+      division: tx.division,
+      type: tx.type === "Entrada" ? "Entrada" : (tx.amount < 0 ? "Saída" : "Entrada")
+    });
+    setIsManualModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (txToDelete !== null) {
+      deleteTransaction(txToDelete);
+      toast.error("Transação excluída");
+      setIsDeleteModalOpen(false);
+      setTxToDelete(null);
+    }
+  };
+
+  const handleAddManualClick = () => {
+    setEditingTx(null);
+    setFormData({
+      description: "",
+      amount: 0,
+      date: new Date().toISOString().split('T')[0],
+      category: "Outros",
+      responsible: "Jorge",
+      division: "Conjunta 50/50",
+      type: "Saída"
+    });
+    setIsManualModalOpen(true);
   };
 
   return (
@@ -164,12 +278,12 @@ function TransactionsPage() {
                       {isLoading ? (
                         <div className="flex items-center gap-2">
                           <Loader2 size={16} className="animate-spin" />
-                          <span className="animate-pulse">Processando transação com IA...</span>
+                          <span className="animate-pulse">Analisando...</span>
                         </div>
                       ) : (
                         <>
                           <Sparkles size={16} />
-                          Processar
+                          Magia IA
                         </>
                       )}
                     </Button>
@@ -177,7 +291,11 @@ function TransactionsPage() {
                 </div>
 
                 <div className="flex items-center justify-center">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-primary transition-all text-sm font-medium gap-2 active:scale-95">
+                  <Button 
+                    variant="ghost" 
+                    className="text-muted-foreground hover:text-primary transition-all text-sm font-medium gap-2 active:scale-95"
+                    onClick={handleAddManualClick}
+                  >
                     <PlusCircle size={16} />
                     Adicionar Manualmente
                   </Button>
@@ -193,7 +311,10 @@ function TransactionsPage() {
             <h2 className="text-2xl font-bold tracking-tight">Histórico</h2>
             
             <div className="flex flex-wrap items-center gap-2">
-              <Select defaultValue="june">
+              <Select 
+                value={filters.month} 
+                onValueChange={(val) => setFilters({ ...filters, month: val })}
+              >
                 <SelectTrigger className="w-[130px] rounded-full apple-interactive">
                   <SelectValue placeholder="Mês" />
                 </SelectTrigger>
@@ -204,38 +325,47 @@ function TransactionsPage() {
                 </SelectContent>
               </Select>
 
-              <Select defaultValue="all-cats">
+              <Select 
+                value={filters.category} 
+                onValueChange={(val) => setFilters({ ...filters, category: val })}
+              >
                 <SelectTrigger className="w-[140px] rounded-full apple-interactive">
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all-cats">Todas Categorias</SelectItem>
-                  <SelectItem value="food">Alimentação</SelectItem>
-                  <SelectItem value="leisure">Lazer</SelectItem>
-                  <SelectItem value="transport">Transporte</SelectItem>
+                  {Object.keys(CATEGORY_ICONS).map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
-              <Select defaultValue="all-types">
+              <Select 
+                value={filters.type} 
+                onValueChange={(val) => setFilters({ ...filters, type: val })}
+              >
                 <SelectTrigger className="w-[120px] rounded-full apple-interactive">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all-types">Todos Tipos</SelectItem>
-                  <SelectItem value="credit">Crédito</SelectItem>
-                  <SelectItem value="debit">Débito</SelectItem>
-                  <SelectItem value="income">Entrada</SelectItem>
+                  <SelectItem value="Entrada">Entrada</SelectItem>
+                  <SelectItem value="Débito">Débito</SelectItem>
+                  <SelectItem value="Crédito">Crédito</SelectItem>
                 </SelectContent>
               </Select>
 
-              <Select defaultValue="both">
+              <Select 
+                value={filters.responsible} 
+                onValueChange={(val) => setFilters({ ...filters, responsible: val })}
+              >
                 <SelectTrigger className="w-[130px] rounded-full apple-interactive">
                   <SelectValue placeholder="Responsável" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="both">O Casal</SelectItem>
-                  <SelectItem value="jorge">Jorge</SelectItem>
-                  <SelectItem value="lilian">Lilian</SelectItem>
+                  <SelectItem value="Jorge">Jorge</SelectItem>
+                  <SelectItem value="Lilian">Lilian</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -256,7 +386,8 @@ function TransactionsPage() {
                     <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Categoria</TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-right">Valor</TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Responsável</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 pr-8 text-center">Divisão</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Divisão</TableHead>
+                    <TableHead className="w-[50px] pr-8"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -294,13 +425,38 @@ function TransactionsPage() {
                             </Avatar>
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 pr-8">
+                        <TableCell className="py-4">
                           <div className="flex justify-center">
                             <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tighter rounded-lg border-muted/50 apple-glass gap-1 py-1">
                               <DivisionIcon size={12} className="text-primary" />
                               {tx.division}
                             </Badge>
                           </div>
+                        </TableCell>
+                        <TableCell className="py-4 pr-8 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreVertical size={16} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="apple-card">
+                              <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => handleEditClick(tx)}>
+                                <Edit size={14} />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="gap-2 text-destructive cursor-pointer" 
+                                onClick={() => {
+                                  setTxToDelete(tx.id);
+                                  setIsDeleteModalOpen(true);
+                                }}
+                              >
+                                <Trash2 size={14} />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
@@ -329,13 +485,33 @@ function TransactionsPage() {
                             <p className="text-[10px] text-muted-foreground">{tx.date} • {tx.type}</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        <div className="flex flex-col items-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2 rounded-full">
+                                <MoreVertical size={14} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="apple-card">
+                              <DropdownMenuItem className="gap-2" onClick={() => handleEditClick(tx)}>
+                                <Edit size={14} />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="gap-2 text-destructive" 
+                                onClick={() => {
+                                  setTxToDelete(tx.id);
+                                  setIsDeleteModalOpen(true);
+                                }}
+                              >
+                                <Trash2 size={14} />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <p className={`text-sm font-black mt-1 ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                             {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
-                          <Badge variant="outline" className="text-[9px] py-0 h-4 mt-1">
-                            {tx.category}
-                          </Badge>
                         </div>
                       </div>
                       
@@ -361,74 +537,45 @@ function TransactionsPage() {
           </motion.div>
         </div>
 
-        {/* Section 3: Confirmation Modal */}
+        {/* Section 3: IA Confirmation Modal */}
         <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
-          <DialogContent className="sm:max-w-[425px] rounded-3xl">
+          <DialogContent className="sm:max-w-[425px] rounded-3xl apple-card">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Sparkles size={20} className="text-primary" />
                 Confirmar Lançamento
               </DialogTitle>
               <DialogDescription>
-                A IA extraiu os seguintes dados do seu texto. Deseja confirmar?
+                A IA extraiu os seguintes dados. Deseja confirmar?
               </DialogDescription>
             </DialogHeader>
             
             {parsedData && (
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="desc" className="text-right text-xs font-bold uppercase text-muted-foreground">
-                    Descrição
-                  </Label>
+                  <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Descrição</Label>
                   <Input
-                    id="desc"
                     value={parsedData.description}
                     onChange={(e) => setParsedData({ ...parsedData, description: e.target.value })}
-                    className="col-span-3 rounded-xl h-11"
+                    className="col-span-3 rounded-xl"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="amount" className="text-right text-xs font-bold uppercase text-muted-foreground">
-                    Valor
-                  </Label>
-                  <div className="col-span-3 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">R$</span>
-                    <Input
-                      id="amount"
-                      type="number"
-                      value={parsedData.amount}
-                      onChange={(e) => setParsedData({ ...parsedData, amount: Number(e.target.value) })}
-                      className="pl-10 rounded-xl h-11"
-                    />
-                  </div>
+                  <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Valor</Label>
+                  <Input
+                    type="number"
+                    value={parsedData.amount}
+                    onChange={(e) => setParsedData({ ...parsedData, amount: Number(e.target.value) })}
+                    className="col-span-3 rounded-xl"
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right text-xs font-bold uppercase text-muted-foreground">
-                    Categoria
-                  </Label>
-                  <Select 
-                    value={parsedData.category} 
-                    onValueChange={(val) => setParsedData({ ...parsedData, category: val as any })}
-                  >
-                    <SelectTrigger className="col-span-3 rounded-xl h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(CATEGORY_ICONS).map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="responsible" className="text-right text-xs font-bold uppercase text-muted-foreground">
-                    Quem
-                  </Label>
+                  <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Quem</Label>
                   <Select 
                     value={parsedData.responsible} 
                     onValueChange={(val) => setParsedData({ ...parsedData, responsible: val as any })}
                   >
-                    <SelectTrigger className="col-span-3 rounded-xl h-11">
+                    <SelectTrigger className="col-span-3 rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -441,15 +588,120 @@ function TransactionsPage() {
             )}
             
             <DialogFooter className="gap-2">
-              <Button variant="ghost" onClick={() => setIsConfirmModalOpen(false)} className="rounded-full">
-                Ajustar
-              </Button>
-              <Button onClick={handleConfirm} className="rounded-full px-8 font-bold shadow-lg">
-                Confirmar e Salvar
-              </Button>
+              <Button variant="ghost" onClick={() => setIsConfirmModalOpen(false)} className="rounded-full">Ajustar</Button>
+              <Button onClick={handleConfirm} className="rounded-full px-8 font-bold shadow-lg">Confirmar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Section 4: Manual Add/Edit Modal */}
+        <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
+          <DialogContent className="sm:max-w-[500px] rounded-3xl apple-card">
+            <DialogHeader>
+              <DialogTitle>{editingTx ? "Editar Lançamento" : "Adicionar Manualmente"}</DialogTitle>
+              <DialogDescription>Preencha os campos abaixo para registrar sua transação.</DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-5 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Valor</Label>
+                <Input 
+                  type="number" 
+                  value={formData.amount} 
+                  onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                  className="col-span-3 h-12 rounded-xl text-lg font-bold"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Descrição</Label>
+                <Input 
+                  value={formData.description} 
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Ex: Jantar fora"
+                  className="col-span-3 h-11 rounded-xl"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Data</Label>
+                <Input 
+                  type="date" 
+                  value={formData.date} 
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="col-span-3 h-11 rounded-xl"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Categoria</Label>
+                <Select 
+                  value={formData.category} 
+                  onValueChange={(val) => setFormData({ ...formData, category: val })}
+                >
+                  <SelectTrigger className="col-span-3 h-11 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(CATEGORY_ICONS).map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Quem</Label>
+                <Select 
+                  value={formData.responsible} 
+                  onValueChange={(val) => setFormData({ ...formData, responsible: val as any })}
+                >
+                  <SelectTrigger className="col-span-3 h-11 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Jorge">Jorge</SelectItem>
+                    <SelectItem value="Lilian">Lilian</SelectItem>
+                    <SelectItem value="Conjunto">Conjunto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Tipo</Label>
+                <Select 
+                  value={formData.type} 
+                  onValueChange={(val) => setFormData({ ...formData, type: val })}
+                >
+                  <SelectTrigger className="col-span-3 h-11 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Entrada">Entrada</SelectItem>
+                    <SelectItem value="Débito">Saída (Débito)</SelectItem>
+                    <SelectItem value="Crédito">Saída (Crédito)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <DialogFooter className="gap-2">
+              <Button variant="ghost" onClick={() => setIsManualModalOpen(false)} className="rounded-full">Cancelar</Button>
+              <Button onClick={handleSaveManual} className="rounded-full px-8 font-bold shadow-lg">Salvar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Section 5: Delete Confirmation */}
+        <AlertDialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+          <AlertDialogContent className="apple-card rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Tem certeza que deseja excluir este lançamento?</AlertDialogTitle>
+              <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-full">Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </motion.div>
     </DashboardLayout>
   );
