@@ -5,6 +5,7 @@ import {
   CreditCard, 
   TrendingUp, 
   Target,
+  Settings,
   PlusCircle,
   Menu
 } from "lucide-react";
