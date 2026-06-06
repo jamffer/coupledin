@@ -127,17 +127,6 @@ function RelatoriosPage() {
     }
   }, [user, authLoading]);
 
-  const handleSettlementConfirm = () => {
-    setIsSettled(true);
-    setIsSettlementModalOpen(false);
-    toast.success("Acerto realizado com sucesso!");
-  };
-
-  const handleShareSummary = () => {
-    const summary = `Resumo Financeiro - Junho\nTotal Gastos Conjuntos: R$ ${totalJoint.toLocaleString('pt-BR')}\nStatus: ${isSettled ? 'Tudo quite!' : (diff < 0 ? "Jorge deve transferir" : "Lilian deve transferir") + " R$ " + settlementAmount.toLocaleString('pt-BR')}`;
-    navigator.clipboard.writeText(summary);
-    toast.success("Resumo copiado para a área de transferência!");
-  };
   
   // Cálculo de Despesas Conjuntas e Proporção
   const jointExpenses = transactions.filter(t => t.division !== "Individual");
