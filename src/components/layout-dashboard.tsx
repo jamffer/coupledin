@@ -148,8 +148,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isProfileOpen) {
-      setTempName(userNames[currentUser]);
-      setTempAvatar(userAvatars[currentUser]);
+      setTempName(userNames[currentUser] || "");
+      setTempAvatar(userAvatars[currentUser] || "");
     }
   }, [isProfileOpen, currentUser, userNames, userAvatars]);
 
