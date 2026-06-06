@@ -391,11 +391,11 @@ function CartoesPage() {
                       </div>
                       <div className="p-6">
                         <p className="text-sm font-medium text-muted-foreground mb-1">Jorge paga</p>
-                        <h3 className="text-2xl font-bold tracking-tight text-blue-600">R$ {jorgePays.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                        <h3 className="text-2xl font-bold tracking-tight text-blue-600">{formatCurrency(jorgePays)}</h3>
                       </div>
                       <div className="p-6">
                         <p className="text-sm font-medium text-muted-foreground mb-1">Lilian paga</p>
-                        <h3 className="text-2xl font-bold tracking-tight text-rose-600">R$ {lilianPays.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                        <h3 className="text-2xl font-bold tracking-tight text-rose-600">{formatCurrency(lilianPays)}</h3>
                       </div>
                     </div>
 
@@ -426,7 +426,7 @@ function CartoesPage() {
                                     <MoreVertical size={16} />
                                   </Button>
                                 </TableCell>
-                                <TableCell className="text-right font-bold pr-6">R$ {item.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                                <TableCell className="text-right font-bold pr-6">{formatCurrency(item.amount)}</TableCell>
                               </TableRow>
                             ))
                           ) : (

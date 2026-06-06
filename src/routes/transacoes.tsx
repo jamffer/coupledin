@@ -859,7 +859,7 @@ function TransactionsPage() {
               <div className="flex justify-between items-center">
                 <p className="text-sm font-medium text-muted-foreground">Quanto?</p>
                 <p className={`font-black ${parsedData.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'}`}>
-                  R$ {Math.abs(parsedData.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  {formatCurrency(Math.abs(parsedData.amount))}
                 </p>
               </div>
               <div className="flex justify-between items-center">
