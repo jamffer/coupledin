@@ -44,8 +44,8 @@ export function ImageCropperModal({
     setLoading(true);
     try {
       const croppedImageBlob = await getCroppedImg(image, croppedAreaPixels);
-      const fileName = `${userId}-${Math.random()}.jpg`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `${Math.random()}.jpg`;
+      const filePath = `${userId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
