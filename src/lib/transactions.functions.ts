@@ -29,6 +29,7 @@ const TransactionSchema = z.object({
 export type ParsedTransaction = z.infer<typeof TransactionSchema>;
 
 export const parseTransactionFromText = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }): Promise<ParsedTransaction> => {
     const key = process.env.LOVABLE_API_KEY;
