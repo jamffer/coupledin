@@ -265,13 +265,12 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                 </DialogContent>
               </Dialog>
 
-              <DialogTrigger asChild className="md:hidden">
-                <Button size="icon" variant="ghost" className="rounded-full apple-interactive border-white/40 active:scale-95 transition-all">
-                  <PlusCircle size={22} />
-                </Button>
-              </DialogTrigger>
-              
               <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+                <DialogTrigger asChild className="md:hidden">
+                  <Button size="icon" variant="ghost" className="rounded-full apple-interactive border-white/40 active:scale-95 transition-all" onClick={() => setIsNewRecordOpen(true)}>
+                    <PlusCircle size={22} />
+                  </Button>
+                </DialogTrigger>
                 <div className="flex -space-x-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
