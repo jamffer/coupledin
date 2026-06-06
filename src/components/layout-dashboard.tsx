@@ -547,6 +547,39 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </DialogContent>
         </Dialog>
+        {/* Modal de Convite (quando clica no parceiro vazio) */}
+        <Dialog open={showInviteDialogInLayout} onOpenChange={setShowInviteDialogInLayout}>
+          <DialogContent className="apple-card dark:bg-[#1A1A1A] border-border/40 sm:max-w-md pointer-events-auto z-[1000]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black tracking-tight text-center pt-4">Convidar Parceiro(a)</DialogTitle>
+              <DialogDescription className="text-center">
+                Compartilhe o código abaixo para que seu parceiro(a) possa se conectar a este espaço.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-6 py-8 px-4">
+              <div className="w-full flex items-center gap-3 bg-white dark:bg-black/40 p-2 pl-6 rounded-2xl border border-primary/20 shadow-inner group">
+                <span className="flex-1 text-2xl font-black font-mono tracking-widest text-primary uppercase text-center">
+                  {inviteCode || "••••••••"}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-xl hover:bg-primary/10 transition-all active:scale-95 shrink-0"
+                  onClick={handleCopyCode}
+                >
+                  {copied ? (
+                    <Check size={20} className="text-emerald-500" />
+                  ) : (
+                    <Copy size={20} className="text-primary" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center italic">
+                O seu parceiro(a) deve escolher "Ingressar em um espaço" e inserir este código no Onboarding.
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
       </SidebarProvider>
     </TooltipProvider>
   );
