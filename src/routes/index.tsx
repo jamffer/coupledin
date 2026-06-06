@@ -272,7 +272,7 @@ function Dashboard() {
     const now = new Date();
     const currentMonthTxs = transactions.filter(tx => tx && tx.date && isSameMonth(new Date(tx.date), now));
     
-    const balance = transactions.reduce((acc, tx) => acc + ((tx?.type === 'Entrada' ? (tx.amount || 0) : -(tx?.amount || 0)) || 0), 0);
+    const balance = transactions.reduce((acc, tx) => acc + (tx.amount || 0), 0);
     const income = currentMonthTxs.filter(tx => tx?.type === 'Entrada').reduce((acc, tx) => acc + (tx?.amount || 0), 0);
     const expenses = currentMonthTxs.filter(tx => tx?.type === 'Débito' || tx?.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
     const credit = transactions.filter(tx => tx?.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
