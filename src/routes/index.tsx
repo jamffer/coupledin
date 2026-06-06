@@ -58,6 +58,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useFinanceStore, CATEGORY_ICONS } from "@/hooks/use-finance-store";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -232,32 +233,37 @@ function Dashboard() {
         <div className="space-y-8 animate-in fade-in duration-500">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 apple-card flex flex-col p-6 space-y-4">
+              <Card key={i} className="h-32 apple-card flex flex-col p-6 space-y-4 border-none shadow-sm">
                 <div className="flex justify-between items-center">
-                  <div className="w-10 h-10 bg-muted rounded-lg animate-pulse" />
-                  <div className="w-20 h-4 bg-muted rounded animate-pulse" />
+                  <Skeleton className="w-10 h-10 rounded-lg" />
+                  <Skeleton className="w-20 h-4 rounded-full" />
                 </div>
-                <div className="w-32 h-8 bg-muted rounded animate-pulse" />
-              </div>
+                <div className="space-y-2">
+                  <Skeleton className="w-32 h-8 rounded-lg" />
+                </div>
+              </Card>
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 h-[450px] apple-card p-8 space-y-4">
-              <div className="w-48 h-8 bg-muted rounded animate-pulse" />
-              <div className="w-full h-full bg-muted/50 rounded-2xl animate-pulse" />
-            </div>
-            <div className="h-[450px] apple-card p-8 space-y-6">
-              <div className="w-32 h-8 bg-muted rounded animate-pulse" />
+            <Card className="lg:col-span-2 h-[450px] apple-card p-8 space-y-6 border-none shadow-sm">
+              <div className="space-y-2">
+                <Skeleton className="w-48 h-8 rounded-lg" />
+                <Skeleton className="w-32 h-4 rounded-full" />
+              </div>
+              <Skeleton className="w-full h-full max-h-[300px] rounded-2xl" />
+            </Card>
+            <Card className="h-[450px] apple-card p-8 space-y-6 border-none shadow-sm">
+              <Skeleton className="w-32 h-8 rounded-lg" />
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-muted rounded-2xl animate-pulse" />
+                  <Skeleton className="w-12 h-12 rounded-2xl" />
                   <div className="flex-1 space-y-2">
-                    <div className="w-full h-4 bg-muted rounded animate-pulse" />
-                    <div className="w-2/3 h-3 bg-muted rounded animate-pulse" />
+                    <Skeleton className="w-full h-4 rounded-full" />
+                    <Skeleton className="w-2/3 h-3 rounded-full" />
                   </div>
                 </div>
               ))}
-            </div>
+            </Card>
           </div>
         </div>
       </DashboardLayout>

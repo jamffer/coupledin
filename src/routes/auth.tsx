@@ -136,7 +136,13 @@ function AuthPage() {
       if (codeError) throw codeError;
 
       setGeneratedInviteCode(inviteCode || "");
-      toast.success("Espaço criado!", { description: "Compartilhe o código com seu parceiro." });
+      toast.success("Espaço criado!", { description: "Redirecionando para o seu Dashboard..." });
+      
+      // Give a small delay for the user to see the success state if we were showing it,
+      // but since we want immediate navigation as per instructions:
+      setTimeout(() => {
+        navigate({ to: "/" });
+      }, 1500);
     } catch (error: any) {
       toast.error("Erro ao criar espaço", { description: error.message });
     } finally {
