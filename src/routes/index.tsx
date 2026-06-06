@@ -55,7 +55,7 @@ const recentTransactions = [
     icon: ShoppingBag,
     amount: -450.0,
     date: "Hoje, 14:20",
-    user: "Felipe",
+    user: "Jorge",
     userColor: "bg-blue-100 text-blue-700",
   },
   {
@@ -65,7 +65,7 @@ const recentTransactions = [
     icon: TrendingUp,
     amount: 5500.0,
     date: "Ontem, 09:00",
-    user: "Beatriz",
+    user: "Lilian",
     userColor: "bg-pink-100 text-pink-700",
   },
   {
@@ -75,7 +75,7 @@ const recentTransactions = [
     icon: Coffee,
     amount: -32.5,
     date: "04 Jun, 16:45",
-    user: "Beatriz",
+    user: "Lilian",
     userColor: "bg-pink-100 text-pink-700",
   },
   {
@@ -85,7 +85,7 @@ const recentTransactions = [
     icon: Car,
     amount: -220.0,
     date: "03 Jun, 11:30",
-    user: "Felipe",
+    user: "Jorge",
     userColor: "bg-blue-100 text-blue-700",
   },
 ];

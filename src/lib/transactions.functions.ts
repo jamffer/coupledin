@@ -21,7 +21,7 @@ const TransactionSchema = z.object({
   ]),
   amount: z.number().describe("Valor absoluto positivo em reais"),
   type: z.enum(["Crédito", "Débito", "Entrada"]),
-  responsible: z.enum(["Felipe", "Beatriz"]),
+  responsible: z.enum(["Jorge", "Lilian"]),
   division: z.enum(["Conjunta 50/50", "Proporcional", "Individual"]),
 });
 
@@ -39,7 +39,7 @@ export const parseTransactionFromText = createServerFn({ method: "POST" })
     try {
       const { text } = await generateText({
         model: gateway("google/gemini-3-flash-preview"),
-        system: `Você é um assistente financeiro de um casal (Felipe e Beatriz). Hoje é ${today}.
+        system: `Você é um assistente financeiro de um casal (Jorge e Lilian). Hoje é ${today}.
 Extraia os campos de uma transação a partir da descrição em português e responda APENAS com um JSON válido (sem markdown, sem texto extra) com este formato exato:
 {
   "date": "YYYY-MM-DD",
@@ -47,14 +47,14 @@ Extraia os campos de uma transação a partir da descrição em português e res
   "category": "Alimentação" | "Lazer" | "Transporte" | "Moradia" | "Saúde" | "Renda" | "Outros",
   "amount": number positivo,
   "type": "Crédito" | "Débito" | "Entrada",
-  "responsible": "Felipe" | "Beatriz",
+  "responsible": "Jorge" | "Lilian",
   "division": "Conjunta 50/50" | "Proporcional" | "Individual"
 }
 Regras:
 - "cartão de crédito" / "no crédito" → "Crédito"
 - "débito" / "pix" / "dinheiro" → "Débito"
 - "recebi" / "salário" / "freela" / "rendimento" → "Entrada"
-- Se não disser quem pagou, use "Felipe"
+- Se não disser quem pagou, use "Jorge"
 - Padrão de divisão: "Conjunta 50/50"; "Individual" se claramente pessoal; "Proporcional" se mencionado
 - "hoje" → ${today}; "ontem" → subtraia 1 dia; senão → ${today}`,
         prompt: data.text,

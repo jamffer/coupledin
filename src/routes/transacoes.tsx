@@ -234,7 +234,7 @@ function TransactionsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="both">O Casal</SelectItem>
-                  <SelectItem value="felipe">Felipe</SelectItem>
+                  <SelectItem value="jorge">Jorge</SelectItem>
                   <SelectItem value="lilian">Lilian</SelectItem>
                 </SelectContent>
               </Select>
@@ -432,8 +432,8 @@ function TransactionsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Felipe">Felipe</SelectItem>
-                      <SelectItem value="Beatriz">Beatriz</SelectItem>
+                      <SelectItem value="Jorge">Jorge</SelectItem>
+                      <SelectItem value="Lilian">Lilian</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
