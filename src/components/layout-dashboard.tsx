@@ -84,19 +84,25 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme) return savedTheme === "dark";
       return document.documentElement.classList.contains("dark");
     }
     return false;
   });
 
-  const toggleDarkMode = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    if (newMode) {
+  useEffect(() => {
+    if (isDarkMode) {
       document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
     }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => !prev);
   };
 
   useEffect(() => {
