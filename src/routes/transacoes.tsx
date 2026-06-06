@@ -168,13 +168,13 @@ function TransactionsPage() {
         }, (payload) => {
           if (payload.eventType === 'INSERT') {
             const newTx = payload.new as any;
-            setTransactions([newTx, ...transactions]);
+            setTransactions((prev) => [newTx, ...prev.filter(tx => tx.id !== newTx.id)]);
           } else if (payload.eventType === 'UPDATE') {
             const updatedTx = payload.new as any;
-            setTransactions(transactions.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
+            setTransactions((prev) => prev.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
           } else if (payload.eventType === 'DELETE') {
             const deletedId = payload.old.id;
-            setTransactions(transactions.filter(tx => tx.id !== deletedId));
+            setTransactions((prev) => prev.filter(tx => tx.id !== deletedId));
           }
         })
         .subscribe();
@@ -243,42 +243,72 @@ function TransactionsPage() {
     mutation.mutate(text);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!parsedData || !user || !profile?.couple_id) return;
-    const tx = buildTransaction(parsedData, crypto.randomUUID(), user.id, profile.couple_id);
-    addTransaction(tx);
+    
+    const txData = {
+      description: parsedData.description,
+      amount: (parsedData.type === "Entrada" ? 1 : -1) * Math.abs(parsedData.amount),
+      date: parsedData.date,
+      category: parsedData.category,
+      responsible: parsedData.responsible as string,
+      division: parsedData.division as string,
+      type: parsedData.type,
+      user_id: user.id,
+      couple_id: profile.couple_id,
+    };
+
+    const { error } = await supabase.from("transactions").insert(txData);
+    
+    if (error) {
+      toast.error("Erro ao salvar transação", { description: error.message });
+      return;
+    }
+
     setSmartInput("");
     setIsConfirmModalOpen(false);
     setParsedData(null);
     toast.success("Transação adicionada!");
   };
 
-  const handleSaveManual = () => {
+  const handleSaveManual = async () => {
     if (!formData.description || !formData.amount) {
       toast.error("Preencha a descrição e o valor.");
       return;
     }
 
+    const txData = {
+      description: formData.description || "",
+      amount: (formData.type === "Entrada" ? 1 : -1) * Math.abs(formData.amount || 0),
+      date: formData.date!,
+      category: formData.category || "Outros",
+      responsible: (formData.responsible as string) || "Jorge",
+      division: (formData.division as string) || "Conjunta 50/50",
+      type: formData.type || "Saída",
+      user_id: user!.id,
+      couple_id: profile.couple_id
+    };
+
     if (editingTx) {
-      updateTransaction(editingTx.id, {
-        ...formData,
-        amount: (formData.type === "Entrada" ? 1 : -1) * Math.abs(formData.amount || 0)
-      } as Partial<Transaction>);
+      const { error } = await supabase
+        .from("transactions")
+        .update(txData)
+        .eq("id", editingTx.id);
+
+      if (error) {
+        toast.error("Erro ao atualizar transação", { description: error.message });
+        return;
+      }
       toast.success("Transação atualizada!");
     } else {
-      const newTx: Transaction = {
-        id: crypto.randomUUID(),
-        description: formData.description || "",
-        amount: (formData.type === "Entrada" ? 1 : -1) * Math.abs(formData.amount || 0),
-        date: formatDate(formData.date!),
-        category: formData.category || "Outros",
-        responsible: (formData.responsible as string) || "Jorge",
-        division: (formData.division as string) || "Conjunta 50/50",
-        type: formData.type || "Saída",
-        user_id: user!.id,
-        couple_id: profile.couple_id
-      };
-      addTransaction(newTx);
+      const { error } = await supabase
+        .from("transactions")
+        .insert(txData);
+
+      if (error) {
+        toast.error("Erro ao adicionar transação", { description: error.message });
+        return;
+      }
       toast.success("Transação adicionada!");
     }
     
@@ -300,9 +330,18 @@ function TransactionsPage() {
     setIsManualModalOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (txToDelete !== null) {
-      deleteTransaction(txToDelete);
+      const { error } = await supabase
+        .from("transactions")
+        .delete()
+        .eq("id", txToDelete);
+
+      if (error) {
+        toast.error("Erro ao excluir transação", { description: error.message });
+        return;
+      }
+      
       toast.error("Transação excluída");
       setIsDeleteModalOpen(false);
       setTxToDelete(null);
