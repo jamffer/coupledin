@@ -5,6 +5,22 @@ import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   Table, 
   TableBody, 
@@ -23,11 +39,27 @@ import {
   Car,
   Home,
   HelpCircle,
-  Smartphone
+  Smartphone,
+  MessageCircle,
+  CheckCircle2,
+  Users,
+  Calendar,
+  DollarSign
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer,
+  Cell
+} from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useFinanceStore, CATEGORY_ICONS } from "@/hooks/use-finance-store";
+import { toast } from "sonner";
+import { useFinanceStore, CATEGORY_ICONS, type Transaction, DIVISION_ICONS } from "@/hooks/use-finance-store";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
