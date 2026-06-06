@@ -27,6 +27,13 @@ import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 
+import { z } from "zod";
+
+const inviteCodeSchema = z.string()
+  .min(6, "O código deve ter pelo menos 6 caracteres")
+  .max(12, "O código é muito longo")
+  .regex(/^[A-Z0-9]+$/, "O código deve conter apenas letras e números");
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
