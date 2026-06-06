@@ -66,7 +66,7 @@ function InvitePage() {
             .select('*', { count: 'exact', head: true })
             .eq('couple_id', profile.couple_id);
           
-          if (countData !== null && (countData as any) >= 2) {
+          if (count !== null && count >= 2) {
             toast.success("Parceiro(a) conectado! Redirecionando...");
             setTimeout(() => navigate({ to: '/' }), 1500);
           }
