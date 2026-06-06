@@ -22,30 +22,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
   ArrowRightLeft, 
   TrendingDown, 
   TrendingUp, 
-  AlertCircle,
-  ShoppingBag,
-  Coffee,
-  Car,
-  Home,
   HelpCircle,
-  Smartphone,
   MessageCircle,
   CheckCircle2,
-  Users,
-  Calendar,
-  DollarSign,
-  Split
 } from "lucide-react";
 import { 
   BarChart, 
@@ -60,7 +42,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useFinanceStore, CATEGORY_ICONS, type Transaction, DIVISION_ICONS } from "@/hooks/use-finance-store";
+import { useFinanceStore, CATEGORY_ICONS, type Transaction } from "@/hooks/use-finance-store";
+import { format, subMonths, startOfMonth, isSameMonth } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
@@ -71,28 +55,6 @@ export const Route = createFileRoute("/relatorios")({
   }),
   component: RelatoriosPage,
 });
-
-const weeklyEvolutionData = {
-  "Este Mês": [
-    { name: "Sem 1", total: 1200 },
-    { name: "Sem 2", total: 950 },
-    { name: "Sem 3", total: 1400 },
-    { name: "Sem 4", total: 800 },
-  ],
-  "Últimos 3 Meses": [
-    { name: "Abril", total: 4200 },
-    { name: "Maio", total: 3800 },
-    { name: "Junho", total: 4350 },
-  ],
-  "Este Ano": [
-    { name: "Jan", total: 3500 },
-    { name: "Fev", total: 3200 },
-    { name: "Mar", total: 4100 },
-    { name: "Abr", total: 4200 },
-    { name: "Mai", total: 3800 },
-    { name: "Jun", total: 4350 },
-  ]
-};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -114,12 +76,9 @@ function RelatoriosPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // New States
   const [isSettled, setIsSettled] = useState(false);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<keyof typeof weeklyEvolutionData>("Este Mês");
-  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<"Este Mês" | "Últimos 3 Meses" | "Este Ano">("Este Mês");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -127,26 +86,22 @@ function RelatoriosPage() {
     }
   }, [user, authLoading]);
 
-  
   // Cálculo de Despesas Conjuntas e Proporção
   const jointExpenses = transactions.filter(t => t.division !== "Individual");
-  const totalJoint = jointExpenses.reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const totalJoint = jointExpenses.reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
   
-  const totalIncome = incomeJorge + incomeLilian;
-  const jorgeShare = totalIncome > 0 ? incomeJorge / totalIncome : 0.5;
-  const lilianShare = totalIncome > 0 ? incomeLilian / totalIncome : 0.5;
-
+  const totalIncome = (incomeJorge || 0) + (incomeLilian || 0);
+  const jorgeShare = totalIncome > 0 ? (incomeJorge || 0) / totalIncome : 0.5;
+  
   const jorgeShouldPay = jointExpenses.reduce((acc, t) => {
     const share = t.division === "Conjunta 50/50" ? 0.5 : jorgeShare;
-    return acc + (Math.abs(t.amount) * share);
+    return acc + (Math.abs(t.amount || 0) * share);
   }, 0);
   
   const lilianShouldPay = totalJoint - jorgeShouldPay;
+  const jorgePaid = jointExpenses.filter(t => t.responsible === "Jorge").reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
   
-  const jorgePaid = jointExpenses.filter(t => t.responsible === "Jorge").reduce((acc, t) => acc + Math.abs(t.amount), 0);
-  const lilianPaid = totalJoint - jorgePaid;
-  
-  const diff = jorgePaid - jorgeShouldPay; // Se positivo, Jorge pagou a mais. Se negativo, Jorge deve.
+  const diff = jorgePaid - jorgeShouldPay;
   const settlementAmount = Math.abs(diff);
 
   const handleSettlementConfirm = () => {
@@ -156,27 +111,61 @@ function RelatoriosPage() {
   };
 
   const handleShareSummary = () => {
-    const summary = `Resumo Financeiro - Junho\nTotal Gastos Conjuntos: R$ ${totalJoint.toLocaleString('pt-BR')}\nStatus: ${isSettled ? 'Tudo quite!' : (diff < 0 ? "Jorge deve transferir" : "Lilian deve transferir") + " R$ " + settlementAmount.toLocaleString('pt-BR')}`;
+    const summary = `Resumo Financeiro\nTotal Gastos Conjuntos: R$ ${totalJoint.toLocaleString('pt-BR')}\nStatus: ${isSettled ? 'Tudo quite!' : (diff < 0 ? "Jorge deve transferir" : "Lilian deve transferir") + " R$ " + settlementAmount.toLocaleString('pt-BR')}`;
     navigator.clipboard.writeText(summary);
     toast.success("Resumo copiado para a área de transferência!");
   };
 
+  const weeklyEvolutionData = useMemo(() => {
+    const now = new Date();
+    
+    const generateData = (count: number, unit: 'month' | 'week') => {
+      const data = [];
+      for (let i = count - 1; i >= 0; i--) {
+        const date = unit === 'month' ? subMonths(now, i) : new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+        const name = unit === 'month' ? format(date, "MMM", { locale: ptBR }) : `Sem ${count - i}`;
+        
+        const periodTxs = transactions.filter(t => {
+          const tDate = new Date(t.date);
+          return unit === 'month' ? isSameMonth(tDate, date) : (tDate >= date && tDate < new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000));
+        });
+        
+        const total = periodTxs.filter(t => t.amount < 0).reduce((acc, t) => acc + Math.abs(t.amount), 0);
+        data.push({ name, total });
+      }
+      return data;
+    };
+
+    return {
+      "Este Mês": generateData(4, 'week'),
+      "Últimos 3 Meses": generateData(3, 'month'),
+      "Este Ano": generateData(6, 'month')
+    };
+  }, [transactions]);
+
+  const hasGraphData = useMemo(() => {
+    return weeklyEvolutionData[selectedPeriod].some(d => d.total > 0);
+  }, [weeklyEvolutionData, selectedPeriod]);
+
   const topExpenses = useMemo(() => {
     return [...transactions]
-      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+      .sort((a, b) => Math.abs(b.amount || 0) - Math.abs(a.amount || 0))
       .slice(0, 5);
   }, [transactions]);
 
   const categoryTotals = useMemo(() => {
     const totals: Record<string, number> = {};
-    transactions.forEach(t => {
-      if (t.amount < 0) {
-        totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount);
-      }
+    const expensesOnly = transactions.filter(t => (t.amount || 0) < 0);
+    expensesOnly.forEach(t => {
+      totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount || 0);
     });
     return Object.entries(totals)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 4);
+  }, [transactions]);
+
+  const totalExpensesAmount = useMemo(() => {
+    return transactions.filter(t => (t.amount || 0) < 0).reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
   }, [transactions]);
 
   return (
@@ -195,7 +184,7 @@ function RelatoriosPage() {
           
           <motion.div variants={itemVariants} className="flex gap-2">
             <Badge variant="outline" className="px-4 py-2 rounded-xl apple-glass border-primary/10 text-primary font-bold">
-              Junho, 2024
+              {format(new Date(), "MMMM, yyyy", { locale: ptBR })}
             </Badge>
           </motion.div>
         </div>
@@ -211,7 +200,7 @@ function RelatoriosPage() {
                 )}>
                   <ArrowRightLeft size={20} />
                 </div>
-                <CardTitle className="text-xl">Fechamento de Junho</CardTitle>
+                <CardTitle className="text-xl">Fechamento do Mês</CardTitle>
               </div>
               <CardDescription>Cálculo automático baseado nas despesas conjuntas do mês.</CardDescription>
             </CardHeader>
@@ -235,7 +224,9 @@ function RelatoriosPage() {
                     </Avatar>
                   </div>
                   <div className="space-y-1">
-                    {isSettled ? (
+                    {totalJoint === 0 ? (
+                      <h3 className="text-xl font-bold tracking-tight">Nenhum gasto conjunto este mês.</h3>
+                    ) : isSettled ? (
                       <h3 className="text-xl font-bold tracking-tight text-emerald-600">Tudo quite! Mês resolvido.</h3>
                     ) : Math.abs(diff) < 1 ? (
                       <h3 className="text-xl font-bold tracking-tight">Tudo quite! Vocês estão empatados.</h3>
@@ -275,7 +266,7 @@ function RelatoriosPage() {
                             <MessageCircle size={18} />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Compartilhar no WhatsApp</TooltipContent>
+                        <TooltipContent>Compartilhar resumo</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
 
@@ -320,49 +311,60 @@ function RelatoriosPage() {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={weeklyEvolutionData[selectedPeriod]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
-                    />
-                    <RechartsTooltip 
-                      cursor={{ fill: 'rgba(0,0,0,0.02)' }}
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="apple-card p-3 shadow-xl border-none text-xs">
-                              <p className="font-black mb-1 text-primary">{label}</p>
-                              <p className="font-bold">Total: R$ {payload[0].value?.toLocaleString('pt-BR')}</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar 
-                      dataKey="total" 
-                      radius={[6, 6, 0, 0]} 
-                      animationDuration={1500}
-                    >
-                      {weeklyEvolutionData[selectedPeriod].map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill="hsl(var(--primary))" 
-                          fillOpacity={0.8 + (index * 0.05)} 
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {hasGraphData ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={weeklyEvolutionData[selectedPeriod]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
+                      />
+                      <RechartsTooltip 
+                        cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="apple-card p-3 shadow-xl border-none text-xs">
+                                <p className="font-black mb-1 text-primary">{label}</p>
+                                <p className="font-bold">Total: R$ {payload[0].value?.toLocaleString('pt-BR')}</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="total" 
+                        radius={[6, 6, 0, 0]} 
+                        animationDuration={1500}
+                      >
+                        {weeklyEvolutionData[selectedPeriod].map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill="hsl(var(--primary))" 
+                            fillOpacity={0.8 + (index * 0.05)} 
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
+                    <div className="p-4 bg-muted rounded-full">
+                      <TrendingUp size={32} className="text-muted-foreground opacity-20" />
+                    </div>
+                    <p className="text-sm text-muted-foreground max-w-[200px]">
+                      Dados insuficientes para gerar o gráfico. Comece a registrar suas finanças para ver sua evolução.
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -376,34 +378,38 @@ function RelatoriosPage() {
               Gastos por Categoria
             </h3>
             <div className="grid gap-4">
-              {categoryTotals.map(([category, amount]) => {
-                const Icon = CATEGORY_ICONS[category] || HelpCircle;
-                const percentage = (amount / Math.abs(transactions.reduce((acc, t) => t.amount < 0 ? acc + t.amount : acc, 0))) * 100;
-                
-                return (
-                  <Card key={category} className="apple-card apple-card-hover border-none shadow-sm group">
-                    <CardContent className="p-5 flex items-center gap-4">
-                      <div className="p-3 bg-muted rounded-2xl text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                        <Icon size={20} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-end mb-1">
-                          <p className="text-sm font-bold truncate">{category}</p>
-                          <p className="text-sm font-black">R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              {categoryTotals.length > 0 ? (
+                categoryTotals.map(([category, amount]) => {
+                  const Icon = CATEGORY_ICONS[category] || HelpCircle;
+                  const percentage = totalExpensesAmount > 0 ? (amount / totalExpensesAmount) * 100 : 0;
+                  
+                  return (
+                    <Card key={category} className="apple-card apple-card-hover border-none shadow-sm group">
+                      <CardContent className="p-5 flex items-center gap-4">
+                        <div className="p-3 bg-muted rounded-2xl text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                          <Icon size={20} />
                         </div>
-                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${percentage}%` }}
-                            transition={{ duration: 1, delay: 0.5 }}
-                            className="h-full bg-primary" 
-                          />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-end mb-1">
+                            <p className="text-sm font-bold truncate">{category}</p>
+                            <p className="text-sm font-black">R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                          </div>
+                          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percentage}%` }}
+                              transition={{ duration: 1, delay: 0.5 }}
+                              className="h-full bg-primary" 
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground p-4 text-center italic">Ainda não há gastos registrados.</p>
+              )}
             </div>
           </motion.div>
 
@@ -412,158 +418,53 @@ function RelatoriosPage() {
             <Card className="apple-card apple-card-hover h-full border-2 border-primary/5 dark:border-white/5">
               <CardHeader>
                 <CardTitle>Top Maiores Gastos</CardTitle>
-                <CardDescription>As 5 transações mais pesadas do mês</CardDescription>
+                <CardDescription>Os 5 maiores lançamentos do mês.</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 px-0">
-                <Table>
-                  <TableHeader className="bg-muted/20 border-none">
-                    <TableRow className="hover:bg-transparent border-none">
-                      <TableHead className="pl-6 py-4 font-bold text-xs uppercase tracking-wider">Gasto</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-center">Quem</TableHead>
-                      <TableHead className="pr-6 py-4 text-right font-bold text-xs uppercase tracking-wider">Valor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {topExpenses.map((expense) => {
-                      const CategoryIcon = CATEGORY_ICONS[expense.category] || HelpCircle;
-                      const avatarUrl = userAvatars[expense.responsible as keyof typeof userAvatars];
-
-                      return (
-                        <TableRow 
-                          key={expense.id} 
-                          className="group border-b border-border/40 hover:bg-muted/10 transition-colors cursor-pointer"
-                          onClick={() => {
-                            setSelectedTx(expense);
-                            setIsDetailModalOpen(true);
-                          }}
-                        >
-                          <TableCell className="pl-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-primary/10 rounded-xl text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                <CategoryIcon size={16} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-bold truncate leading-tight">{expense.description}</p>
-                                <p className="text-[10px] text-muted-foreground">{expense.date} • {expense.category}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-4">
-                            <div className="flex justify-center">
-                              <Avatar className="w-8 h-8 border border-white shadow-sm ring-1 ring-muted/20">
-                                <AvatarImage src={avatarUrl} />
-                                <AvatarFallback>{expense.responsible[0]}</AvatarFallback>
-                              </Avatar>
-                            </div>
-                          </TableCell>
-                          <TableCell className="pr-6 py-4 text-right font-black text-sm text-rose-500">
-                            R$ {Math.abs(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+              <CardContent>
+                {topExpenses.length > 0 ? (
+                  <div className="space-y-4">
+                    {topExpenses.map((tx) => (
+                      <div key={tx.id} className="flex items-center justify-between p-3 rounded-2xl hover:bg-muted/30 transition-all border border-transparent hover:border-border/40">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-muted rounded-2xl text-muted-foreground">
+                            {React.createElement(CATEGORY_ICONS[tx.category] || HelpCircle, { size: 18 })}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold">{tx.description}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{tx.category}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm font-black text-rose-600">
+                          - R$ {Math.abs(tx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-50 py-12">
+                    <p className="text-sm">Nenhuma transação registrada.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
         </div>
-
-        {/* Modals */}
-        <AnimatePresence>
-          {/* Settlement Confirmation Modal */}
-          <Dialog open={isSettlementModalOpen} onOpenChange={setIsSettlementModalOpen}>
-            <DialogContent className="sm:max-w-[425px] rounded-3xl apple-card">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <ArrowRightLeft size={20} className="text-primary" />
-                  Confirmar Acerto
-                </DialogTitle>
-                <DialogDescription className="pt-2">
-                  Deseja zerar os saldos e marcar o mês como resolvido? Isso registrará uma transferência de ajuste no valor de <span className="font-bold text-foreground">R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="gap-2 mt-4">
-                <Button variant="ghost" onClick={() => setIsSettlementModalOpen(false)} className="rounded-full">Cancelar</Button>
-                <Button onClick={handleSettlementConfirm} className="rounded-full px-8 font-bold shadow-lg">Confirmar Transferência</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Transaction Detail Modal */}
-          <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-            <DialogContent className="sm:max-w-[425px] rounded-3xl apple-card overflow-hidden p-0 border-none">
-              {selectedTx && (
-                <div className="relative">
-                  <div className="bg-primary/5 p-8 text-center border-b border-primary/10">
-                    <div className="mx-auto w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-primary mb-4">
-                      {(() => {
-                        const Icon = CATEGORY_ICONS[selectedTx.category] || HelpCircle;
-                        return <Icon size={32} />;
-                      })()}
-                    </div>
-                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-1">{selectedTx.category}</h3>
-                    <h2 className="text-2xl font-black tracking-tight">{selectedTx.description}</h2>
-                    <p className="text-3xl font-black mt-4 text-primary">
-                      R$ {Math.abs(selectedTx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                  
-                  <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                          <Calendar size={10} /> Data
-                        </p>
-                        <p className="text-sm font-bold">{selectedTx.date}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                          <Users size={10} /> Pagador
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="w-5 h-5 border shadow-sm">
-                            <AvatarImage src={userAvatars[selectedTx.responsible as keyof typeof userAvatars]} />
-                            <AvatarFallback>{selectedTx.responsible[0]}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm font-bold">{selectedTx.responsible}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                          <ArrowRightLeft size={10} /> Divisão
-                        </p>
-                        <div className="flex items-center gap-2">
-                          {(() => {
-                            const DivIcon = DIVISION_ICONS[selectedTx.division] || Split;
-                            return <DivIcon size={14} className="text-primary" />;
-                          })()}
-                          <span className="text-sm font-bold">{selectedTx.division}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                          <DollarSign size={10} /> Tipo
-                        </p>
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase rounded-lg">
-                          {selectedTx.type}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <Button 
-                      className="w-full rounded-2xl h-12 font-bold shadow-lg mt-4"
-                      onClick={() => setIsDetailModalOpen(false)}
-                    >
-                      Fechar
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
-        </AnimatePresence>
       </motion.div>
+      
+      <Dialog open={isSettlementModalOpen} onOpenChange={setIsSettlementModalOpen}>
+        <DialogContent className="apple-card rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Confirmar Acerto de Contas</DialogTitle>
+            <DialogDescription>
+              Isso marcará as contas como resolvidas. Certifique-se de que a transferência de <span className="font-bold">R$ {settlementAmount.toLocaleString('pt-BR')}</span> foi feita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" className="rounded-full" onClick={() => setIsSettlementModalOpen(false)}>Cancelar</Button>
+            <Button className="rounded-full" onClick={handleSettlementConfirm}>Confirmar Acerto</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
