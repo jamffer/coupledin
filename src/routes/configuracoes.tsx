@@ -330,16 +330,16 @@ function ConfiguracoesPage() {
                     <div className="flex justify-between items-end mb-2">
                       <div className="space-y-1">
                         <p className="text-sm font-bold">Resultado do Cálculo</p>
-                        <p className="text-xs text-muted-foreground italic">Jorge paga {percentageA}% / Lilian paga {percentageB}%</p>
+                        <p className="text-xs text-muted-foreground italic">{profile?.display_name?.split(' ')[0] || "Você"} paga {percentageA}% / {partnerProfile?.display_name?.split(' ')[0] || "Parceiro(a)"} paga {percentageB}%</p>
                       </div>
                       <div className="flex gap-4">
                         <div className="flex items-center gap-1.5">
                           <div className="w-3 h-3 rounded-full bg-primary" />
-                          <span className="text-[10px] font-bold uppercase text-muted-foreground">Jorge</span>
+                          <span className="text-[10px] font-bold uppercase text-muted-foreground">{profile?.display_name?.split(' ')[0] || "Você"}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-3 h-3 rounded-full bg-rose-400" />
-                          <span className="text-[10px] font-bold uppercase text-muted-foreground">Lilian</span>
+                          <span className="text-[10px] font-bold uppercase text-muted-foreground">{partnerProfile?.display_name?.split(' ')[0] || "Parceiro(a)"}</span>
                         </div>
                       </div>
                     </div>
