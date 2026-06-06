@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   Gem,
   ArrowRight,
   Loader2,
+  PieChart as PieChartIcon
 } from "lucide-react";
 import { 
   Table, 
@@ -25,10 +26,23 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/investimentos")({
   head: () => ({
@@ -69,7 +83,7 @@ const itemVariants = {
   visible: { y: 0, opacity: 1 }
 };
 
-function AssetTable({ data }: { data: any[] }) {
+function AssetTable({ data, onSelect }: { data: any[], onSelect: (asset: any) => void }) {
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -89,7 +103,7 @@ function AssetTable({ data }: { data: any[] }) {
             const profit = (asset.currentPrice - asset.avgPrice) * asset.qty;
 
             return (
-              <TableRow key={asset.ticker} className="border-border/40 group hover:bg-muted/10 transition-colors">
+              <TableRow key={asset.ticker} onClick={() => onSelect(asset)} className="border-border/40 group hover:bg-muted/10 transition-colors cursor-pointer active:scale-[0.99]">
                 <TableCell className="py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg apple-glass p-1 flex items-center justify-center overflow-hidden">
@@ -132,6 +146,7 @@ function InvestimentosPage() {
   const [acoes, setAcoes] = useState(initialAcoes);
   const [fiis, setFiis] = useState(initialFIIs);
   const [cripto, setCripto] = useState(initialCripto);
+  const [selectedAsset, setSelectedAsset] = useState<any>(null);
 
   const fetchStockPrices = async () => {
     try {
@@ -329,7 +344,7 @@ function InvestimentosPage() {
                     <CardDescription>Cotações em tempo real via Brapi API.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0">
-                    <AssetTable data={acoes} />
+                    <AssetTable data={acoes} onSelect={setSelectedAsset} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -341,7 +356,7 @@ function InvestimentosPage() {
                     <CardDescription>Acompanhe o rendimento dos seus proventos.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0">
-                    <AssetTable data={fiis} />
+                    <AssetTable data={fiis} onSelect={setSelectedAsset} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -353,7 +368,7 @@ function InvestimentosPage() {
                     <CardDescription>Dados globais via CoinGecko API.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0">
-                    <AssetTable data={cripto} />
+                    <AssetTable data={cripto} onSelect={setSelectedAsset} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -361,6 +376,79 @@ function InvestimentosPage() {
           </Tabs>
         </motion.div>
       </motion.div>
+
+      <Sheet open={!!selectedAsset} onOpenChange={(open) => !open && setSelectedAsset(null)}>
+        <SheetContent className="apple-card dark:bg-[#1A1A1A] border-border/40 sm:max-w-md">
+          <SheetHeader className="pb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl apple-glass p-2 flex items-center justify-center overflow-hidden">
+                <img src={selectedAsset?.icon} alt={selectedAsset?.ticker} className="w-full h-full object-contain" />
+              </div>
+              <div>
+                <SheetTitle className="text-2xl font-bold">{selectedAsset?.ticker}</SheetTitle>
+                <SheetDescription className="text-sm font-medium">{selectedAsset?.name}</SheetDescription>
+              </div>
+            </div>
+          </SheetHeader>
+
+          {selectedAsset && (
+            <div className="space-y-8 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="apple-interactive p-4 dark:bg-black/20">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Preço Atual</p>
+                  <p className="text-xl font-black">R$ {selectedAsset.currentPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                </div>
+                <div className="apple-interactive p-4 dark:bg-black/20">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Variação</p>
+                  <div className={cn(
+                    "flex items-center gap-1 text-xl font-black",
+                    selectedAsset.currentPrice >= selectedAsset.avgPrice ? "text-emerald-600" : "text-rose-500"
+                  )}>
+                    {((selectedAsset.currentPrice - selectedAsset.avgPrice) / selectedAsset.avgPrice * 100).toFixed(2)}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground px-1">Minha Posição</h4>
+                <div className="apple-interactive p-6 space-y-4 dark:bg-black/10">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Quantidade</span>
+                    <span className="font-bold">{selectedAsset.qty}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Preço Médio</span>
+                    <span className="font-bold text-sm">R$ {selectedAsset.avgPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="pt-4 border-t border-border/40 flex justify-between items-end">
+                    <span className="text-sm font-bold">Valor Total</span>
+                    <div className="text-right">
+                      <p className="text-2xl font-black text-primary dark:text-white">
+                        R$ {(selectedAsset.qty * selectedAsset.currentPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className={cn(
+                        "text-[10px] font-bold",
+                        selectedAsset.currentPrice >= selectedAsset.avgPrice ? "text-emerald-600" : "text-rose-500"
+                      )}>
+                        {selectedAsset.currentPrice >= selectedAsset.avgPrice ? '+' : ''} R$ {((selectedAsset.currentPrice - selectedAsset.avgPrice) * selectedAsset.qty).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de lucro
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="outline" className="rounded-xl border-border/40 h-12 font-bold active:scale-95 transition-all">
+                  Vender
+                </Button>
+                <Button className="rounded-xl h-12 font-bold active:scale-95 transition-all shadow-lg">
+                  Comprar Mais
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </DashboardLayout>
   );
 }

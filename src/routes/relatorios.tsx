@@ -184,11 +184,11 @@ function RelatoriosPage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                  <Button className="rounded-full gap-2 px-6 h-12 font-bold shadow-md hover:shadow-lg transition-all" disabled={Math.abs(diff) < 1}>
+                  <Button className="rounded-full gap-2 px-6 h-12 font-bold shadow-md hover:shadow-lg transition-all active:scale-95" disabled={Math.abs(diff) < 1}>
                     <CheckCircle2 size={18} />
                     Marcar como Resolvido
                   </Button>
-                  <Button variant="outline" className="rounded-full gap-2 px-6 h-12 font-bold border-border/60 hover:bg-muted/50 transition-all">
+                  <Button variant="outline" className="rounded-full gap-2 px-6 h-12 font-bold border-border/60 hover:bg-muted/50 transition-all active:scale-95">
                     <Share2 size={18} />
                     WhatsApp
                   </Button>

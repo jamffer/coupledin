@@ -64,7 +64,7 @@ export function AppSidebar() {
   });
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar z-50 shadow-xl transition-colors duration-300">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar z-[100] shadow-xl transition-all duration-300 pointer-events-auto">
       <SidebarHeader className="h-16 flex items-center px-6 border-b border-white/10">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-primary">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
@@ -144,7 +144,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full relative bg-background overflow-x-hidden">
+        <div className="min-h-screen flex w-full relative bg-background overflow-x-hidden isolate">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300">
             <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-border/40 bg-background/80 backdrop-blur-xl sticky top-0 z-40 transition-colors">
