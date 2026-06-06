@@ -25,6 +25,7 @@ import {
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useFinanceStore } from "@/hooks/use-finance-store";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
