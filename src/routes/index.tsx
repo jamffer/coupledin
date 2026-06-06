@@ -721,7 +721,7 @@ function Dashboard() {
             <div className="flex justify-between items-center mb-4">
               <p className="text-sm font-bold text-muted-foreground uppercase">Resumo do Período</p>
               <p className="text-lg font-black">
-                R$ {filteredTransactions.reduce((acc, tx) => acc + ((tx.type === 'Entrada' ? (tx.amount || 0) : -(tx.amount || 0)) || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {filteredTransactions.reduce((acc, tx) => acc + (tx.amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
             </div>
             <Button variant="secondary" className="w-full rounded-2xl font-bold active:scale-95 transition-all" onClick={() => setActiveSheet(null)}>
