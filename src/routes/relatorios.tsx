@@ -149,7 +149,7 @@ function RelatoriosPage() {
                 <div className="flex items-center gap-6 text-center md:text-left">
                   <div className="flex -space-x-4">
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src={AVATARS.Jorge} />
+                      <AvatarImage src={userAvatars.Jorge} />
                       <AvatarFallback>JO</AvatarFallback>
                     </Avatar>
                     <div className={cn(
@@ -159,7 +159,7 @@ function RelatoriosPage() {
                       <ArrowRightLeft size={24} className={cn(diff < -1 && "rotate-180")} />
                     </div>
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src={AVATARS.Lilian} />
+                      <AvatarImage src={userAvatars.Lilian} />
                       <AvatarFallback>LI</AvatarFallback>
                     </Avatar>
                   </div>
@@ -266,7 +266,7 @@ function RelatoriosPage() {
                   <TableBody>
                     {topExpenses.map((expense) => {
                       const CategoryIcon = CATEGORY_ICONS[expense.category] || HelpCircle;
-                      const avatarUrl = AVATARS[expense.responsible] || AVATARS.Jorge;
+                      const avatarUrl = userAvatars[expense.responsible as keyof typeof userAvatars];
 
                       return (
                         <TableRow key={expense.id} className="group border-b border-border/40 hover:bg-muted/10 transition-colors">

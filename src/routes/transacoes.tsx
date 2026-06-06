@@ -314,7 +314,7 @@ function TransactionsPage() {
               {transactions.map((tx) => {
                 const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                 const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                const avatarUrl = AVATARS[tx.responsible] || AVATARS.Jorge;
+                const avatarUrl = userAvatars[tx.responsible as keyof typeof userAvatars];
                 
                 return (
                   <Card key={tx.id} className="apple-card apple-card-hover overflow-hidden group">
