@@ -8,17 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Sparkles, 
   Filter, 
-  ShoppingBag,
-  Coffee,
-  Car,
-  Home,
-  Heart,
   PlusCircle,
   TrendingUp,
   HelpCircle,
-  User,
-  Users,
-  Split,
   Loader2,
 } from "lucide-react";
 import { 
@@ -52,6 +44,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
 import { parseTransactionFromText, type ParsedTransaction } from "@/lib/transactions.functions";
+import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, AVATARS, type Transaction } from "@/hooks/use-finance-store";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -63,41 +56,6 @@ export const Route = createFileRoute("/transacoes")({
   component: TransactionsPage,
 });
 
-type Transaction = {
-  id: number;
-  date: string;
-  description: string;
-  category: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  amount: number;
-  type: string;
-  responsible: string;
-  avatar: string;
-  division: string;
-  divisionIcon: React.ComponentType<{ size?: number; className?: string }>;
-};
-
-const CATEGORY_ICONS: Record<string, Transaction["icon"]> = {
-  "Alimentação": ShoppingBag,
-  "Lazer": Coffee,
-  "Transporte": Car,
-  "Moradia": Home,
-  "Saúde": Heart,
-  "Renda": TrendingUp,
-  "Outros": HelpCircle,
-};
-
-const DIVISION_ICONS: Record<string, Transaction["divisionIcon"]> = {
-  "Conjunta 50/50": Users,
-  "Proporcional": Split,
-  "Individual": User,
-};
-
-const AVATARS: Record<string, string> = {
-  Felipe: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-  Beatriz: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
-};
-
 function formatDate(iso: string): string {
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const [y, m, d] = iso.split("-").map(Number);
@@ -105,88 +63,16 @@ function formatDate(iso: string): string {
   return `${String(d).padStart(2, "0")} ${months[m - 1]}, ${y}`;
 }
 
-const initialTransactions: Transaction[] = [
-  {
-    id: 1,
-    date: "05 Jun, 2024",
-    description: "Supermercado Pão de Açúcar",
-    category: "Alimentação",
-    icon: ShoppingBag,
-    amount: -350.20,
-    type: "Débito",
-    responsible: "Felipe",
-    avatar: AVATARS.Felipe,
-    division: "Conjunta 50/50",
-    divisionIcon: Users,
-  },
-  {
-    id: 2,
-    date: "05 Jun, 2024",
-    description: "Assinatura Netflix",
-    category: "Lazer",
-    icon: Coffee,
-    amount: -55.90,
-    type: "Crédito",
-    responsible: "Beatriz",
-    avatar: AVATARS.Beatriz,
-    division: "Proporcional",
-    divisionIcon: Split,
-  },
-  {
-    id: 3,
-    date: "04 Jun, 2024",
-    description: "Salário Empresa X",
-    category: "Renda",
-    icon: TrendingUp,
-    amount: 5200.00,
-    type: "Entrada",
-    responsible: "Beatriz",
-    avatar: AVATARS.Beatriz,
-    division: "Individual",
-    divisionIcon: User,
-  },
-  {
-    id: 4,
-    date: "03 Jun, 2024",
-    description: "Manutenção Carro",
-    category: "Transporte",
-    icon: Car,
-    amount: -450.00,
-    type: "Crédito",
-    responsible: "Felipe",
-    avatar: AVATARS.Felipe,
-    division: "Conjunta 50/50",
-    divisionIcon: Users,
-  },
-  {
-    id: 5,
-    date: "02 Jun, 2024",
-    description: "Aluguel Apartamento",
-    category: "Moradia",
-    icon: Home,
-    amount: -2500.00,
-    type: "Débito",
-    responsible: "Beatriz",
-    avatar: AVATARS.Beatriz,
-    division: "Proporcional",
-    divisionIcon: Split,
-  },
-];
-
 function buildTransaction(parsed: ParsedTransaction, id: number): Transaction {
-  const sign = parsed.type === "Entrada" ? 1 : -1;
   return {
     id,
     date: formatDate(parsed.date),
     description: parsed.description,
     category: parsed.category,
-    icon: CATEGORY_ICONS[parsed.category] ?? HelpCircle,
-    amount: sign * Math.abs(parsed.amount),
+    amount: (parsed.type === "Entrada" ? 1 : -1) * Math.abs(parsed.amount),
     type: parsed.type,
-    responsible: parsed.responsible,
-    avatar: AVATARS[parsed.responsible] ?? AVATARS.Felipe,
-    division: parsed.division,
-    divisionIcon: DIVISION_ICONS[parsed.division] ?? Users,
+    responsible: parsed.responsible as "Jorge" | "Beatriz",
+    division: parsed.division as any,
   };
 }
 
