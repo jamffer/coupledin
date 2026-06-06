@@ -44,13 +44,13 @@ export function ImageCropperModal({
     setLoading(true);
     try {
       const croppedImageBlob = await getCroppedImg(image, croppedAreaPixels);
-      const fileName = `${Math.random()}.jpg`;
+      const fileName = `${Math.random()}.webp`;
       const filePath = `${userId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, croppedImageBlob, {
-          contentType: "image/jpeg",
+          contentType: "image/webp",
           upsert: true,
         });
 
