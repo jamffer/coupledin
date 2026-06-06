@@ -141,10 +141,10 @@ function InvestimentosPage() {
                     </div>
                     <CardTitle className="mt-4 text-lg font-bold">{goal.title}</CardTitle>
                     <CardDescription className="flex justify-between items-end mt-1">
-                      <span className="text-foreground font-bold text-lg">
+                      <span className="text-foreground font-bold text-lg dark:text-white">
                         R$ {goal.current.toLocaleString('pt-BR')}
                       </span>
-                      <span className="text-xs">
+                      <span className="text-xs dark:text-white/60">
                         alvo: R$ {goal.target.toLocaleString('pt-BR')}
                       </span>
                     </CardDescription>
