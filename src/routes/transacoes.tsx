@@ -11,6 +11,7 @@ import {
   PlusCircle,
   TrendingUp,
   HelpCircle,
+  Users,
   Loader2,
 } from "lucide-react";
 import { 
