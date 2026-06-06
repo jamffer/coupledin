@@ -58,14 +58,14 @@ function InvitePage() {
           schema: 'public',
           table: 'profiles',
           filter: `couple_id=eq.${profile.couple_id}`
-        }, async (payload) => {
+        }, async () => {
           // Check if it's a new partner
-          const { data: count } = await supabase
+          const { data: countData } = await supabase
             .from('profiles')
             .select('id', { count: 'exact', head: true })
             .eq('couple_id', profile.couple_id);
           
-          if (count && count >= 2) {
+          if (countData !== null && (countData as any) >= 2) {
             toast.success("Parceiro(a) conectado! Redirecionando...");
             setTimeout(() => navigate({ to: '/' }), 1500);
           }
