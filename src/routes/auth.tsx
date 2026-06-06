@@ -84,7 +84,13 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#fcfbf8] p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-black p-4 relative overflow-hidden">
+      {/* Background Gradient */}
+      <div className="fixed inset-0 -z-10 pointer-events-none transition-transform duration-300 ease-out"
+        style={{
+          background: 'linear-gradient(to bottom, #161616, #203F9A, #4E7CB2, #E84797, #94C2DA, #E7A0CC, #EFE8E0)'
+        }}
+      />
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -99,13 +105,13 @@ function AuthPage() {
         </div>
 
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted/50 p-1 rounded-2xl h-12">
+          <TabsList className="grid w-full grid-cols-2 mb-8 apple-interactive p-1 rounded-2xl h-12">
             <TabsTrigger value="login" className="rounded-xl data-[state=active]:shadow-md">Entrar</TabsTrigger>
             <TabsTrigger value="register" className="rounded-xl data-[state=active]:shadow-md">Criar Conta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
-            <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">
+            <Card className="apple-card overflow-hidden">
               <CardHeader className="pt-8 pb-4">
                 <CardTitle className="text-xl font-bold">Bem-vindo de volta</CardTitle>
                 <CardDescription>Acesse sua conta para continuar.</CardDescription>
@@ -151,7 +157,7 @@ function AuthPage() {
                     <span className="w-full border-t border-muted" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-4 text-muted-foreground font-medium italic">ou</span>
+                    <span className="apple-glass px-4 text-muted-foreground font-medium italic">ou</span>
                   </div>
                 </div>
 
@@ -168,7 +174,7 @@ function AuthPage() {
           </TabsContent>
 
           <TabsContent value="register">
-            <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">
+            <Card className="apple-card overflow-hidden">
               <CardHeader className="pt-8 pb-4">
                 <CardTitle className="text-xl font-bold">Comece agora</CardTitle>
                 <CardDescription>Crie sua conta e conecte-se ao seu parceiro.</CardDescription>
