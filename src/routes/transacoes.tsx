@@ -133,6 +133,19 @@ function TransactionsPage() {
   const { profile, isLoading: isProfileLoading } = useProfile();
   const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars, setTransactions } = useFinanceStore();
 
+  const { data: cards = [] } = useQuery({
+    queryKey: ["cards"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cards")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.couple_id,
+  });
+
 
   // Sync transactions from Supabase
   useEffect(() => {
@@ -254,6 +267,7 @@ function TransactionsPage() {
       type: parsedData.type,
       user_id: user.id,
       couple_id: coupleId,
+      card_id: parsedData.type === "Crédito" ? cards.find(c => c.name.toLowerCase().includes(parsedData.description.toLowerCase()))?.id : undefined,
     };
 
     const { error } = await supabase.from("transactions").insert(txData);
@@ -286,7 +300,8 @@ function TransactionsPage() {
       division: (formData.division as string) || "Conjunta 50/50",
       type: formData.type || "Saída",
       user_id: user!.id,
-      couple_id: coupleId
+      couple_id: coupleId,
+      card_id: formData.card_id
     };
 
     if (editingTx) {
@@ -325,7 +340,8 @@ function TransactionsPage() {
       category: tx.category,
       responsible: tx.responsible,
       division: tx.division,
-      type: tx.type === "Entrada" ? "Entrada" : (tx.amount < 0 ? "Saída" : "Entrada")
+      type: tx.type === "Entrada" ? "Entrada" : (tx.amount < 0 ? "Saída" : "Entrada"),
+      card_id: (tx as any).card_id
     });
     setIsManualModalOpen(true);
   };
@@ -357,7 +373,8 @@ function TransactionsPage() {
       category: "Outros",
       responsible: "Jorge",
       division: "Conjunta 50/50",
-      type: "Saída"
+      type: "Saída",
+      card_id: undefined
     });
     setIsManualModalOpen(true);
   };
