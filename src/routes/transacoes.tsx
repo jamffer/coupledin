@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/use-profile";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -131,7 +132,21 @@ function TransactionsPage() {
   const search = useSearch({ from: "/transacoes" });
   const { user, loading: authLoading } = useAuth();
   const { profile, isLoading: isProfileLoading } = useProfile();
+  const queryClient = useQueryClient();
   const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars, setTransactions } = useFinanceStore();
+
+  const { data: cards = [] } = useQuery({
+    queryKey: ["cards"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cards")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.couple_id,
+  });
 
 
   // Sync transactions from Supabase
@@ -193,14 +208,15 @@ function TransactionsPage() {
   const [txToDelete, setTxToDelete] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
-  const [formData, setFormData] = useState<Partial<Transaction>>({
+  const [formData, setFormData] = useState<Partial<Transaction & { card_id?: string }>>({
     description: "",
     amount: 0,
     date: new Date().toISOString().split('T')[0],
     category: "Outros",
     responsible: "Jorge",
     division: "Conjunta 50/50",
-    type: "Saída"
+    type: "Saída",
+    card_id: undefined
   });
 
   const filters = {
@@ -253,6 +269,7 @@ function TransactionsPage() {
       type: parsedData.type,
       user_id: user.id,
       couple_id: coupleId,
+      card_id: (formData as any).card_id,
     };
 
     const { error } = await supabase.from("transactions").insert(txData);
@@ -265,6 +282,8 @@ function TransactionsPage() {
     setSmartInput("");
     setIsConfirmModalOpen(false);
     setParsedData(null);
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["cards"] });
     toast.success("Transação adicionada!");
   };
 
@@ -285,7 +304,8 @@ function TransactionsPage() {
       division: (formData.division as string) || "Conjunta 50/50",
       type: formData.type || "Saída",
       user_id: user!.id,
-      couple_id: coupleId
+      couple_id: coupleId,
+      card_id: formData.card_id
     };
 
     if (editingTx) {
@@ -311,6 +331,9 @@ function TransactionsPage() {
       toast.success("Transação adicionada!");
     }
     
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["cards"] });
+    
     setIsManualModalOpen(false);
     setEditingTx(null);
   };
@@ -324,7 +347,8 @@ function TransactionsPage() {
       category: tx.category,
       responsible: tx.responsible,
       division: tx.division,
-      type: tx.type === "Entrada" ? "Entrada" : (tx.amount < 0 ? "Saída" : "Entrada")
+      type: tx.type === "Entrada" ? "Entrada" : (tx.amount < 0 ? "Saída" : "Entrada"),
+      card_id: (tx as any).card_id
     });
     setIsManualModalOpen(true);
   };
@@ -342,6 +366,8 @@ function TransactionsPage() {
       }
       
       toast.error("Transação excluída");
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["cards"] });
       setIsDeleteModalOpen(false);
       setTxToDelete(null);
     }
@@ -356,7 +382,8 @@ function TransactionsPage() {
       category: "Outros",
       responsible: "Jorge",
       division: "Conjunta 50/50",
-      type: "Saída"
+      type: "Saída",
+      card_id: undefined
     });
     setIsManualModalOpen(true);
   };
@@ -749,6 +776,28 @@ function TransactionsPage() {
                 </Select>
               </div>
             </div>
+
+            {formData.type === "Crédito" && (
+              <div className="grid gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                <Label htmlFor="card" className="font-bold text-xs uppercase tracking-widest opacity-60">Cartão de Crédito</Label>
+                <Select value={formData.card_id} onValueChange={(val) => setFormData({...formData, card_id: val})}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Selecione o cartão" />
+                  </SelectTrigger>
+                  <SelectContent className="apple-card">
+                    {cards.length > 0 ? (
+                      cards.map((card: any) => (
+                        <SelectItem key={card.id} value={card.id}>
+                          {card.name} (•••• {card.last_four})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-cards" disabled>Nenhum cartão cadastrado</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label className="font-bold text-xs uppercase tracking-widest opacity-60">Responsável</Label>
@@ -817,6 +866,26 @@ function TransactionsPage() {
                 <p className="text-sm font-medium text-muted-foreground">Categoria</p>
                 <Badge variant="outline" className="font-bold">{parsedData.category}</Badge>
               </div>
+              {parsedData.type === "Crédito" && (
+                <div className="space-y-2 mt-2">
+                   <p className="text-sm font-medium text-muted-foreground">Vincular ao Cartão</p>
+                   <Select 
+                     value={(formData as any).card_id} 
+                     onValueChange={(val) => setFormData({...formData, card_id: val})}
+                   >
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue placeholder="Selecione o cartão" />
+                    </SelectTrigger>
+                    <SelectContent className="apple-card">
+                      {cards.map((card: any) => (
+                        <SelectItem key={card.id} value={card.id}>
+                          {card.name} (•••• {card.last_four})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           )}
 

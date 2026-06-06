@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/hooks/use-profile";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -51,6 +52,7 @@ export function AddCardModal({ children }: AddCardModalProps) {
   const [open, setOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const { user } = useAuth();
+  const { profile } = useProfile();
   const queryClient = useQueryClient();
 
   const form = useForm<CardFormValues>({
@@ -65,25 +67,29 @@ export function AddCardModal({ children }: AddCardModalProps) {
   });
 
   async function onSubmit(values: CardFormValues) {
-    if (!user) return;
+    if (!user || !profile?.couple_id) {
+      toast.error("Você precisa estar em um casal para adicionar um cartão.");
+      return;
+    }
 
     setIsUploading(true);
     try {
       const numericLimit = Number(values.totalLimit) / 100;
       
-      const { error } = await supabase.from("credit_cards").insert({
-        user_id: user.id,
+      const { error } = await supabase.from("cards").insert({
+        owner_id: user.id,
+        couple_id: profile.couple_id,
         name: values.name,
-        total_limit: numericLimit,
+        limit_amount: numericLimit,
         card_type: values.cardType,
-        last_digits: values.lastDigits || null,
+        last_four: values.lastDigits || null,
         color: values.color,
       });
 
       if (error) throw error;
 
       toast.success("Cartão adicionado com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["credit_cards"] });
+      queryClient.invalidateQueries({ queryKey: ["cards"] });
       setOpen(false);
       form.reset();
     } catch (error: any) {

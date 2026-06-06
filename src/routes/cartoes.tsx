@@ -127,33 +127,66 @@ function CartoesPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const { data: cards = [], isLoading: isCardsLoading } = useQuery({
-    queryKey: ["credit_cards"],
+  const { data: transactions = [] } = useQuery({
+    queryKey: ["transactions"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("credit_cards")
+        .from("transactions")
+        .select("*")
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: cards = [], isLoading: isCardsLoading } = useQuery({
+    queryKey: ["cards"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cards")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       
-      return data.map(card => ({
-        id: card.id,
-        name: card.name,
-        lastDigits: card.last_digits || "0000",
-        brand: "Mastercard", // Fallback for now
-        color: card.color || "card-gradient-blue",
-        currentBill: 0, // Should be calculated from transactions
-        limitUsed: 0,   // Should be calculated from transactions
-        totalLimit: Number(card.total_limit),
-        type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
-        owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
-      }));
+      return data.map(card => {
+        // Calcular fatura atual baseada nas transações vinculadas a este cartão
+        const cardTransactions = transactions.filter(tx => tx.card_id === card.id);
+        const currentBill = cardTransactions.reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
+
+        return {
+          id: card.id,
+          name: card.name,
+          lastDigits: card.last_four || "0000",
+          brand: "Mastercard", 
+          color: card.color || "card-gradient-blue",
+          currentBill: currentBill,
+          limitUsed: currentBill, // Simplificado para este exemplo
+          totalLimit: Number(card.limit_amount),
+          type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
+          owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
+        };
+      });
     },
-    enabled: !!user,
+    enabled: !!user && !!transactions,
   });
 
-  const [bills, setBills] = useState<Record<string, BillItem[]>>({});
+  // Derivar itens da fatura das transações reais
+  const currentBillItems = selectedCardId 
+    ? transactions
+        .filter(tx => tx.card_id === selectedCardId)
+        .map(tx => ({
+          id: tx.id,
+          date: new Date(tx.date).toLocaleDateString('pt-BR'),
+          description: tx.description,
+          amount: Math.abs(tx.amount),
+          user: tx.responsible,
+          category: tx.category,
+          icon: CreditCard, // Fallback
+          installments: '1/1'
+        }))
+    : [];
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -168,7 +201,7 @@ function CartoesPage() {
   }, [cards, selectedCardId]);
 
   const selectedCard = cards.find(c => c.id === selectedCardId);
-  const currentBillItems = selectedCardId ? (bills[selectedCardId] || []) : [];
+  // const currentBillItems = selectedCardId ? (bills[selectedCardId] || []) : [];
 
   const usagePercentage = selectedCard ? (selectedCard.limitUsed / selectedCard.totalLimit) * 100 : 0;
   
