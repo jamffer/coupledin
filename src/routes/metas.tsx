@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -79,6 +81,14 @@ const itemVariants = {
 };
 
 function MetasPage() {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/auth" });
+    }
+  }, [user, authLoading]);
   return (
     <DashboardLayout>
       <motion.div 
