@@ -179,34 +179,36 @@ function CartoesPage() {
               className="cursor-pointer"
             >
               <Card className={cn(
-                "relative h-56 border-none text-white shadow-xl overflow-hidden transition-all duration-300",
+                "relative h-64 border-none text-white shadow-xl overflow-hidden transition-all duration-300 flex flex-col justify-between",
                 card.color,
-                selectedCardId === card.id ? "ring-2 ring-primary ring-offset-4 ring-offset-[#fcfbf8]" : "opacity-90 hover:opacity-100"
+                selectedCardId === card.id ? "ring-2 ring-primary ring-offset-4 ring-offset-[#fcfbf8]" : "opacity-95 hover:opacity-100"
               )}>
-                <div className="absolute top-0 right-0 p-8 opacity-20">
-                  <CreditCard size={120} />
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <CreditCard size={140} />
                 </div>
-                <CardHeader className="relative z-10 flex flex-row items-center justify-between pb-2">
+                
+                <CardHeader className="relative z-10 flex flex-row items-center justify-between p-6 pb-0">
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">
                       {card.type === "conjunto" ? "Conjunto" : `Individual - ${card.owner}`}
                     </span>
-                    <CardTitle className="text-lg font-bold">{card.name}</CardTitle>
+                    <CardTitle className="text-base font-bold leading-tight">{card.name}</CardTitle>
                   </div>
-                  <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
-                    <span className="text-xs font-bold">{card.brand}</span>
+                  <div className="bg-white/10 px-2 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm">
+                    {card.brand}
                   </div>
                 </CardHeader>
-                <CardContent className="relative z-10 space-y-4">
-                  <div className="flex flex-col gap-1">
+
+                <CardContent className="relative z-10 p-6 space-y-4">
+                  <div className="flex flex-col gap-0">
                     <span className="text-[10px] uppercase font-bold opacity-60">Fatura Atual</span>
                     <h3 className="text-3xl font-bold tracking-tight">R$ {card.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                   </div>
                   
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center text-[10px] font-bold uppercase">
-                      <span className="opacity-70">Uso do Limite</span>
-                      <span>R$ {card.limitUsed.toLocaleString('pt-BR')} de R$ {card.totalLimit.toLocaleString('pt-BR')}</span>
+                    <div className="flex justify-between items-center text-[9px] font-bold uppercase">
+                      <span className="opacity-60">Uso do Limite</span>
+                      <span>{Math.round(card.limitUsed / card.totalLimit * 100)}%</span>
                     </div>
                     <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
                       <div 
@@ -217,10 +219,10 @@ function CartoesPage() {
                   </div>
 
                   <div className="flex justify-between items-center pt-2">
-                    <span className="text-sm font-mono tracking-widest opacity-70">•••• {card.lastDigits}</span>
+                    <span className="text-xs font-mono tracking-widest opacity-60">•••• {card.lastDigits}</span>
                     {selectedCardId === card.id && (
-                      <motion.div layoutId="active-indicator" className="bg-white text-black p-1 rounded-full">
-                        <CheckCircle2 size={16} />
+                      <motion.div layoutId="active-indicator" className="bg-white text-black p-1 rounded-full shadow-sm">
+                        <CheckCircle2 size={14} />
                       </motion.div>
                     )}
                   </div>
