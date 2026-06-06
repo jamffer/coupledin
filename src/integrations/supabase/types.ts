@@ -73,6 +73,56 @@ export type Database = {
           },
         ]
       }
+      transactions: {
+        Row: {
+          amount: number
+          category: string
+          couple_id: string
+          created_at: string
+          date: string
+          description: string
+          division: string
+          id: string
+          responsible: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          couple_id: string
+          created_at?: string
+          date?: string
+          description: string
+          division: string
+          id?: string
+          responsible: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          couple_id?: string
+          created_at?: string
+          date?: string
+          description?: string
+          division?: string
+          id?: string
+          responsible?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
