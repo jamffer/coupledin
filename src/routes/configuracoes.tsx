@@ -312,7 +312,7 @@ function ConfiguracoesPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="incomeB" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal da Lilian</Label>
+                      <Label htmlFor="incomeB" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal de {partnerProfile?.display_name?.split(' ')[0] || "Parceiro(a)"}</Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
                         <Input 
