@@ -219,7 +219,7 @@ function AuthPage() {
     // Client-side validation with Zod
     const validation = inviteCodeSchema.safeParse(inviteCodeInput.toUpperCase());
     if (!validation.success) {
-      toast.error("Código inválido", { description: validation.error.errors[0].message });
+      toast.error("Código inválido", { description: validation.error.issues[0].message });
       return;
     }
 
