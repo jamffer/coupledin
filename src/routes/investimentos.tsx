@@ -14,6 +14,7 @@ import {
   Building2,
   Gem,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { 
   Table, 
@@ -25,8 +26,9 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/investimentos")({
   head: () => ({
@@ -38,23 +40,23 @@ export const Route = createFileRoute("/investimentos")({
   component: InvestimentosPage,
 });
 
-// Mocked Data for API response simulation
-const mockAcoes = [
-  { ticker: "VALE3", name: "Vale S.A.", qty: 100, avgPrice: 65.40, currentPrice: 68.12, icon: "https://logo.clearbit.com/vale.com" },
-  { ticker: "PETR4", name: "Petrobras", qty: 150, avgPrice: 32.10, currentPrice: 38.45, icon: "https://logo.clearbit.com/petrobras.com.br" },
-  { ticker: "ITUB4", name: "Itaú Unibanco", qty: 200, avgPrice: 28.50, currentPrice: 31.20, icon: "https://logo.clearbit.com/itau.com.br" },
+// Base assets in portfolio
+const initialAcoes = [
+  { ticker: "VALE3", name: "Vale S.A.", qty: 100, avgPrice: 65.40, currentPrice: 65.40, icon: "https://logo.clearbit.com/vale.com" },
+  { ticker: "PETR4", name: "Petrobras", qty: 150, avgPrice: 32.10, currentPrice: 32.10, icon: "https://logo.clearbit.com/petrobras.com.br" },
+  { ticker: "ITUB4", name: "Itaú Unibanco", qty: 200, avgPrice: 28.50, currentPrice: 28.50, icon: "https://logo.clearbit.com/itau.com.br" },
 ];
 
-const mockFIIs = [
-  { ticker: "HGLG11", name: "CSHG Logística", qty: 50, avgPrice: 160.00, currentPrice: 165.40, icon: "https://logo.clearbit.com/cshg.com.br" },
-  { ticker: "KNRI11", name: "Kinea Renda", qty: 80, avgPrice: 155.20, currentPrice: 162.15, icon: "https://logo.clearbit.com/kinea.com.br" },
-  { ticker: "XPML11", name: "XP Malls", qty: 120, avgPrice: 108.50, currentPrice: 115.30, icon: "https://logo.clearbit.com/xp.com.br" },
+const initialFIIs = [
+  { ticker: "HGLG11", name: "CSHG Logística", qty: 50, avgPrice: 160.00, currentPrice: 160.00, icon: "https://logo.clearbit.com/cshg.com.br" },
+  { ticker: "KNRI11", name: "Kinea Renda", qty: 80, avgPrice: 155.20, currentPrice: 155.20, icon: "https://logo.clearbit.com/kinea.com.br" },
+  { ticker: "XPML11", name: "XP Malls", qty: 120, avgPrice: 108.50, currentPrice: 108.50, icon: "https://logo.clearbit.com/xp.com.br" },
 ];
 
-const mockCripto = [
-  { ticker: "BTC", name: "Bitcoin", qty: 0.05, avgPrice: 285000, currentPrice: 345000, icon: "https://assets.coingecko.com/coins/images/1/small/bitcoin.png" },
-  { ticker: "ETH", name: "Ethereum", qty: 1.2, avgPrice: 12500, currentPrice: 15400, icon: "https://assets.coingecko.com/coins/images/279/small/ethereum.png" },
-  { ticker: "SOL", name: "Solana", qty: 15, avgPrice: 450, currentPrice: 820, icon: "https://assets.coingecko.com/coins/images/4128/small/solana.png" },
+const initialCripto = [
+  { ticker: "BTC", id: "bitcoin", name: "Bitcoin", qty: 0.05, avgPrice: 285000, currentPrice: 285000, icon: "https://assets.coingecko.com/coins/images/1/small/bitcoin.png" },
+  { ticker: "ETH", id: "ethereum", name: "Ethereum", qty: 1.2, avgPrice: 12500, currentPrice: 12500, icon: "https://assets.coingecko.com/coins/images/279/small/ethereum.png" },
+  { ticker: "SOL", id: "solana", name: "Solana", qty: 15, avgPrice: 450, currentPrice: 450, icon: "https://assets.coingecko.com/coins/images/4128/small/solana.png" },
 ];
 
 const containerVariants = {
@@ -127,14 +129,65 @@ function AssetTable({ data }: { data: any[] }) {
 
 function InvestimentosPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [acoes, setAcoes] = useState(initialAcoes);
+  const [fiis, setFiis] = useState(initialFIIs);
+  const [cripto, setCripto] = useState(initialCripto);
 
-  const handleRefresh = () => {
+  const fetchStockPrices = useCallback(async () => {
+    try {
+      const tickers = [...acoes, ...fiis].map(a => a.ticker).join(',');
+      const response = await fetch(`https://brapi.dev/api/quote/${tickers}`);
+      const data = await response.json();
+      
+      if (data.results) {
+        setAcoes(prev => prev.map(stock => {
+          const result = data.results.find((r: any) => r.symbol === stock.ticker);
+          return result ? { ...stock, currentPrice: result.regularMarketPrice } : stock;
+        }));
+        setFiis(prev => prev.map(fii => {
+          const result = data.results.find((r: any) => r.symbol === fii.ticker);
+          return result ? { ...fii, currentPrice: result.regularMarketPrice } : fii;
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching stocks:", error);
+      toast.error("Erro ao atualizar cotações da B3");
+    }
+  }, [acoes, fiis]);
+
+  const fetchCryptoPrices = useCallback(async () => {
+    try {
+      const ids = cripto.map(c => c.id).join(',');
+      const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl`);
+      const data = await response.json();
+      
+      if (data) {
+        setCripto(prev => prev.map(coin => {
+          const price = data[coin.id]?.brl;
+          return price ? { ...coin, currentPrice: price } : coin;
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching crypto:", error);
+      toast.error("Erro ao atualizar criptoativos");
+    }
+  }, [cripto]);
+
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1500);
+    await Promise.all([fetchStockPrices(), fetchCryptoPrices()]);
+    setIsRefreshing(false);
+    toast.success("Preços atualizados!");
   };
 
-  const totalPatrimony = 145850.00;
-  const monthProfit = 4250.30;
+  useEffect(() => {
+    // Initial fetch on mount
+    handleRefresh();
+  }, []);
+
+  const totalPatrimony = [...acoes, ...fiis, ...cripto].reduce((acc, curr) => acc + (curr.qty * curr.currentPrice), 0);
+  const totalCost = [...acoes, ...fiis, ...cripto].reduce((acc, curr) => acc + (curr.qty * curr.avgPrice), 0);
+  const totalProfit = totalPatrimony - totalCost;
 
   return (
     <DashboardLayout>
@@ -195,12 +248,12 @@ function InvestimentosPage() {
                   <div className="p-2 bg-white/20 rounded-lg text-white">
                     <TrendingUp size={24} />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 bg-white/10 px-3 py-1 rounded-full">30 Dias</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 bg-white/10 px-3 py-1 rounded-full">Total Acumulado</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white/80">Lucro Estimado</p>
+                  <p className="text-sm font-medium text-white/80">Lucro/Prejuízo Total</p>
                   <h3 className="text-4xl font-black tracking-tight text-white mt-1">
-                    + R$ {monthProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {totalProfit >= 0 ? '+' : ''} R$ {totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </h3>
                 </div>
               </CardContent>
@@ -277,7 +330,7 @@ function InvestimentosPage() {
                     <CardDescription>Cotações em tempo real via Brapi API.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0">
-                    <AssetTable data={mockAcoes} />
+                    <AssetTable data={acoes} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -289,7 +342,7 @@ function InvestimentosPage() {
                     <CardDescription>Acompanhe o rendimento dos seus proventos.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0">
-                    <AssetTable data={mockFIIs} />
+                    <AssetTable data={fiis} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -301,7 +354,7 @@ function InvestimentosPage() {
                     <CardDescription>Dados globais via CoinGecko API.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0">
-                    <AssetTable data={mockCripto} />
+                    <AssetTable data={cripto} />
                   </CardContent>
                 </Card>
               </TabsContent>
