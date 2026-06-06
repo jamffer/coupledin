@@ -44,8 +44,9 @@ export const useFinanceStore = create<FinanceStore>()(
   persist(
     (set) => ({
       transactions: [],
-      incomeJorge: 6000,
-      incomeLilian: 4000,
+      incomeJorge: 0,
+      incomeLilian: 0,
+
       addTransaction: (tx) => set((state) => ({ transactions: [tx, ...state.transactions] })),
       updateTransaction: (id, updatedTx) => set((state) => ({
         transactions: state.transactions.map((tx) => tx.id === id ? { ...tx, ...updatedTx } : tx)
