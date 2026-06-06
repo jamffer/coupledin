@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
   CreditCard, 
@@ -12,8 +13,35 @@ import {
   Utensils,
   Smartphone,
   CheckCircle2,
-  Clock
+  Clock,
+  MoreVertical,
+  Edit,
+  FastForward,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { toast } from "sonner";
 import { 
   Select, 
   SelectContent, 
@@ -103,6 +131,7 @@ type BillItem = {
   date: string;
   description: string;
   amount: number;
+  totalAmount?: number;
   installments?: string;
   user: "Jorge" | "Lilian";
   category: string;
@@ -114,7 +143,7 @@ const mockBills: Record<string, BillItem[]> = {
     { id: "b1", date: "05 Jun", description: "Supermercado Extra", amount: 450.00, installments: "1/1", user: "Jorge", category: "Alimentação", icon: Utensils },
     { id: "b2", date: "04 Jun", description: "Netflix", amount: 55.90, installments: "1/1", user: "Lilian", category: "Lazer", icon: Coffee },
     { id: "b3", date: "02 Jun", description: "Posto Shell", amount: 220.00, installments: "1/1", user: "Jorge", category: "Transporte", icon: Car },
-    { id: "b4", date: "01 Jun", description: "Amazon.com", amount: 1424.50, installments: "2/10", user: "Lilian", category: "Shopping", icon: ShoppingBag },
+    { id: "b4", date: "01 Jun", description: "Amazon.com", amount: 142.45, totalAmount: 1424.50, installments: "2/10", user: "Lilian", category: "Shopping", icon: ShoppingBag },
   ],
   "2": [
     { id: "j1", date: "06 Jun", description: "Steam Store", amount: 150.00, installments: "1/1", user: "Jorge", category: "Lazer", icon: Coffee },
@@ -165,14 +194,21 @@ function CartoesPage() {
   const jorgePays = selectedCard.type === "conjunto" ? 1200 : selectedCard.owner === "Jorge" ? selectedCard.currentBill : 0;
   const lilianPays = selectedCard.type === "conjunto" ? 800 : selectedCard.owner === "Lilian" ? selectedCard.currentBill : 0;
 
+  const handlePayBill = () => {
+    toast.success("Fatura paga com sucesso!", {
+      description: `O pagamento de R$ ${selectedCard.currentBill.toLocaleString('pt-BR')} foi registrado.`,
+    });
+  };
+
   return (
     <DashboardLayout>
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-8"
-      >
+      <TooltipProvider>
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="space-y-8"
+        >
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Meus Cartões</h1>
           <p className="text-muted-foreground italic">Gerencie seus limites e faturas.</p>
@@ -256,23 +292,37 @@ function CartoesPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-[180px] rounded-full apple-interactive font-medium">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon size={16} className="text-muted-foreground" />
-                      <SelectValue placeholder="Selecione o mês" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="june">Junho (Aberta)</SelectItem>
-                    <SelectItem value="may">Maio (Paga)</SelectItem>
-                    <SelectItem value="april">Abril (Paga)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="rounded-full apple-interactive font-medium min-w-[180px] justify-between">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon size={16} className="text-muted-foreground" />
+                        <span>
+                          {selectedMonth === "june" ? "Junho (Aberta)" : 
+                           selectedMonth === "may" ? "Maio (Fechada)" : 
+                           "Abril (Paga)"}
+                        </span>
+                      </div>
+                      <ChevronRight size={14} className="rotate-90 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="apple-card w-[180px]">
+                    <DropdownMenuItem onClick={() => setSelectedMonth("june")} className="cursor-pointer">
+                      Junho (Aberta)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedMonth("may")} className="cursor-pointer">
+                      Maio (Fechada)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedMonth("april")} className="cursor-pointer">
+                      Abril (Paga)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <Badge variant={selectedMonth === "june" ? "outline" : "secondary"} className={cn(
-                  "px-3 py-1 rounded-full border-none",
-                  selectedMonth === "june" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
+                  "px-3 py-1 rounded-full border-none h-9 flex items-center",
+                  selectedMonth === "june" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" : "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
                 )}>
                   {selectedMonth === "june" ? "Fatura Aberta" : "Fatura Paga"}
                 </Badge>
@@ -280,10 +330,35 @@ function CartoesPage() {
             </CardHeader>
             <CardContent className="p-0">
               {/* Resumo da Fatura */}
-              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x border-b border-border/40">
-                <div className="p-6">
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Total da Fatura</p>
-                  <h3 className="text-2xl font-bold tracking-tight">R$ {selectedCard.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x border-b border-border/40">
+                <div className="p-6 flex flex-col justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Total da Fatura</p>
+                    <h3 className="text-2xl font-bold tracking-tight">R$ {selectedCard.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                  </div>
+                  {selectedMonth === "june" && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button className="mt-4 w-full rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all font-bold">
+                          Pagar Fatura
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="apple-card rounded-3xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmar Pagamento</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Deseja registrar o pagamento desta fatura no valor de <span className="font-bold text-foreground">R$ {selectedCard.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="rounded-full">Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={handlePayBill} className="rounded-full shadow-lg shadow-primary/20">
+                            Confirmar Pagamento
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
                 <div className="p-6">
                   <div className="flex items-center gap-3 mb-1">
@@ -317,6 +392,7 @@ function CartoesPage() {
                       <TableHead>Categoria</TableHead>
                       <TableHead>Parcela</TableHead>
                       <TableHead>Responsável</TableHead>
+                      <TableHead className="text-right pr-6 min-w-[120px]">Ações</TableHead>
                       <TableHead className="text-right pr-6">Valor</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -335,9 +411,22 @@ function CartoesPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="font-mono text-[10px] px-2 py-0 border-muted">
-                              {item.installments}
-                            </Badge>
+                            {item.totalAmount ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="font-mono text-[10px] px-2 py-0 border-primary/20 bg-primary/5 text-primary cursor-help">
+                                    {item.installments}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent className="apple-card">
+                                  <p className="text-xs">Valor Total: <span className="font-bold">R$ {item.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></p>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Badge variant="outline" className="font-mono text-[10px] px-2 py-0 border-muted">
+                                {item.installments}
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Avatar className="w-6 h-6 ring-2 ring-background ring-offset-1 group-hover:scale-110 transition-transform">
@@ -345,7 +434,26 @@ function CartoesPage() {
                               <AvatarFallback>{item.user.substring(0, 2)}</AvatarFallback>
                             </Avatar>
                           </TableCell>
-                          <TableCell className="text-right font-bold pr-6">
+                          <TableCell className="text-right pr-6">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MoreVertical size={14} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="apple-card">
+                                <DropdownMenuItem className="gap-2 cursor-pointer">
+                                  <Edit size={14} />
+                                  Editar Compra
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="gap-2 cursor-pointer">
+                                  <FastForward size={14} />
+                                  Antecipar Parcelas
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                          <TableCell className="text-right font-bold pr-6 whitespace-nowrap">
                             R$ {item.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </TableCell>
                         </TableRow>
@@ -364,7 +472,8 @@ function CartoesPage() {
             </CardContent>
           </Card>
         </motion.div>
-      </motion.div>
+        </motion.div>
+      </TooltipProvider>
     </DashboardLayout>
   );
 }
