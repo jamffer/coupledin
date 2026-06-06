@@ -62,7 +62,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSpaceOnboardingStore, OnboardingStep } from "@/store/useSpaceOnboardingStore";
-import { Progress } from "@/components/ui/progress";
+import { LoadingOverlay } from "@/components/onboarding/loading-overlay";
 
 const chartData = [
   { name: "Jan", entradas: 4500, saidas: 3200 },
@@ -404,36 +404,13 @@ function Dashboard() {
 
   return (
     <DashboardLayout>
-      {/* Mounting Overlay */}
-      <AnimatePresence>
-        {isProcessing && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm"
-          >
-            <div className="w-full max-w-md p-6 space-y-4 text-center">
-              <motion.div
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 text-primary mb-4"
-              >
-                <RefreshCcw size={40} className="animate-spin" />
-              </motion.div>
-              <div className="space-y-2">
-                <h2 className="text-xl font-bold tracking-tight">{message}</h2>
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  <span>Progresso</span>
-                  <span>{progressValue}%</span>
-                </div>
-                <Progress value={progressValue} className="h-1.5" />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <LoadingOverlay 
+        isVisible={isProcessing} 
+        message={message} 
+        progressValue={progressValue} 
+      />
       <motion.div 
+
 
         variants={containerVariants}
         initial="hidden"
