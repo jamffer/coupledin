@@ -203,7 +203,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       const { error } = await supabase
         .from("profiles")
         .update({ display_name: tempName.trim() })
-        .eq("id", user?.id);
+        .eq("id", user?.id as string);
 
       if (error) throw error;
 
