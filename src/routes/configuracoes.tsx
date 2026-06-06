@@ -69,6 +69,8 @@ function ConfiguracoesPage() {
   const { incomeJorge, incomeLilian, setIncomes } = useFinanceStore();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+  const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -93,6 +95,20 @@ function ConfiguracoesPage() {
       import("@/integrations/supabase/client").then(({ supabase }) => {
         supabase.rpc("get_my_invite_code").then(({ data }) => {
           setInviteCode(data as string);
+        });
+
+        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+          setProfile(data);
+          if (data?.couple_id) {
+            supabase.from("profiles")
+              .select("*")
+              .eq("couple_id", data.couple_id)
+              .neq("id", user.id)
+              .maybeSingle()
+              .then(({ data: partnerData }) => {
+                setPartnerProfile(partnerData);
+              });
+          }
         });
       });
     }
@@ -149,7 +165,10 @@ function ConfiguracoesPage() {
                 </div>
 
                 <div className="flex-1 text-center md:text-left space-y-2">
-                  <h2 className="text-2xl font-bold">Jorge & Lilian</h2>
+                  <h2 className="text-2xl font-bold">
+                    {profile?.display_name || "Você"}
+                    {partnerProfile?.display_name ? ` & ${partnerProfile.display_name}` : ""}
+                  </h2>
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5 bg-muted dark:bg-muted/10 px-3 py-1 rounded-full">
                       <Calendar size={14} />
@@ -280,7 +299,7 @@ function ConfiguracoesPage() {
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="incomeA" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal do Jorge</Label>
+                      <Label htmlFor="incomeA" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal de {profile?.display_name?.split(' ')[0] || "Você"}</Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
                         <Input 
@@ -293,7 +312,7 @@ function ConfiguracoesPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="incomeB" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal da Lilian</Label>
+                      <Label htmlFor="incomeB" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal de {partnerProfile?.display_name?.split(' ')[0] || "Parceiro(a)"}</Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
                         <Input 
@@ -311,16 +330,16 @@ function ConfiguracoesPage() {
                     <div className="flex justify-between items-end mb-2">
                       <div className="space-y-1">
                         <p className="text-sm font-bold">Resultado do Cálculo</p>
-                        <p className="text-xs text-muted-foreground italic">Jorge paga {percentageA}% / Lilian paga {percentageB}%</p>
+                        <p className="text-xs text-muted-foreground italic">{profile?.display_name?.split(' ')[0] || "Você"} paga {percentageA}% / {partnerProfile?.display_name?.split(' ')[0] || "Parceiro(a)"} paga {percentageB}%</p>
                       </div>
                       <div className="flex gap-4">
                         <div className="flex items-center gap-1.5">
                           <div className="w-3 h-3 rounded-full bg-primary" />
-                          <span className="text-[10px] font-bold uppercase text-muted-foreground">Jorge</span>
+                          <span className="text-[10px] font-bold uppercase text-muted-foreground">{profile?.display_name?.split(' ')[0] || "Você"}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-3 h-3 rounded-full bg-rose-400" />
-                          <span className="text-[10px] font-bold uppercase text-muted-foreground">Lilian</span>
+                          <span className="text-[10px] font-bold uppercase text-muted-foreground">{partnerProfile?.display_name?.split(' ')[0] || "Parceiro(a)"}</span>
                         </div>
                       </div>
                     </div>
