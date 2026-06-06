@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
+  Plus, 
   TrendingUp, 
   TrendingDown, 
   Wallet,
