@@ -38,6 +38,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Tooltip,
   TooltipContent,
@@ -145,6 +146,7 @@ function AssetTable({ data, onSelect }: { data: any[], onSelect: (asset: any) =>
 function InvestimentosPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { user, loading: authLoading } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -152,6 +154,14 @@ function InvestimentosPage() {
       navigate({ to: "/auth" });
     }
   }, [user, authLoading]);
+
+  useEffect(() => {
+    if (user) {
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+        setProfile(data);
+      });
+    }
+  }, [user]);
   const [acoes, setAcoes] = useState(initialAcoes);
   const [fiis, setFiis] = useState(initialFIIs);
   const [cripto, setCripto] = useState(initialCripto);

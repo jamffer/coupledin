@@ -67,6 +67,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { parseTransactionFromText, type ParsedTransaction } from "@/lib/transactions.functions";
 import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, type Transaction } from "@/hooks/use-finance-store";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -87,7 +88,7 @@ function formatDate(iso: string): string {
   return `${String(d).padStart(2, "0")} ${months[m]}, ${y}`;
 }
 
-function buildTransaction(parsed: ParsedTransaction, id: number): Transaction {
+function buildTransaction(parsed: ParsedTransaction, id: string, userId: string, coupleId: string): Transaction {
   return {
     id,
     date: formatDate(parsed.date),
@@ -95,8 +96,10 @@ function buildTransaction(parsed: ParsedTransaction, id: number): Transaction {
     category: parsed.category,
     amount: (parsed.type === "Entrada" ? 1 : -1) * Math.abs(parsed.amount),
     type: parsed.type,
-    responsible: parsed.responsible as "Jorge" | "Lilian",
-    division: parsed.division as any,
+    responsible: parsed.responsible as string,
+    division: parsed.division as string,
+    user_id: userId,
+    couple_id: coupleId,
   };
 }
 
@@ -114,7 +117,54 @@ function TransactionsPage() {
   const [smartInput, setSmartInput] = useState("");
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars } = useFinanceStore();
+  const [profile, setProfile] = useState<any>(null);
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars, setTransactions } = useFinanceStore();
+
+  useEffect(() => {
+    if (user) {
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+        setProfile(data);
+      });
+    }
+  }, [user]);
+
+  // Sync transactions from Supabase
+  useEffect(() => {
+    if (profile?.couple_id) {
+      const fetchTransactions = async () => {
+        const { data, error } = await supabase
+          .from("transactions")
+          .select("*")
+          .eq("couple_id", profile.couple_id)
+          .order("date", { ascending: false });
+
+        if (!error && data) {
+          // Map snake_case from DB to camelCase in store if necessary, or ensure store uses same keys
+          // For now, let's assume they match or we adjust
+          setTransactions(data as any);
+        }
+      };
+
+      fetchTransactions();
+
+      // Subscription for real-time updates
+      const subscription = supabase
+        .channel("transactions-updates")
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "transactions",
+          filter: `couple_id=eq.${profile.couple_id}`
+        }, () => {
+          fetchTransactions();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(subscription);
+      };
+    }
+  }, [profile?.couple_id, setTransactions]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -125,7 +175,7 @@ function TransactionsPage() {
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-  const [txToDelete, setTxToDelete] = useState<number | null>(null);
+  const [txToDelete, setTxToDelete] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
   // States for manual form
@@ -170,8 +220,8 @@ function TransactionsPage() {
   };
 
   const handleConfirm = () => {
-    if (!parsedData) return;
-    const tx = buildTransaction(parsedData, Date.now());
+    if (!parsedData || !user) return;
+    const tx = buildTransaction(parsedData, crypto.randomUUID(), user.id, "FIXME_COUPLE_ID");
     addTransaction(tx);
     setSmartInput("");
     setIsConfirmModalOpen(false);
@@ -193,14 +243,16 @@ function TransactionsPage() {
       toast.success("Transação atualizada!");
     } else {
       const newTx: Transaction = {
-        id: Date.now(),
+        id: crypto.randomUUID(),
         description: formData.description || "",
         amount: (formData.type === "Entrada" ? 1 : -1) * Math.abs(formData.amount || 0),
         date: formatDate(formData.date!),
         category: formData.category || "Outros",
-        responsible: (formData.responsible as "Jorge" | "Lilian") || "Jorge",
-        division: (formData.division as any) || "Conjunta 50/50",
-        type: formData.type || "Saída"
+        responsible: (formData.responsible as string) || "Jorge",
+        division: (formData.division as string) || "Conjunta 50/50",
+        type: formData.type || "Saída",
+        user_id: user!.id,
+        couple_id: "FIXME_COUPLE_ID"
       };
       addTransaction(newTx);
       toast.success("Transação adicionada!");
@@ -444,29 +496,31 @@ function TransactionsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="py-4 pr-8 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreVertical size={16} />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="apple-card">
-                              <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => handleEditClick(tx)}>
-                                <Edit size={14} />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="gap-2 text-destructive cursor-pointer" 
-                                onClick={() => {
-                                  setTxToDelete(tx.id);
-                                  setIsDeleteModalOpen(true);
-                                }}
-                              >
-                                <Trash2 size={14} />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {tx.user_id === user?.id && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MoreVertical size={16} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="apple-card">
+                                <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => handleEditClick(tx)}>
+                                  <Edit size={14} />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="gap-2 text-destructive cursor-pointer" 
+                                  onClick={() => {
+                                    setTxToDelete(tx.id);
+                                    setIsDeleteModalOpen(true);
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -496,29 +550,31 @@ function TransactionsPage() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2 rounded-full">
-                                <MoreVertical size={14} />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="apple-card">
-                              <DropdownMenuItem className="gap-2" onClick={() => handleEditClick(tx)}>
-                                <Edit size={14} />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="gap-2 text-destructive" 
-                                onClick={() => {
-                                  setTxToDelete(tx.id);
-                                  setIsDeleteModalOpen(true);
-                                }}
-                              >
-                                <Trash2 size={14} />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {tx.user_id === user?.id && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2 rounded-full">
+                                  <MoreVertical size={14} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="apple-card">
+                                <DropdownMenuItem className="gap-2" onClick={() => handleEditClick(tx)}>
+                                  <Edit size={14} />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="gap-2 text-destructive" 
+                                  onClick={() => {
+                                    setTxToDelete(tx.id);
+                                    setIsDeleteModalOpen(true);
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                           <p className={`text-sm font-black mt-1 ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                             {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
