@@ -118,6 +118,11 @@ function Dashboard() {
   const navigate = useNavigate();
   const [selectedTx, setSelectedTx] = useState<any>(null);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const scrollToTransactions = () => {
     const el = document.getElementById('recent-transactions');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
