@@ -45,7 +45,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
 import { parseTransactionFromText, type ParsedTransaction } from "@/lib/transactions.functions";
-import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, AVATARS, type Transaction } from "@/hooks/use-finance-store";
+import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, type Transaction } from "@/hooks/use-finance-store";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -89,7 +89,7 @@ const itemVariants = {
 
 function TransactionsPage() {
   const [smartInput, setSmartInput] = useState("");
-  const { transactions, addTransaction } = useFinanceStore();
+  const { transactions, addTransaction, userAvatars } = useFinanceStore();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
@@ -263,7 +263,7 @@ function TransactionsPage() {
                   {transactions.map((tx) => {
                     const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                     const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                    const avatarUrl = AVATARS[tx.responsible] || AVATARS.Jorge;
+                    const avatarUrl = userAvatars[tx.responsible as keyof typeof userAvatars];
                     
                     return (
                       <TableRow key={tx.id} className="group border-b border-muted/50 hover:bg-muted/10 transition-colors">

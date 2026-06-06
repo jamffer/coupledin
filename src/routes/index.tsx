@@ -53,7 +53,7 @@ import {
   Legend
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
-import { useFinanceStore, CATEGORY_ICONS, AVATARS } from "@/hooks/use-finance-store";
+import { useFinanceStore, CATEGORY_ICONS } from "@/hooks/use-finance-store";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -95,7 +95,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [selectedTx, setSelectedTx] = useState<any>(null);
-  const { transactions } = useFinanceStore();
+  const { transactions, userAvatars } = useFinanceStore();
   
   // Estados para os painéis laterais
   const [activeSheet, setActiveSheet] = useState<'balance' | 'income' | 'expenses' | 'credit' | null>(null);
@@ -189,7 +189,7 @@ function Dashboard() {
 
   const renderTransactionItem = (tx: any) => {
     const Icon = CATEGORY_ICONS[tx.category] || HelpCircle;
-    const avatar = AVATARS[tx.responsible];
+    const avatar = userAvatars[tx.responsible as keyof typeof userAvatars];
 
     return (
       <div 
@@ -546,7 +546,7 @@ function Dashboard() {
                 <div className="apple-interactive p-4 dark:bg-black/20">
                   <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Responsável</p>
                   <div className="flex items-center gap-2">
-                    <img src={AVATARS[selectedTx.responsible]} alt={selectedTx.responsible} className="w-6 h-6 rounded-full" />
+                    <img src={userAvatars[selectedTx.responsible as keyof typeof userAvatars]} alt={selectedTx.responsible} className="w-6 h-6 rounded-full" />
                     <p className="font-bold">{selectedTx.responsible}</p>
                   </div>
                 </div>

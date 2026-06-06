@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useFinanceStore, CATEGORY_ICONS, AVATARS } from "@/hooks/use-finance-store";
+import { useFinanceStore, CATEGORY_ICONS } from "@/hooks/use-finance-store";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
