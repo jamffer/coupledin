@@ -164,16 +164,7 @@ function Dashboard() {
           table: "transactions",
           filter: `couple_id=eq.${profile.couple_id}`
         }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newTx = payload.new as any;
-            setTransactions((prev) => [newTx, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedTx = payload.new as any;
-            setTransactions((prev) => prev.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = payload.old.id;
-            setTransactions((prev) => prev.filter(tx => tx.id !== deletedId));
-          }
+          fetchTransactions(profile.couple_id);
         })
         .subscribe();
 
