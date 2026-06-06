@@ -199,8 +199,8 @@ function ConfiguracoesPage() {
                         <Input 
                           id="incomeA" 
                           type="number" 
-                          value={incomeA} 
-                          onChange={(e) => setIncomeA(Number(e.target.value))}
+                          value={incomeJorge} 
+                          onChange={(e) => setIncomes(Number(e.target.value), incomeBeatriz)}
                           className="pl-10 h-12 rounded-xl border-muted focus:border-primary/50"
                         />
                       </div>
