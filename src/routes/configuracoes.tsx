@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -150,10 +151,12 @@ function ConfiguracoesPage() {
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="flex -space-x-6">
-                   <Avatar className="w-24 h-24 border-4 border-white dark:border-[#1A1A1A] shadow-xl ring-1 ring-muted/20">
-                    <AvatarImage src={profile?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} />
-                    <AvatarFallback>{profile?.display_name?.substring(0, 2).toUpperCase() || "ME"}</AvatarFallback>
-                  </Avatar>
+                   <ProfileAvatar 
+                     url={profile?.avatar_url} 
+                     name={profile?.display_name || "ME"} 
+                     userId={user?.id}
+                     onUpdate={(url) => setProfile((prev: any) => ({ ...prev, avatar_url: url }))}
+                   />
                   <div className="w-24 h-24 rounded-full apple-glass border-4 border-white dark:border-[#1A1A1A] flex items-center justify-center relative z-10">
                     <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center text-primary">
                       <Heart size={32} className="fill-primary" />
