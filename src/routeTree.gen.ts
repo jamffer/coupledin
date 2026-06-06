@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TransacoesRouteImport } from './routes/transacoes'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as MetasRouteImport } from './routes/metas'
 import { Route as InvestimentosRouteImport } from './routes/investimentos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CartoesRouteImport } from './routes/cartoes'
@@ -25,6 +26,11 @@ const TransacoesRoute = TransacoesRouteImport.update({
 const RelatoriosRoute = RelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetasRoute = MetasRouteImport.update({
+  id: '/metas',
+  path: '/metas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvestimentosRoute = InvestimentosRouteImport.update({
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/cartoes': typeof CartoesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/investimentos': typeof InvestimentosRoute
+  '/metas': typeof MetasRoute
   '/relatorios': typeof RelatoriosRoute
   '/transacoes': typeof TransacoesRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/cartoes': typeof CartoesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/investimentos': typeof InvestimentosRoute
+  '/metas': typeof MetasRoute
   '/relatorios': typeof RelatoriosRoute
   '/transacoes': typeof TransacoesRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/cartoes': typeof CartoesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/investimentos': typeof InvestimentosRoute
+  '/metas': typeof MetasRoute
   '/relatorios': typeof RelatoriosRoute
   '/transacoes': typeof TransacoesRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/cartoes'
     | '/configuracoes'
     | '/investimentos'
+    | '/metas'
     | '/relatorios'
     | '/transacoes'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/cartoes'
     | '/configuracoes'
     | '/investimentos'
+    | '/metas'
     | '/relatorios'
     | '/transacoes'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/cartoes'
     | '/configuracoes'
     | '/investimentos'
+    | '/metas'
     | '/relatorios'
     | '/transacoes'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   CartoesRoute: typeof CartoesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   InvestimentosRoute: typeof InvestimentosRoute
+  MetasRoute: typeof MetasRoute
   RelatoriosRoute: typeof RelatoriosRoute
   TransacoesRoute: typeof TransacoesRoute
 }
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios'
       fullPath: '/relatorios'
       preLoaderRoute: typeof RelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/metas': {
+      id: '/metas'
+      path: '/metas'
+      fullPath: '/metas'
+      preLoaderRoute: typeof MetasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/investimentos': {
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartoesRoute: CartoesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   InvestimentosRoute: InvestimentosRoute,
+  MetasRoute: MetasRoute,
   RelatoriosRoute: RelatoriosRoute,
   TransacoesRoute: TransacoesRoute,
 }
