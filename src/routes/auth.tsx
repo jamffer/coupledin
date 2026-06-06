@@ -189,9 +189,21 @@ function AuthPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!name.trim()) {
+      toast.error("Por favor, informe seu nome primeiro.");
+      return;
+    }
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/auth",
+        options: {
+          queryParams: {
+            prompt: 'select_account'
+          },
+          data: {
+            full_name: name
+          }
+        }
       });
       if (result.error) throw result.error;
     } catch (error: any) {
