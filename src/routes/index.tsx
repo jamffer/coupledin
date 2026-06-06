@@ -368,10 +368,11 @@ function Dashboard() {
       </motion.div>
 
       {/* Detail Modal for Transactions */}
-      <Dialog open={!!selectedTx} onOpenChange={(open) => !open && setSelectedTx(null)}>
+      <Dialog open={!!selectedTx} onOpenChange={(open: boolean) => !open && setSelectedTx(null)}>
         <DialogContent className="apple-card dark:bg-[#1A1A1A] border-border/40">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Detalhes da Transação</DialogTitle>
+            <DialogDescription className="sr-only">Visualização detalhada do gasto selecionado</DialogDescription>
           </DialogHeader>
           {selectedTx && (
             <div className="space-y-6 py-4">
