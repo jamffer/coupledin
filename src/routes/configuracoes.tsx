@@ -277,24 +277,24 @@ function ConfiguracoesPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-xl transition-colors group cursor-pointer">
+                <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold group-hover:text-primary transition-colors">Notificações de Fatura</p>
-                    <p className="text-xs text-muted-foreground italic">Lembrar dias antes do vencimento.</p>
+                    <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Lembrar dias antes do vencimento.</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
-                <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-xl transition-colors group cursor-pointer">
+                <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold group-hover:text-primary transition-colors">Alertas de Orçamento</p>
-                    <p className="text-xs text-muted-foreground italic">Avisar quando passar de 80% do limite.</p>
+                    <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Avisar quando passar de 80% do limite.</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
-                <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-xl transition-colors group cursor-pointer">
+                <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold group-hover:text-primary transition-colors">Relatório Semanal</p>
-                    <p className="text-xs text-muted-foreground italic">Resumo por e-mail toda segunda-feira.</p>
+                    <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Resumo por e-mail toda segunda-feira.</p>
                   </div>
                   <Switch />
                 </div>
