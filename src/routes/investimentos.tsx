@@ -154,8 +154,9 @@ function InvestimentosPage() {
     toast.success("Preços atualizados!");
   };
 
-  const totalPatrimony = [...acoes, ...fiis, ...cripto].reduce((acc, curr) => acc + (curr.qty * curr.currentPrice), 0);
-  const totalCost = [...acoes, ...fiis, ...cripto].reduce((acc, curr) => acc + (curr.qty * curr.avgPrice), 0);
+  const totalPatrimony = [...acoes, ...fiis, ...cripto].reduce((acc, curr) => acc + (curr.qty * (curr.currentPrice || 0)), 0);
+  const totalCost = [...acoes, ...fiis, ...cripto].reduce((acc, curr) => acc + (curr.qty * (curr.avgPrice || 0)), 0);
+
   const totalProfit = totalPatrimony - totalCost;
 
   const hasInvestments = acoes.length > 0 || fiis.length > 0 || cripto.length > 0;
