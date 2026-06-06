@@ -25,6 +25,7 @@ import {
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useFinanceStore } from "@/hooks/use-finance-store";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -52,24 +53,23 @@ const itemVariants = {
 };
 
 function ConfiguracoesPage() {
+  const { incomeJorge, incomeBeatriz, setIncomes } = useFinanceStore();
   const [divisionModel, setDivisionModel] = useState("proportional");
-  const [incomeA, setIncomeA] = useState(6000);
-  const [incomeB, setIncomeB] = useState(4000);
   const [percentageA, setPercentageA] = useState(60);
   const [percentageB, setPercentageB] = useState(40);
 
   useEffect(() => {
     if (divisionModel === "proportional") {
-      const total = incomeA + incomeB;
+      const total = incomeJorge + incomeBeatriz;
       if (total > 0) {
-        setPercentageA(Math.round((incomeA / total) * 100));
-        setPercentageB(Math.round((incomeB / total) * 100));
+        setPercentageA(Math.round((incomeJorge / total) * 100));
+        setPercentageB(Math.round((incomeBeatriz / total) * 100));
       }
     } else {
       setPercentageA(50);
       setPercentageB(50);
     }
-  }, [divisionModel, incomeA, incomeB]);
+  }, [divisionModel, incomeJorge, incomeBeatriz]);
 
   return (
     <DashboardLayout>
@@ -199,8 +199,8 @@ function ConfiguracoesPage() {
                         <Input 
                           id="incomeA" 
                           type="number" 
-                          value={incomeA} 
-                          onChange={(e) => setIncomeA(Number(e.target.value))}
+                          value={incomeJorge} 
+                          onChange={(e) => setIncomes(Number(e.target.value), incomeBeatriz)}
                           className="pl-10 h-12 rounded-xl border-muted focus:border-primary/50"
                         />
                       </div>
@@ -212,8 +212,8 @@ function ConfiguracoesPage() {
                         <Input 
                           id="incomeB" 
                           type="number" 
-                          value={incomeB} 
-                          onChange={(e) => setIncomeB(Number(e.target.value))}
+                          value={incomeBeatriz} 
+                          onChange={(e) => setIncomes(incomeJorge, Number(e.target.value))}
                           className="pl-10 h-12 rounded-xl border-muted focus:border-primary/50"
                         />
                       </div>

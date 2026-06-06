@@ -33,10 +33,12 @@ import {
   Coffee,
   Car,
   Home,
+  HelpCircle,
   Smartphone
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useFinanceStore, CATEGORY_ICONS, AVATARS } from "@/hooks/use-finance-store";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
@@ -48,27 +50,11 @@ export const Route = createFileRoute("/relatorios")({
   component: RelatoriosPage,
 });
 
-const categoryComparisonData = [
-  { category: "Alimentação", Jorge: 1200, Beatriz: 850 },
-  { category: "Moradia", Jorge: 1500, Beatriz: 1500 },
-  { category: "Transporte", Jorge: 450, Beatriz: 600 },
-  { category: "Lazer", Jorge: 300, Beatriz: 550 },
-  { category: "Serviços", Jorge: 200, Beatriz: 180 },
-];
-
 const weeklyEvolutionData = [
   { week: "Semana 1", atual: 1200, anterior: 1100 },
   { week: "Semana 2", atual: 950, anterior: 1300 },
   { week: "Semana 3", atual: 1400, anterior: 1050 },
   { week: "Semana 4", atual: 800, anterior: 1200 },
-];
-
-const topExpenses = [
-  { id: 1, description: "Aluguel Apartamento", amount: 3000.00, category: "Moradia", user: "Jorge", date: "01 Jun", icon: Home },
-  { id: 2, description: "Supermercado Semanal", amount: 650.40, category: "Alimentação", user: "Beatriz", date: "15 Jun", icon: ShoppingBag },
-  { id: 3, description: "Restaurante Comemoração", amount: 380.00, category: "Lazer", user: "Beatriz", date: "12 Jun", icon: Coffee },
-  { id: 4, description: "Conserto Geladeira", amount: 350.00, category: "Moradia", user: "Jorge", date: "18 Jun", icon: AlertCircle },
-  { id: 5, description: "Posto de Gasolina", amount: 280.00, category: "Transporte", user: "Jorge", date: "20 Jun", icon: Car },
 ];
 
 const containerVariants = {
@@ -87,7 +73,42 @@ const itemVariants = {
 };
 
 function RelatoriosPage() {
-  const settlementAmount = 250.00;
+  const { transactions, incomeJorge, incomeBeatriz } = useFinanceStore();
+
+  const categories = ["Alimentação", "Moradia", "Transporte", "Lazer", "Saúde", "Outros"];
+  
+  const categoryComparisonData = categories.map(cat => ({
+    category: cat,
+    Jorge: Math.abs(transactions.filter(t => t.category === cat && t.responsible === "Jorge" && t.amount < 0).reduce((acc, t) => acc + t.amount, 0)),
+    Beatriz: Math.abs(transactions.filter(t => t.category === cat && t.responsible === "Beatriz" && t.amount < 0).reduce((acc, t) => acc + t.amount, 0)),
+  }));
+
+  const topExpenses = [...transactions]
+    .filter(t => t.amount < 0)
+    .sort((a, b) => a.amount - b.amount)
+    .slice(0, 5);
+
+  // Lógica de Acerto de Contas
+  const jointExpenses = transactions.filter(t => t.division !== "Individual" && t.amount < 0);
+  const totalJoint = jointExpenses.reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  
+  // Proporção configurada
+  const totalIncome = incomeJorge + incomeBeatriz;
+  const jorgeShare = incomeJorge / totalIncome;
+  const beatrizShare = incomeBeatriz / totalIncome;
+  
+  const jorgeShouldPay = jointExpenses.reduce((acc, t) => {
+    const share = t.division === "Conjunta 50/50" ? 0.5 : jorgeShare;
+    return acc + (Math.abs(t.amount) * share);
+  }, 0);
+  
+  const beatrizShouldPay = totalJoint - jorgeShouldPay;
+  
+  const jorgePaid = jointExpenses.filter(t => t.responsible === "Jorge").reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const beatrizPaid = totalJoint - jorgePaid;
+  
+  const diff = jorgePaid - jorgeShouldPay; // Se positivo, Jorge pagou a mais. Se negativo, Jorge deve.
+  const settlementAmount = Math.abs(diff);
 
   return (
     <DashboardLayout>
@@ -104,10 +125,19 @@ function RelatoriosPage() {
 
         {/* Section 1: Acerto de Contas */}
         <motion.div variants={itemVariants}>
-          <Card className="border-none shadow-md bg-white overflow-hidden ring-1 ring-primary/5">
-            <CardHeader className="bg-primary/5 pb-8">
+          <Card className={cn(
+            "border-none shadow-md overflow-hidden ring-1 ring-primary/5 transition-colors duration-500",
+            diff > 1 ? "bg-emerald-50/50" : diff < -1 ? "bg-rose-50/50" : "bg-white"
+          )}>
+            <CardHeader className={cn(
+              "pb-8 transition-colors",
+              diff > 1 ? "bg-emerald-500/5" : diff < -1 ? "bg-rose-500/5" : "bg-primary/5"
+            )}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                <div className={cn(
+                  "p-2 rounded-lg transition-colors",
+                  diff > 1 ? "bg-emerald-100 text-emerald-600" : diff < -1 ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary"
+                )}>
                   <ArrowRightLeft size={20} />
                 </div>
                 <CardTitle className="text-xl">Fechamento de Junho</CardTitle>
@@ -116,29 +146,45 @@ function RelatoriosPage() {
             </CardHeader>
             <CardContent className="-mt-4">
               <div className="bg-white rounded-2xl shadow-sm border border-border/40 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-6 text-center md:text-left">
                   <div className="flex -space-x-4">
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
+                      <AvatarImage src={AVATARS.Jorge} />
                       <AvatarFallback>JO</AvatarFallback>
                     </Avatar>
-                    <div className="w-16 h-16 rounded-full bg-primary/10 border-4 border-white shadow-lg flex items-center justify-center text-primary relative z-10">
-                      <ArrowRightLeft size={24} />
+                    <div className={cn(
+                      "w-16 h-16 rounded-full border-4 border-white shadow-lg flex items-center justify-center relative z-10 transition-colors",
+                      diff > 1 ? "bg-emerald-100 text-emerald-600" : diff < -1 ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary"
+                    )}>
+                      <ArrowRightLeft size={24} className={cn(diff < -1 && "rotate-180")} />
                     </div>
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
+                      <AvatarImage src={AVATARS.Beatriz} />
                       <AvatarFallback>BE</AvatarFallback>
                     </Avatar>
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-xl font-bold tracking-tight">Jorge, você precisa transferir</h3>
-                    <p className="text-3xl font-black text-primary">R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    <p className="text-sm text-muted-foreground">para a Beatriz para igualar os gastos conjuntos.</p>
+                    {Math.abs(diff) < 1 ? (
+                      <h3 className="text-xl font-bold tracking-tight">Tudo quite! Vocês estão empatados.</h3>
+                    ) : (
+                      <>
+                        <h3 className="text-xl font-bold tracking-tight">
+                          {diff < 0 ? "Jorge, você deve transferir" : "Beatriz, você deve transferir"}
+                        </h3>
+                        <p className={cn(
+                          "text-3xl font-black",
+                          diff < 0 ? "text-rose-600" : "text-emerald-600"
+                        )}>
+                          R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-sm text-muted-foreground">para {diff < 0 ? "Beatriz" : "o Jorge"} para igualar os gastos conjutos.</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                  <Button className="rounded-full gap-2 px-6 h-12 font-bold shadow-md hover:shadow-lg transition-all">
+                  <Button className="rounded-full gap-2 px-6 h-12 font-bold shadow-md hover:shadow-lg transition-all" disabled={Math.abs(diff) < 1}>
                     <CheckCircle2 size={18} />
                     Marcar como Resolvido
                   </Button>
@@ -218,30 +264,35 @@ function RelatoriosPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {topExpenses.map((expense) => (
-                      <TableRow key={expense.id} className="group border-b border-border/40 hover:bg-muted/10 transition-colors">
-                        <TableCell className="pl-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-muted rounded-xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                              <expense.icon size={16} />
+                    {topExpenses.map((expense) => {
+                      const CategoryIcon = CATEGORY_ICONS[expense.category] || HelpCircle;
+                      const avatarUrl = AVATARS[expense.responsible] || AVATARS.Jorge;
+
+                      return (
+                        <TableRow key={expense.id} className="group border-b border-border/40 hover:bg-muted/10 transition-colors">
+                          <TableCell className="pl-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-muted rounded-xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                <CategoryIcon size={16} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold truncate leading-tight">{expense.description}</p>
+                                <p className="text-[10px] text-muted-foreground">{expense.date} • {expense.category}</p>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold truncate leading-tight">{expense.description}</p>
-                              <p className="text-[10px] text-muted-foreground">{expense.date} • {expense.category}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Avatar className="w-6 h-6 inline-block ring-1 ring-muted/20">
-                            <AvatarImage src={expense.user === "Jorge" ? "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" : "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella"} />
-                            <AvatarFallback>{expense.user[0]}</AvatarFallback>
-                          </Avatar>
-                        </TableCell>
-                        <TableCell className="pr-6 text-right font-black text-sm">
-                          R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Avatar className="w-6 h-6 inline-block ring-1 ring-muted/20">
+                              <AvatarImage src={avatarUrl} />
+                              <AvatarFallback>{expense.responsible[0]}</AvatarFallback>
+                            </Avatar>
+                          </TableCell>
+                          <TableCell className="pr-6 text-right font-black text-sm">
+                            R$ {Math.abs(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>

@@ -8,17 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Sparkles, 
   Filter, 
-  ShoppingBag,
-  Coffee,
-  Car,
-  Home,
-  Heart,
   PlusCircle,
   TrendingUp,
   HelpCircle,
-  User,
   Users,
-  Split,
   Loader2,
 } from "lucide-react";
 import { 
@@ -52,6 +45,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
 import { parseTransactionFromText, type ParsedTransaction } from "@/lib/transactions.functions";
+import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, AVATARS, type Transaction } from "@/hooks/use-finance-store";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -63,41 +57,6 @@ export const Route = createFileRoute("/transacoes")({
   component: TransactionsPage,
 });
 
-type Transaction = {
-  id: number;
-  date: string;
-  description: string;
-  category: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  amount: number;
-  type: string;
-  responsible: string;
-  avatar: string;
-  division: string;
-  divisionIcon: React.ComponentType<{ size?: number; className?: string }>;
-};
-
-const CATEGORY_ICONS: Record<string, Transaction["icon"]> = {
-  "Alimentação": ShoppingBag,
-  "Lazer": Coffee,
-  "Transporte": Car,
-  "Moradia": Home,
-  "Saúde": Heart,
-  "Renda": TrendingUp,
-  "Outros": HelpCircle,
-};
-
-const DIVISION_ICONS: Record<string, Transaction["divisionIcon"]> = {
-  "Conjunta 50/50": Users,
-  "Proporcional": Split,
-  "Individual": User,
-};
-
-const AVATARS: Record<string, string> = {
-  Felipe: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-  Beatriz: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
-};
-
 function formatDate(iso: string): string {
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const [y, m, d] = iso.split("-").map(Number);
@@ -105,88 +64,16 @@ function formatDate(iso: string): string {
   return `${String(d).padStart(2, "0")} ${months[m - 1]}, ${y}`;
 }
 
-const initialTransactions: Transaction[] = [
-  {
-    id: 1,
-    date: "05 Jun, 2024",
-    description: "Supermercado Pão de Açúcar",
-    category: "Alimentação",
-    icon: ShoppingBag,
-    amount: -350.20,
-    type: "Débito",
-    responsible: "Felipe",
-    avatar: AVATARS.Felipe,
-    division: "Conjunta 50/50",
-    divisionIcon: Users,
-  },
-  {
-    id: 2,
-    date: "05 Jun, 2024",
-    description: "Assinatura Netflix",
-    category: "Lazer",
-    icon: Coffee,
-    amount: -55.90,
-    type: "Crédito",
-    responsible: "Beatriz",
-    avatar: AVATARS.Beatriz,
-    division: "Proporcional",
-    divisionIcon: Split,
-  },
-  {
-    id: 3,
-    date: "04 Jun, 2024",
-    description: "Salário Empresa X",
-    category: "Renda",
-    icon: TrendingUp,
-    amount: 5200.00,
-    type: "Entrada",
-    responsible: "Beatriz",
-    avatar: AVATARS.Beatriz,
-    division: "Individual",
-    divisionIcon: User,
-  },
-  {
-    id: 4,
-    date: "03 Jun, 2024",
-    description: "Manutenção Carro",
-    category: "Transporte",
-    icon: Car,
-    amount: -450.00,
-    type: "Crédito",
-    responsible: "Felipe",
-    avatar: AVATARS.Felipe,
-    division: "Conjunta 50/50",
-    divisionIcon: Users,
-  },
-  {
-    id: 5,
-    date: "02 Jun, 2024",
-    description: "Aluguel Apartamento",
-    category: "Moradia",
-    icon: Home,
-    amount: -2500.00,
-    type: "Débito",
-    responsible: "Beatriz",
-    avatar: AVATARS.Beatriz,
-    division: "Proporcional",
-    divisionIcon: Split,
-  },
-];
-
 function buildTransaction(parsed: ParsedTransaction, id: number): Transaction {
-  const sign = parsed.type === "Entrada" ? 1 : -1;
   return {
     id,
     date: formatDate(parsed.date),
     description: parsed.description,
     category: parsed.category,
-    icon: CATEGORY_ICONS[parsed.category] ?? HelpCircle,
-    amount: sign * Math.abs(parsed.amount),
+    amount: (parsed.type === "Entrada" ? 1 : -1) * Math.abs(parsed.amount),
     type: parsed.type,
-    responsible: parsed.responsible,
-    avatar: AVATARS[parsed.responsible] ?? AVATARS.Felipe,
-    division: parsed.division,
-    divisionIcon: DIVISION_ICONS[parsed.division] ?? Users,
+    responsible: parsed.responsible as "Jorge" | "Beatriz",
+    division: parsed.division as any,
   };
 }
 
@@ -202,7 +89,7 @@ const itemVariants = {
 
 function TransactionsPage() {
   const [smartInput, setSmartInput] = useState("");
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const { transactions, addTransaction } = useFinanceStore();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
@@ -229,7 +116,7 @@ function TransactionsPage() {
   const handleConfirm = () => {
     if (!parsedData) return;
     const tx = buildTransaction(parsedData, Date.now());
-    setTransactions((prev) => [tx, ...prev]);
+    addTransaction(tx);
     setSmartInput("");
     setIsConfirmModalOpen(false);
     setParsedData(null);
@@ -373,91 +260,103 @@ function TransactionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map((tx) => (
-                    <TableRow key={tx.id} className="group border-b border-muted/50 hover:bg-muted/10 transition-colors">
-                      <TableCell className="py-4 pl-8">
-                        <span className="text-sm text-muted-foreground font-medium">{tx.date}</span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="text-sm font-bold text-foreground">{tx.description}</span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex justify-center">
-                          <Badge variant="secondary" className="bg-muted text-muted-foreground font-semibold px-3 py-1 rounded-full border-none gap-2">
-                            <tx.icon size={14} />
-                            {tx.category}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 text-right">
-                        <span className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex justify-center">
-                          <Avatar className="w-8 h-8 border-2 border-white shadow-sm ring-1 ring-muted/50">
-                            <AvatarImage src={tx.avatar} />
-                            <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
-                          </Avatar>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 pr-8">
-                        <div className="flex justify-center">
-                          <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tighter rounded-lg border-muted/50 bg-white shadow-xs gap-1 py-1">
-                            <tx.divisionIcon size={12} className="text-primary" />
-                            {tx.division}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {transactions.map((tx) => {
+                    const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
+                    const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
+                    const avatarUrl = AVATARS[tx.responsible] || AVATARS.Jorge;
+                    
+                    return (
+                      <TableRow key={tx.id} className="group border-b border-muted/50 hover:bg-muted/10 transition-colors">
+                        <TableCell className="py-4 pl-8">
+                          <span className="text-sm text-muted-foreground font-medium">{tx.date}</span>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <span className="text-sm font-bold text-foreground">{tx.description}</span>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="flex justify-center">
+                            <Badge variant="secondary" className="bg-muted text-muted-foreground font-semibold px-3 py-1 rounded-full border-none gap-2">
+                              <CategoryIcon size={14} />
+                              {tx.category}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 text-right">
+                          <span className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                            {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="flex justify-center">
+                            <Avatar className="w-8 h-8 border-2 border-white shadow-sm ring-1 ring-muted/50">
+                              <AvatarImage src={avatarUrl} />
+                              <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
+                            </Avatar>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 pr-8">
+                          <div className="flex justify-center">
+                            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tighter rounded-lg border-muted/50 bg-white shadow-xs gap-1 py-1">
+                              <DivisionIcon size={12} className="text-primary" />
+                              {tx.division}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
 
             {/* Mobile View */}
             <div className="md:hidden space-y-4">
-              {transactions.map((tx) => (
-                <Card key={tx.id} className="border-none shadow-sm bg-white overflow-hidden group">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-muted rounded-xl text-muted-foreground">
-                          <tx.icon size={18} />
+              {transactions.map((tx) => {
+                const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
+                const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
+                const avatarUrl = AVATARS[tx.responsible] || AVATARS.Jorge;
+                
+                return (
+                  <Card key={tx.id} className="border-none shadow-sm bg-white overflow-hidden group">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-muted rounded-xl text-muted-foreground">
+                            <CategoryIcon size={18} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold">{tx.description}</p>
+                            <p className="text-[10px] text-muted-foreground">{tx.date} • {tx.type}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold">{tx.description}</p>
-                          <p className="text-[10px] text-muted-foreground">{tx.date} • {tx.type}</p>
+                        <div className="text-right">
+                          <p className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                            {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                          <Badge variant="outline" className="text-[9px] py-0 h-4 mt-1">
+                            {tx.category}
+                          </Badge>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <Badge variant="outline" className="text-[9px] py-0 h-4 mt-1">
-                          {tx.category}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 pt-4 border-t border-muted/50 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-6 h-6 border shadow-sm">
-                          <AvatarImage src={tx.avatar} />
-                          <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs font-medium text-muted-foreground">{tx.responsible}</span>
                       </div>
                       
-                      <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-lg">
-                        <tx.divisionIcon size={12} className="text-primary" />
-                        <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">{tx.division}</span>
+                      <div className="mt-4 pt-4 border-t border-muted/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-6 h-6 border shadow-sm">
+                            <AvatarImage src={avatarUrl} />
+                            <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs font-medium text-muted-foreground">{tx.responsible}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-lg">
+                          <DivisionIcon size={12} className="text-primary" />
+                          <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">{tx.division}</span>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </motion.div>
         </div>
