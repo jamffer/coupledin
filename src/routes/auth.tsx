@@ -27,6 +27,13 @@ import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 
+import { z } from "zod";
+
+const inviteCodeSchema = z.string()
+  .min(6, "O código deve ter pelo menos 6 caracteres")
+  .max(12, "O código é muito longo")
+  .regex(/^[A-Z0-9]+$/, "O código deve conter apenas letras e números");
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
@@ -163,11 +170,17 @@ function AuthPage() {
   };
 
   const handleCreateCouple = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     setStep(OnboardingStep.CREATING_SPACE);
     const toastId = toast.loading("Criando seu espaço...", { description: "Preparando o ambiente..." });
+    
     try {
-      const { data: coupleId, error: createError } = await supabase
+      const createPromise = supabase
         .rpc("create_couple", { _name: `${name}'s Couple` });
+
+      const { data: coupleId, error: createError } = await createPromise;
 
       if (createError) throw createError;
 
@@ -188,20 +201,50 @@ function AuthPage() {
       }, 1500);
     } catch (error: any) {
       console.error("Error creating space:", error);
-      setOnboardingError("Não conseguimos criar seu espaço. Verifique sua conexão e tente novamente.");
+      const isTimeout = error.name === 'AbortError';
+      const errorMessage = isTimeout 
+        ? "A conexão expirou. Tente novamente em um local com sinal melhor."
+        : "Não conseguimos criar seu espaço. Verifique sua conexão e tente novamente.";
+      
+      setOnboardingError(errorMessage);
       toast.error("Erro ao criar espaço", { id: toastId, description: error.message });
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 
   const handleJoinCouple = async () => {
     if (!inviteCodeInput) return;
+
+    // Client-side validation with Zod
+    const validation = inviteCodeSchema.safeParse(inviteCodeInput.toUpperCase());
+    if (!validation.success) {
+      toast.error("Código inválido", { description: validation.error.issues[0].message });
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     setStep(OnboardingStep.VALIDATING);
     const toastId = toast.loading("Verificando convite...", { description: "Buscando o espaço do seu parceiro..." });
+    
     try {
-      const { data: coupleId, error: joinError } = await supabase
+      const joinPromise = supabase
         .rpc("join_couple_with_invite", { _invite_code: inviteCodeInput.toUpperCase() });
 
-      if (joinError) throw joinError;
+      const { data: coupleId, error: joinError } = await joinPromise;
+
+      if (joinError) {
+        // Map backend errors to friendly messages
+        let friendlyMessage = "Ocorreu um erro ao entrar no espaço.";
+        if (joinError.message.includes('INVITE_CODE_NOT_FOUND')) {
+          friendlyMessage = "Código de convite não encontrado ou já utilizado.";
+        } else if (joinError.message.includes('COUPLE_SPACE_FULL')) {
+          friendlyMessage = "Este espaço já está completo (limite de 2 pessoas).";
+        }
+        throw new Error(friendlyMessage);
+      }
 
       setStep(OnboardingStep.CONNECTING_REALTIME);
       toast.loading("Conectando ao banco de dados...", { id: toastId });
@@ -214,8 +257,15 @@ function AuthPage() {
       }, 1000);
     } catch (error: any) {
       console.error("Error joining space:", error);
-      setOnboardingError("Não conseguimos conectar a este espaço. Verifique o código e tente novamente.");
+      const isTimeout = error.name === 'AbortError';
+      const errorMessage = isTimeout 
+        ? "A conexão expirou (timeout de 10s). Verifique sua internet."
+        : (error.message || "Não conseguimos conectar a este espaço. Verifique o código e tente novamente.");
+      
+      setOnboardingError(errorMessage);
       toast.error("Erro ao entrar", { id: toastId, description: error.message });
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 
