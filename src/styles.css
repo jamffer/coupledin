@@ -95,13 +95,13 @@
   --chart-3: #94C2DA;
   --chart-4: #E84797;
   --chart-5: #E7A0CC;
-  --sidebar: oklch(1 0 0);
+  --sidebar: #FFFFFF;
   --sidebar-foreground: #161616;
   --sidebar-primary: #203F9A;
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: #EFE8E0;
   --sidebar-accent-foreground: #203F9A;
-  --sidebar-border: #EFE8E0;
+  --sidebar-border: rgba(0, 0, 0, 0.1);
   --sidebar-ring: #203F9A;
 }
 
