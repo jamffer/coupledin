@@ -81,20 +81,26 @@ export function AppSidebar() {
 export function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#fcfbf8]">
+      <div className="min-h-screen flex w-full bg-white relative">
+        {/* Apple-style background gradient that follows scroll */}
+        <div className="fixed inset-0 pointer-events-none z-0">
+          <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-white to-rose-500/5 opacity-50" />
+          <div className="absolute top-0 left-0 right-0 h-screen bg-linear-to-b from-white via-transparent to-transparent" />
+        </div>
+
         <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-border/40 bg-white/50 backdrop-blur-md sticky top-0 z-10">
+        <div className="flex-1 flex flex-col min-w-0 relative z-10">
+          <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-border/10 bg-white/40 backdrop-blur-xl sticky top-0 z-20">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
               <div>
-                <h2 className="text-sm font-medium text-muted-foreground italic">Bom dia,</h2>
+                <h2 className="text-xs font-medium text-muted-foreground italic">Bom dia,</h2>
                 <h1 className="text-lg font-bold text-foreground">O casal preferido!</h1>
               </div>
             </div>
             
             <div className="flex items-center gap-3 md:gap-6">
-              <Button size="sm" className="hidden md:flex gap-2 rounded-full shadow-sm hover:shadow-md transition-all">
+              <Button size="sm" className="hidden md:flex gap-2 rounded-full shadow-sm hover:shadow-md transition-all bg-primary/80 backdrop-blur-sm border border-white/20">
                 <PlusCircle size={18} />
                 Novo Registro
               </Button>
@@ -103,13 +109,13 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               </Button>
               
               <div className="flex -space-x-2">
-                <Avatar className="border-2 border-background w-8 h-8 md:w-10 md:h-10">
+                <Avatar className="border-2 border-white/50 w-8 h-8 md:w-10 md:h-10 shadow-sm">
                   <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
-                  <AvatarFallback>FE</AvatarFallback>
+                  <AvatarFallback>JO</AvatarFallback>
                 </Avatar>
-                <Avatar className="border-2 border-background w-8 h-8 md:w-10 md:h-10">
+                <Avatar className="border-2 border-white/50 w-8 h-8 md:w-10 md:h-10 shadow-sm">
                   <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
-                  <AvatarFallback>BE</AvatarFallback>
+                  <AvatarFallback>LI</AvatarFallback>
                 </Avatar>
               </div>
             </div>

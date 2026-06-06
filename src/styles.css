@@ -150,3 +150,17 @@
     color: var(--color-foreground);
   }
 }
+
+@layer components {
+  .apple-card {
+    @apply bg-white/40 backdrop-blur-xl border border-white/20 shadow-xs transition-all duration-300;
+  }
+  
+  .apple-card:hover {
+    @apply bg-white/60 shadow-md;
+  }
+  
+  .apple-button {
+    @apply bg-white/20 backdrop-blur-md border border-white/20 hover:bg-white/40 transition-all duration-300;
+  }
+}
