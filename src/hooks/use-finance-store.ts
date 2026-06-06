@@ -30,6 +30,9 @@ type FinanceStore = {
   incomeJorge: number;
   incomeLilian: number;
   setIncomes: (jorge: number, lilian: number) => void;
+  userNames: { Jorge: string; Lilian: string };
+  userAvatars: { Jorge: string; Lilian: string };
+  updateUserProfile: (user: "Jorge" | "Lilian", name: string, avatar: string) => void;
 };
 
 export const useFinanceStore = create<FinanceStore>()(
@@ -71,6 +74,15 @@ export const useFinanceStore = create<FinanceStore>()(
       incomeLilian: 4000,
       addTransaction: (tx) => set((state) => ({ transactions: [tx, ...state.transactions] })),
       setIncomes: (jorge, lilian) => set({ incomeJorge: jorge, incomeLilian: lilian }),
+      userNames: { Jorge: "Jorge", Lilian: "Lilian" },
+      userAvatars: { 
+        Jorge: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
+        Lilian: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" 
+      },
+      updateUserProfile: (user, name, avatar) => set((state) => ({
+        userNames: { ...state.userNames, [user]: name },
+        userAvatars: { ...state.userAvatars, [user]: avatar }
+      })),
     }),
     {
       name: "finance-storage",
@@ -94,7 +106,8 @@ export const DIVISION_ICONS: Record<string, any> = {
   "Individual": User,
 };
 
-export const AVATARS: Record<string, string> = {
+// Removendo AVATARS estáticos para usar os do store dinamicamente
+export const AVATARS_DEFAULT: Record<string, string> = {
   Jorge: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
   Lilian: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
 };
