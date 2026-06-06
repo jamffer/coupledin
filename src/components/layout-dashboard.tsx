@@ -208,10 +208,23 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             .then(({ data: partnerData }) => {
               setPartnerProfile(partnerData);
             });
+
+          supabase.rpc("get_my_invite_code").then(({ data: code }) => {
+            setInviteCode(code as string);
+          });
         }
       });
     }
   }, [user]);
+
+  const handleCopyCode = () => {
+    if (inviteCode) {
+      navigator.clipboard.writeText(inviteCode);
+      setCopied(true);
+      toast.success("Código copiado!");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleSaveName = async () => {
     if (!tempName.trim()) {
