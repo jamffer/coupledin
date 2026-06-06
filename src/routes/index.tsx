@@ -9,6 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { 
