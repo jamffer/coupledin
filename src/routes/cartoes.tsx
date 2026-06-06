@@ -17,7 +17,8 @@ import {
   MoreVertical,
   Edit,
   FastForward,
-  Plus
+  Plus,
+  Loader2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -66,6 +67,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
+import { AddCardModal } from "@/components/add-card-modal";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/cartoes")({
   head: () => ({
@@ -118,18 +122,50 @@ const itemVariants = {
 };
 
 function CartoesPage() {
-  const [cards, setCards] = useState<CardInfo[]>([]);
-  const [bills, setBills] = useState<Record<string, BillItem[]>>({});
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState("june");
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  const { data: cards = [], isLoading: isCardsLoading } = useQuery({
+    queryKey: ["credit_cards"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("credit_cards")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      return data.map(card => ({
+        id: card.id,
+        name: card.name,
+        lastDigits: card.last_digits || "0000",
+        brand: "Mastercard", // Fallback for now
+        color: card.color || "card-gradient-blue",
+        currentBill: 0, // Should be calculated from transactions
+        limitUsed: 0,   // Should be calculated from transactions
+        totalLimit: Number(card.total_limit),
+        type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
+        owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
+      }));
+    },
+    enabled: !!user,
+  });
+
+  const [bills, setBills] = useState<Record<string, BillItem[]>>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate({ to: "/auth" });
     }
   }, [user, authLoading]);
+
+  useEffect(() => {
+    if (cards.length > 0 && !selectedCardId) {
+      setSelectedCardId(cards[0].id);
+    }
+  }, [cards, selectedCardId]);
 
   const selectedCard = cards.find(c => c.id === selectedCardId);
   const currentBillItems = selectedCardId ? (bills[selectedCardId] || []) : [];
@@ -162,10 +198,7 @@ function CartoesPage() {
             <p className="text-muted-foreground italic">Gerencie seus limites e faturas.</p>
           </div>
           {cards.length > 0 && (
-             <Button className="rounded-full gap-2 shadow-sm">
-               <Plus size={16} />
-               Novo Cartão
-             </Button>
+             <AddCardModal />
           )}
         </div>
 
@@ -372,14 +405,24 @@ function CartoesPage() {
               </motion.div>
             )}
           </>
+        ) : isCardsLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
         ) : (
           <EmptyState 
             icon={CreditCard}
             title="Você ainda não cadastrou nenhum cartão"
             description="Organize seus limites e faturas em um só lugar."
             actionLabel="Adicionar Cartão"
-            onAction={() => toast.info("Funcionalidade de adicionar cartão em breve!")}
-          />
+            onAction={() => {}}
+          >
+            <AddCardModal>
+              <Button className="mt-4 apple-interactive rounded-xl px-8 shadow-lg shadow-primary/20 font-bold">
+                Adicionar Cartão
+              </Button>
+            </AddCardModal>
+          </EmptyState>
         )}
         </motion.div>
       </TooltipProvider>
