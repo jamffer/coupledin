@@ -29,7 +29,9 @@ import {
   PiggyBank,
   Heart,
   ChevronRight,
-  Info
+  Info,
+  ClipboardCopy,
+  Check
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -69,6 +71,16 @@ function ConfiguracoesPage() {
   const navigate = useNavigate();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = () => {
+    if (inviteCode) {
+      navigator.clipboard.writeText(inviteCode);
+      setCopied(true);
+      toast.success("Código copiado para a área de transferência!");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -160,6 +172,43 @@ function ConfiguracoesPage() {
                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Código: <span className="text-primary font-mono">{inviteCode}</span></p>
                     </div>
                   )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Invite Code Section */}
+        <motion.div variants={itemVariants}>
+          <Card className="apple-card overflow-hidden border-primary/20 bg-primary/5">
+            <CardContent className="p-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-1 text-center md:text-left">
+                  <h3 className="text-lg font-bold flex items-center gap-2 justify-center md:justify-start">
+                    <UserPlus size={20} className="text-primary" />
+                    Código de Convite do Casal
+                  </h3>
+                  <p className="text-sm text-muted-foreground italic">
+                    Compartilhe este código para conectar seu parceiro(a) ao seu espaço.
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-3 bg-white dark:bg-black/40 p-2 pl-6 rounded-2xl border border-primary/20 shadow-inner group">
+                  <span className="text-2xl font-black font-mono tracking-widest text-primary uppercase">
+                    {inviteCode || "••••••••"}
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-xl hover:bg-primary/10 transition-all active:scale-95"
+                    onClick={handleCopyCode}
+                  >
+                    {copied ? (
+                      <Check size={20} className="text-emerald-500" />
+                    ) : (
+                      <ClipboardCopy size={20} className="text-primary" />
+                    )}
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -398,15 +447,11 @@ function ConfiguracoesPage() {
                 </p>
               </div>
               <Button 
-                className="w-full h-12 rounded-xl font-bold" 
-                onClick={() => {
-                  if (inviteCode) {
-                    navigator.clipboard.writeText(inviteCode);
-                    toast.success("Código copiado!");
-                  }
-                }}
+                className="w-full h-12 rounded-xl font-bold gap-2" 
+                onClick={handleCopyCode}
               >
-                Copiar Código
+                {copied ? <Check size={20} /> : <ClipboardCopy size={20} />}
+                {copied ? "Copiado!" : "Copiar Código"}
               </Button>
             </div>
           </DialogContent>
