@@ -14,7 +14,8 @@ import {
   User as UserIcon,
   Check,
   AlertCircle,
-  Loader2
+  Loader2,
+  Copy
 } from "lucide-react";
 import { 
   Sidebar, 
