@@ -31,8 +31,10 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/cartoes")({
@@ -144,6 +146,14 @@ const itemVariants = {
 function CartoesPage() {
   const [selectedCardId, setSelectedCardId] = useState(mockCards[0].id);
   const [selectedMonth, setSelectedMonth] = useState("june");
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/auth" });
+    }
+  }, [user, authLoading]);
 
   const selectedCard = mockCards.find(c => c.id === selectedCardId)!;
   const currentBillItems = mockBills[selectedCardId] || [];
