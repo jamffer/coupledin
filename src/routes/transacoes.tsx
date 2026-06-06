@@ -67,6 +67,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { parseTransactionFromText, type ParsedTransaction } from "@/lib/transactions.functions";
 import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, type Transaction } from "@/hooks/use-finance-store";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -116,7 +117,54 @@ function TransactionsPage() {
   const [smartInput, setSmartInput] = useState("");
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars } = useFinanceStore();
+  const [profile, setProfile] = useState<any>(null);
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars, setTransactions } = useFinanceStore();
+
+  useEffect(() => {
+    if (user) {
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+        setProfile(data);
+      });
+    }
+  }, [user]);
+
+  // Sync transactions from Supabase
+  useEffect(() => {
+    if (profile?.couple_id) {
+      const fetchTransactions = async () => {
+        const { data, error } = await supabase
+          .from("transactions")
+          .select("*")
+          .eq("couple_id", profile.couple_id)
+          .order("date", { ascending: false });
+
+        if (!error && data) {
+          // Map snake_case from DB to camelCase in store if necessary, or ensure store uses same keys
+          // For now, let's assume they match or we adjust
+          setTransactions(data as any);
+        }
+      };
+
+      fetchTransactions();
+
+      // Subscription for real-time updates
+      const subscription = supabase
+        .channel("transactions-updates")
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "transactions",
+          filter: `couple_id=eq.${profile.couple_id}`
+        }, () => {
+          fetchTransactions();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(subscription);
+      };
+    }
+  }, [profile?.couple_id, setTransactions]);
 
   useEffect(() => {
     if (!authLoading && !user) {
