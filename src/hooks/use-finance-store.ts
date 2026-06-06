@@ -43,38 +43,7 @@ type FinanceStore = {
 export const useFinanceStore = create<FinanceStore>()(
   persist(
     (set) => ({
-      transactions: [
-        {
-          id: 1,
-          date: "05 Jun, 2024",
-          description: "Supermercado Pão de Açúcar",
-          category: "Alimentação",
-          amount: -350.20,
-          type: "Débito",
-          responsible: "Jorge",
-          division: "Conjunta 50/50",
-        },
-        {
-          id: 2,
-          date: "05 Jun, 2024",
-          description: "Assinatura Netflix",
-          category: "Lazer",
-          amount: -55.90,
-          type: "Crédito",
-          responsible: "Lilian",
-          division: "Proporcional",
-        },
-        {
-          id: 3,
-          date: "04 Jun, 2024",
-          description: "Salário Empresa X",
-          category: "Renda",
-          amount: 5200.00,
-          type: "Entrada",
-          responsible: "Lilian",
-          division: "Individual",
-        },
-      ],
+      transactions: [],
       incomeJorge: 6000,
       incomeLilian: 4000,
       addTransaction: (tx) => set((state) => ({ transactions: [tx, ...state.transactions] })),
