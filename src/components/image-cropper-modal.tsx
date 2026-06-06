@@ -13,6 +13,7 @@ import { getCroppedImg } from "@/lib/crop-image";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ImageCropperModalProps {
   image: string | null;
@@ -32,7 +33,7 @@ export function ImageCropperModal({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -41,7 +42,7 @@ export function ImageCropperModal({
   const handleSave = async () => {
     if (!image || !croppedAreaPixels || !userId) return;
 
-    setLoading(true);
+    setIsUploading(true);
     try {
       const croppedImageBlob = await getCroppedImg(image, croppedAreaPixels);
       const fileName = `${Math.random()}.webp`;
@@ -72,20 +73,23 @@ export function ImageCropperModal({
       onClose();
     } catch (error: any) {
       console.error("Error saving cropped image:", error);
-      toast.error("Erro ao salvar a foto: " + error.message);
+      toast.error("Falha ao salvar a imagem. Verifique sua conexão e tente novamente.");
     } finally {
-      setLoading(false);
+      setIsUploading(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isUploading && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Ajustar Foto</DialogTitle>
         </DialogHeader>
         
-        <div className="relative h-[300px] w-full bg-muted rounded-md overflow-hidden">
+        <div className={cn(
+          "relative h-[300px] w-full bg-muted rounded-md overflow-hidden",
+          isUploading && "pointer-events-none opacity-80"
+        )}>
           {image && (
             <Cropper
               image={image}
@@ -99,7 +103,7 @@ export function ImageCropperModal({
           )}
         </div>
 
-        <div className="space-y-2 mt-4">
+        <div className={cn("space-y-2 mt-4", isUploading && "pointer-events-none opacity-50")}>
           <label className="text-sm font-medium">Zoom</label>
           <Slider
             value={[zoom]}
@@ -107,18 +111,27 @@ export function ImageCropperModal({
             max={3}
             step={0.1}
             onValueChange={([value]) => setZoom(value)}
+            disabled={isUploading}
           />
         </div>
 
         <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+          <Button 
+            variant="outline" 
+            onClick={onClose} 
+            disabled={isUploading}
+          >
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={loading || !image}>
-            {loading ? (
+          <Button 
+            onClick={handleSave} 
+            disabled={isUploading || !image}
+            className="min-w-[140px]"
+          >
+            {isUploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
+                Salvando imagem...
               </>
             ) : (
               "Salvar Foto"
