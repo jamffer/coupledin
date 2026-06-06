@@ -162,7 +162,7 @@ function Dashboard() {
         {/* Grid de Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm bg-white overflow-hidden group hover:shadow-md transition-shadow">
+            <Card className="apple-card group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -179,7 +179,7 @@ function Dashboard() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm bg-white overflow-hidden group hover:shadow-md transition-shadow">
+            <Card className="apple-card group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
@@ -196,7 +196,7 @@ function Dashboard() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm bg-white overflow-hidden group hover:shadow-md transition-shadow">
+            <Card className="apple-card group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 bg-rose-100 rounded-lg text-rose-600">
@@ -213,7 +213,7 @@ function Dashboard() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm bg-white overflow-hidden group hover:shadow-md transition-shadow">
+            <Card className="apple-card group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
@@ -240,7 +240,7 @@ function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Gráfico */}
           <motion.div variants={itemVariants} className="lg:col-span-2">
-            <Card className="border-none shadow-sm bg-white h-full">
+            <Card className="apple-card">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold">Fluxo de Caixa</CardTitle>
@@ -303,7 +303,7 @@ function Dashboard() {
 
           {/* Transações Recentes */}
           <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm bg-white h-full">
+            <Card className="apple-card">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold">Transações</CardTitle>
