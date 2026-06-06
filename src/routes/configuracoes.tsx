@@ -31,7 +31,8 @@ import {
   ChevronRight,
   Info,
   ClipboardCopy,
-  Check
+  Check,
+  PlusCircle
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
