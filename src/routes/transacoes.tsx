@@ -149,51 +149,54 @@ function TransactionsPage() {
   });
 
 
-  // Sync transactions from Supabase
+  // Fetch transactions with React Query
+  const { data: dbTransactions = [], isLoading: isTxsLoading } = useQuery({
+    queryKey: ["transactions", profile?.couple_id],
+    queryFn: async () => {
+      if (!profile?.couple_id) return [];
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("couple_id", profile.couple_id)
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.couple_id,
+  });
+
+  // Keep store in sync with React Query data for other components that might still use the store
+  useEffect(() => {
+    if (dbTransactions.length > 0) {
+      setTransactions(dbTransactions as any);
+    }
+  }, [dbTransactions, setTransactions]);
+
+  // Real-time subscription to invalidate React Query cache
   useEffect(() => {
     if (profile?.couple_id) {
-      const coupleId = profile.couple_id;
-      const fetchTransactions = async () => {
-        const { data, error } = await supabase
-          .from("transactions")
-          .select("*")
-          .eq("couple_id", coupleId)
-          .order("date", { ascending: false });
-
-        if (!error && data) {
-          setTransactions(data as any);
-        }
-      };
-
-      fetchTransactions();
-
-      // Subscription for real-time updates
-      const subscription = supabase
-        .channel("transactions-updates")
-        .on("postgres_changes", {
-          event: "*",
-          schema: "public",
-          table: "transactions",
-          filter: `couple_id=eq.${coupleId}`
-        }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newTx = payload.new as any;
-            setTransactions((prev) => [newTx, ...prev.filter(tx => tx.id !== newTx.id)]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedTx = payload.new as any;
-            setTransactions((prev) => prev.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = payload.old.id;
-            setTransactions((prev) => prev.filter(tx => tx.id !== deletedId));
+      const channel = supabase
+        .channel("transactions-realtime")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "transactions",
+            filter: `couple_id=eq.${profile.couple_id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ["transactions"] });
+            queryClient.invalidateQueries({ queryKey: ["cards"] });
           }
-        })
+        )
         .subscribe();
 
       return () => {
-        supabase.removeChannel(subscription);
+        supabase.removeChannel(channel);
       };
     }
-  }, [profile?.couple_id, setTransactions]);
+  }, [profile?.couple_id, queryClient]);
 
   useEffect(() => {
     if (!authLoading && !user) {
