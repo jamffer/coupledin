@@ -2,7 +2,7 @@ import { createLovableAuth } from "@lovable.dev/cloud-auth-js";
 import { supabase } from "../supabase/client";
 
 const lovableAuth = createLovableAuth({
-  projectRef: "yqbwgyezwjfzkvpyjebw",
+  supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
 });
 
 type SignInOptions = {
