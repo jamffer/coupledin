@@ -203,17 +203,15 @@ const itemVariants = {
 function TransactionsPage() {
   const [smartInput, setSmartInput] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
   const parseFn = useServerFn(parseTransactionFromText);
   const mutation = useMutation({
     mutationFn: (text: string) => parseFn({ data: { text } }),
     onSuccess: (parsed) => {
-      const tx = buildTransaction(parsed, Date.now());
-      setTransactions((prev) => [tx, ...prev]);
-      setSmartInput("");
-      toast.success("Transação criada", {
-        description: `${parsed.description} • R$ ${parsed.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
-      });
+      setParsedData(parsed);
+      setIsConfirmModalOpen(true);
     },
     onError: (err: Error) => {
       toast.error("Não foi possível processar", { description: err.message });
@@ -226,6 +224,16 @@ function TransactionsPage() {
     const text = smartInput.trim();
     if (!text || isLoading) return;
     mutation.mutate(text);
+  };
+
+  const handleConfirm = () => {
+    if (!parsedData) return;
+    const tx = buildTransaction(parsedData, Date.now());
+    setTransactions((prev) => [tx, ...prev]);
+    setSmartInput("");
+    setIsConfirmModalOpen(false);
+    setParsedData(null);
+    toast.success("Lançamento adicionado com sucesso!");
   };
 
   return (
