@@ -27,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/hooks/use-profile";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -96,8 +96,8 @@ function AssetTable({ data, onSelect }: { data: any[], onSelect: (asset: any) =>
                   </div>
                 </TableCell>
                 <TableCell className="text-center font-medium">{asset.qty}</TableCell>
-                <TableCell className="text-right font-medium">R$ {asset.avgPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
-                <TableCell className="text-right font-bold">R$ {asset.currentPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                <TableCell className="text-right font-medium">{formatCurrency(asset.avgPrice)}</TableCell>
+                <TableCell className="text-right font-bold">{formatCurrency(asset.currentPrice)}</TableCell>
                 <TableCell className="text-right">
                   <div className={cn(
                     "flex flex-col items-end",
@@ -108,7 +108,7 @@ function AssetTable({ data, onSelect }: { data: any[], onSelect: (asset: any) =>
                       {variation.toFixed(2)}%
                     </div>
                     <span className="text-[10px] font-bold">
-                      {isPositive ? '+' : ''} R$ {profit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      {isPositive ? '+' : ''} {formatCurrency(profit)}
                     </span>
                   </div>
                 </TableCell>
@@ -204,7 +204,7 @@ function InvestimentosPage() {
                     <div>
                       <p className="text-sm font-medium text-white/80">Patrimônio Total</p>
                       <h3 className="text-4xl font-black tracking-tight text-white mt-1">
-                        R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {formatCurrency(totalPatrimony)}
                       </h3>
                     </div>
                   </CardContent>
@@ -223,7 +223,7 @@ function InvestimentosPage() {
                     <div>
                       <p className="text-sm font-medium text-white/80">Lucro/Prejuízo Total</p>
                       <h3 className="text-4xl font-black tracking-tight text-white mt-1">
-                        {totalProfit >= 0 ? '+' : ''} R$ {totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {totalProfit >= 0 ? '+' : ''} {formatCurrency(totalProfit)}
                       </h3>
                     </div>
                   </CardContent>
