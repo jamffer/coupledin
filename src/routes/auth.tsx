@@ -36,6 +36,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [authStep, setAuthStep] = useState<"auth" | "onboarding">("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -123,13 +124,13 @@ function AuthPage() {
 
   const handleCreateCouple = async () => {
     setLoading(true);
+    setError(null);
     try {
       const { data: coupleId, error: createError } = await supabase
         .rpc("create_couple", { _name: `${name}'s Couple` });
 
       if (createError) throw createError;
 
-      // Get the invite code via the RPC we created
       const { data: inviteCode, error: codeError } = await supabase
         .rpc("get_my_invite_code");
 
@@ -138,12 +139,12 @@ function AuthPage() {
       setGeneratedInviteCode(inviteCode || "");
       toast.success("Espaço criado!", { description: "Redirecionando para o seu Dashboard..." });
       
-      // Give a small delay for the user to see the success state if we were showing it,
-      // but since we want immediate navigation as per instructions:
       setTimeout(() => {
         navigate({ to: "/" });
       }, 1500);
     } catch (error: any) {
+      console.error("Error creating space:", error);
+      setError("Não conseguimos criar seu espaço. Verifique sua conexão e tente novamente.");
       toast.error("Erro ao criar espaço", { description: error.message });
     } finally {
       setLoading(false);
@@ -153,6 +154,7 @@ function AuthPage() {
   const handleJoinCouple = async () => {
     if (!inviteCodeInput) return;
     setLoading(true);
+    setError(null);
     try {
       const { data: coupleId, error: joinError } = await supabase
         .rpc("join_couple_with_invite", { _invite_code: inviteCodeInput.toUpperCase() });
@@ -161,11 +163,12 @@ function AuthPage() {
 
       toast.success("Vinculado com sucesso!", { description: "Carregando o seu novo espaço..." });
       
-      // Immediate navigation for better engagement
       setTimeout(() => {
         navigate({ to: "/" });
       }, 1000);
     } catch (error: any) {
+      console.error("Error joining space:", error);
+      setError("Não conseguimos conectar a este espaço. Verifique o código e tente novamente.");
       toast.error("Erro ao entrar", { description: error.message });
     } finally {
       setLoading(false);
