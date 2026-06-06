@@ -96,6 +96,20 @@ function ConfiguracoesPage() {
         supabase.rpc("get_my_invite_code").then(({ data }) => {
           setInviteCode(data as string);
         });
+
+        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+          setProfile(data);
+          if (data?.couple_id) {
+            supabase.from("profiles")
+              .select("*")
+              .eq("couple_id", data.couple_id)
+              .neq("id", user.id)
+              .maybeSingle()
+              .then(({ data: partnerData }) => {
+                setPartnerProfile(partnerData);
+              });
+          }
+        });
       });
     }
   }, [user]);
