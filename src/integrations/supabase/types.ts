@@ -128,6 +128,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_couple: { Args: { _name: string }; Returns: string }
+      get_my_couple_id: { Args: never; Returns: string }
       get_my_invite_code: { Args: never; Returns: string }
       join_couple_with_invite: {
         Args: { _invite_code: string }
