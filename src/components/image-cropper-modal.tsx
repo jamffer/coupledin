@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Cropper from "react-easy-crop";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ImageCropperModalProps {
   image: string | null;
@@ -30,10 +31,20 @@ export function ImageCropperModal({
   onSuccess,
   userId,
 }: ImageCropperModalProps) {
+  const queryClient = useQueryClient();
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Cleanup effect to revoke object URLs if needed (though we mostly use data URLs in this flow)
+  useEffect(() => {
+    return () => {
+      if (image && image.startsWith('blob:')) {
+        URL.revokeObjectURL(image);
+      }
+    };
+  }, [image]);
 
   const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -45,6 +56,12 @@ export function ImageCropperModal({
     setIsUploading(true);
     try {
       const croppedImageBlob = await getCroppedImg(image, croppedAreaPixels);
+      
+      // Cleanup the original image URL if it's a blob
+      if (image.startsWith('blob:')) {
+        URL.revokeObjectURL(image);
+      }
+
       const fileName = `${Math.random()}.webp`;
       const filePath = `${userId}/${fileName}`;
 
@@ -68,6 +85,9 @@ export function ImageCropperModal({
 
       if (updateError) throw updateError;
 
+      // Single Source of Truth: Invalidate queries to sync throughout the app
+      await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      
       onSuccess(publicUrl);
       toast.success("Foto de perfil atualizada com sucesso!");
       onClose();

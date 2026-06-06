@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useFinanceStore } from "@/hooks/use-finance-store";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 
 const menuItems = [
@@ -115,8 +116,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const { userNames, userAvatars, updateUserProfile } = useFinanceStore();
   const { user, signOut } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
-  const [partnerProfile, setPartnerProfile] = useState<any>(null);
+  const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const [currentUser, setCurrentUser] = useState<"Jorge" | "Lilian">("Jorge");
   const [tempName, setTempName] = useState("");
   const [tempAvatar, setTempAvatar] = useState("");
@@ -171,7 +171,6 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       updateUserProfile(currentUser, tempName, tempAvatar);
-      setProfile((prev: any) => ({ ...prev, display_name: tempName, avatar_url: tempAvatar }));
       toast.success("Perfil atualizado com sucesso!");
       setIsProfileOpen(false);
     } catch (error: any) {
@@ -193,51 +192,16 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (user) {
-      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
-        setProfile(data);
-        if (data && !data.display_name) {
-          setIsNameModalOpen(true);
-        }
-        
-        if (data?.couple_id) {
-          // Initial fetch
-          fetchPartnerProfile(data.couple_id, user.id);
-
-          // Subscribe to profile changes for the couple
-          const profileSubscription = supabase
-            .channel('couple-profile-changes')
-            .on('postgres_changes', {
-              event: '*',
-              schema: 'public',
-              table: 'profiles',
-              filter: `couple_id=eq.${data.couple_id}`
-            }, () => {
-          fetchPartnerProfile(data.couple_id as string, user.id);
-            })
-            .subscribe();
-
-          supabase.rpc("get_my_invite_code").then(({ data: code }) => {
-            setInviteCode(code as string);
-          });
-
-          return () => {
-            supabase.removeChannel(profileSubscription);
-          };
-        }
+    if (user && profile) {
+      if (!profile.display_name) {
+        setIsNameModalOpen(true);
+      }
+      
+      supabase.rpc("get_my_invite_code").then(({ data: code }) => {
+        setInviteCode(code as string);
       });
     }
-  }, [user]);
-
-  const fetchPartnerProfile = async (coupleId: string, userId: string) => {
-    const { data: partnerData } = await supabase.from("profiles")
-      .select("*")
-      .eq("couple_id", coupleId)
-      .neq("id", userId)
-      .maybeSingle();
-    
-    setPartnerProfile(partnerData);
-  };
+  }, [user, profile]);
 
   const handleCopyCode = () => {
     if (inviteCode) {
@@ -263,7 +227,6 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
-      setProfile((prev: any) => ({ ...prev, display_name: tempName.trim() }));
       setIsNameModalOpen(false);
       toast.success("Nome salvo com sucesso!");
     } catch (error: any) {
