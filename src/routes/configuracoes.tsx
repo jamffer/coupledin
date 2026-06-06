@@ -165,7 +165,10 @@ function ConfiguracoesPage() {
                 </div>
 
                 <div className="flex-1 text-center md:text-left space-y-2">
-                  <h2 className="text-2xl font-bold">Jorge & Lilian</h2>
+                  <h2 className="text-2xl font-bold">
+                    {profile?.display_name || "Você"}
+                    {partnerProfile?.display_name ? ` & ${partnerProfile.display_name}` : ""}
+                  </h2>
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5 bg-muted dark:bg-muted/10 px-3 py-1 rounded-full">
                       <Calendar size={14} />
