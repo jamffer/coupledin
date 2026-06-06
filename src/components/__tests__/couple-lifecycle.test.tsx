@@ -31,9 +31,9 @@ describe('Couple lifecycle integration', () => {
     mocks.realtimeCallback.current = null;
     mocks.subscribeMock.mockClear();
     mocks.removeChannelMock.mockClear();
-    // Force a deterministic time (morning -> "Bom dia")
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 5, 6, 9, 0, 0));
+    // Force a deterministic time (morning -> "Bom dia") without fake timers,
+    // so findByText's internal setTimeout polling still works.
+    vi.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
   });
 
   /**
