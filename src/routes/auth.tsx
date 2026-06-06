@@ -38,6 +38,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
+  const [loading, setLoading] = useState(false);
   const [authStep, setAuthStep] = useState<"auth" | "onboarding">("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
