@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,12 @@ export const Route = createFileRoute("/")({
      { name: "description", content: "Finanças do casal em um só lugar." },
    ],
  }),
+ validateSearch: (search: Record<string, unknown>) => {
+   return {
+     month: (search.month as string) || undefined,
+     sheet: (search.sheet as string) || undefined,
+   }
+ },
  component: Dashboard,
 });
 
@@ -100,14 +106,32 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<boolean>(false);
   const navigate = useNavigate();
+  const search = useSearch({ from: "/" });
   const [selectedTx, setSelectedTx] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
   const { transactions, userAvatars, setTransactions } = useFinanceStore();
   const [profile, setProfile] = useState<any>(null);
   
-  // Estados para os painéis laterais
-  const [activeSheet, setActiveSheet] = useState<'balance' | 'income' | 'expenses' | 'credit' | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
+  // Estados para os painéis laterais baseados na URL
+  const activeSheet = (search.sheet as 'balance' | 'income' | 'expenses' | 'credit' | null) || null;
+  const setActiveSheet = (sheet: string | null) => {
+    navigate({
+      search: (prev: any) => ({ ...prev, sheet: sheet || undefined }),
+    });
+  };
+
+  const selectedMonth = useMemo(() => {
+    if (search.month) {
+      return parse(search.month, 'yyyy-MM', new Date());
+    }
+    return startOfMonth(new Date());
+  }, [search.month]);
+
+  const setSelectedMonth = (date: Date) => {
+    navigate({
+      search: (prev: any) => ({ ...prev, month: format(date, 'yyyy-MM') }),
+    });
+  };
 
   useEffect(() => {
     if (!authLoading) {

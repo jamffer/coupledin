@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useServerFn } from "@tanstack/react-start";
@@ -76,6 +76,14 @@ export const Route = createFileRoute("/transacoes")({
       { name: "description", content: "Gerencie as transações do casal." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      month: (search.month as string) || "june",
+      category: (search.category as string) || "all-cats",
+      type: (search.type as string) || "all-types",
+      responsible: (search.responsible as string) || "both",
+    }
+  },
   component: TransactionsPage,
 });
 
@@ -116,6 +124,7 @@ const itemVariants = {
 function TransactionsPage() {
   const [smartInput, setSmartInput] = useState("");
   const navigate = useNavigate();
+  const search = useSearch({ from: "/transacoes" });
   const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars, setTransactions } = useFinanceStore();
@@ -198,13 +207,19 @@ function TransactionsPage() {
     type: "Saída"
   });
 
-  // States for filters
-  const [filters, setFilters] = useState({
-    month: "june",
-    category: "all-cats",
-    type: "all-types",
-    responsible: "both"
-  });
+  // States for filters synced with URL
+  const filters = {
+    month: search.month,
+    category: search.category,
+    type: search.type,
+    responsible: search.responsible
+  };
+
+  const setFilters = (newFilters: any) => {
+    navigate({
+      search: (prev: any) => ({ ...prev, ...newFilters }),
+    });
+  };
 
   const parseFn = useServerFn(parseTransactionFromText);
   const mutation = useMutation({
