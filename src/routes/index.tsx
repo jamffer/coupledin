@@ -106,10 +106,14 @@ function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate({ to: "/auth" });
+    if (!authLoading) {
+      if (!user) {
+        navigate({ to: "/auth" });
+      } else if (profile && !profile.couple_id) {
+        navigate({ to: "/auth" });
+      }
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, profile, navigate]);
 
   // Fetch profile and sync transactions
   useEffect(() => {
