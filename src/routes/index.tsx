@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,11 +107,13 @@ const itemVariants = {
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const [selectedTx, setSelectedTx] = useState<any>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(timer);
-  }, []);
+  const scrollToTransactions = () => {
+    const el = document.getElementById('recent-transactions');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
 
   if (loading) {
     return (
@@ -161,7 +163,7 @@ function Dashboard() {
       >
         {/* Grid de Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} onClick={scrollToTransactions} className="cursor-pointer active:scale-95 transition-all">
             <Card className="apple-card apple-card-hover group card-gradient-blue border-none">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -178,7 +180,7 @@ function Dashboard() {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} onClick={() => navigate({ to: '/transacoes' })} className="cursor-pointer active:scale-95 transition-all">
             <Card className="apple-card apple-card-hover group card-gradient-light-blue border-none">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -195,7 +197,7 @@ function Dashboard() {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} onClick={() => navigate({ to: '/transacoes' })} className="cursor-pointer active:scale-95 transition-all">
             <Card className="apple-card apple-card-hover group card-gradient-magenta border-none">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -212,7 +214,7 @@ function Dashboard() {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} onClick={() => navigate({ to: '/cartoes' })} className="cursor-pointer active:scale-95 transition-all">
             <Card className="apple-card apple-card-hover group border-2 border-primary/20 dark:border-primary/40">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
@@ -302,7 +304,7 @@ function Dashboard() {
           </motion.div>
 
           {/* Transações Recentes */}
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} id="recent-transactions">
             <Card className="apple-card apple-card-hover">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -313,7 +315,11 @@ function Dashboard() {
               <CardContent className="pt-2">
                 <div className="space-y-6">
                   {recentTransactions.map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between group">
+                    <div 
+                      key={tx.id} 
+                      onClick={() => setSelectedTx(tx)}
+                      className="flex items-center justify-between group cursor-pointer p-2 -mx-2 rounded-2xl hover:bg-white/10 active:scale-95 transition-all"
+                    >
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-muted rounded-2xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                           <tx.icon size={18} />
@@ -337,7 +343,7 @@ function Dashboard() {
                     </div>
                   ))}
                 </div>
-                <Button variant="ghost" className="w-full mt-8 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
+                <Button variant="ghost" onClick={() => navigate({ to: '/transacoes' })} className="w-full mt-8 text-xs font-bold text-muted-foreground hover:text-primary active:scale-95 transition-all">
                   Ver extrato completo
                 </Button>
               </CardContent>
@@ -345,6 +351,55 @@ function Dashboard() {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Detail Modal for Transactions */}
+      <Dialog open={!!selectedTx} onOpenChange={(open) => !open && setSelectedTx(null)}>
+        <DialogContent className="apple-card dark:bg-[#1A1A1A] border-border/40">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Detalhes da Transação</DialogTitle>
+          </DialogHeader>
+          {selectedTx && (
+            <div className="space-y-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-4 bg-primary/10 rounded-2xl text-primary">
+                    <selectedTx.icon size={24} />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{selectedTx.description}</p>
+                    <p className="text-sm text-muted-foreground">{selectedTx.category}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={cn("text-xl font-black", selectedTx.amount < 0 ? "text-foreground" : "text-emerald-600")}>
+                    {selectedTx.amount < 0 ? '-' : '+'} R$ {Math.abs(selectedTx.amount).toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{selectedTx.date}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="apple-interactive p-4 dark:bg-black/20">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Responsável</p>
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-2 h-2 rounded-full", selectedTx.user === 'Jorge' ? 'bg-blue-500' : 'bg-pink-500')} />
+                    <p className="font-bold">{selectedTx.user}</p>
+                  </div>
+                </div>
+                <div className="apple-interactive p-4 dark:bg-black/20">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Método</p>
+                  <p className="font-bold">Cartão de Crédito</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" className="w-full rounded-xl active:scale-95 transition-all" onClick={() => setSelectedTx(null)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
