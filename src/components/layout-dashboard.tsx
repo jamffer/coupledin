@@ -120,6 +120,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const [tempName, setTempName] = useState("");
   const [tempAvatar, setTempAvatar] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showInviteDialogInLayout, setShowInviteDialogInLayout] = useState(false);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   
   const navigate = useNavigate();
   
