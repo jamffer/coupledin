@@ -113,7 +113,7 @@ function InvestimentosPage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Investimentos e Metas</h1>
             <p className="text-muted-foreground italic">Construindo o futuro em conjunto.</p>
           </div>
-          <Button className="rounded-full shadow-sm gap-2">
+          <Button className="rounded-full shadow-sm gap-2 apple-interactive border-white/20">
             <Plus size={18} />
             Nova Meta
           </Button>
@@ -129,7 +129,7 @@ function InvestimentosPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {goals.map((goal) => (
               <motion.div key={goal.id} variants={itemVariants}>
-                <Card className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden bg-white">
+                <Card className="apple-card apple-card-hover group overflow-hidden">
                   <CardHeader className="pb-4">
                     <div className="flex justify-between items-start">
                       <div className={cn("p-3 rounded-2xl", goal.iconColor)}>
@@ -197,7 +197,7 @@ function InvestimentosPage() {
             {/* Patrimonio Total Card */}
             <motion.div variants={itemVariants} className="lg:col-span-1 h-full">
               <div className="grid grid-cols-1 gap-6 h-full">
-                <Card className="border-none shadow-sm bg-primary text-primary-foreground overflow-hidden relative">
+                <Card className="apple-card overflow-hidden relative bg-primary text-primary-foreground border-none">
                   <div className="absolute top-0 right-0 p-8 opacity-10">
                     <Wallet size={120} />
                   </div>
