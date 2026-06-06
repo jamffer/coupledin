@@ -1,8 +1,9 @@
+import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { 
   Table, 
   TableBody, 
@@ -12,21 +13,8 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer,
-  AreaChart,
-  Area
-} from "recharts";
-import { 
-  CheckCircle2, 
-  Share2, 
   ArrowRightLeft, 
+  TrendingDown, 
   TrendingUp, 
   AlertCircle,
   ShoppingBag,
@@ -73,30 +61,16 @@ const itemVariants = {
 };
 
 function RelatoriosPage() {
-  const { transactions, incomeJorge, incomeLilian } = useFinanceStore();
-
-  const categories = ["Alimentação", "Moradia", "Transporte", "Lazer", "Saúde", "Outros"];
+  const { transactions, incomeJorge, incomeLilian, userAvatars } = useFinanceStore();
   
-  const categoryComparisonData = categories.map(cat => ({
-    category: cat,
-    Jorge: Math.abs(transactions.filter(t => t.category === cat && t.responsible === "Jorge" && t.amount < 0).reduce((acc, t) => acc + t.amount, 0)),
-    Lilian: Math.abs(transactions.filter(t => t.category === cat && t.responsible === "Lilian" && t.amount < 0).reduce((acc, t) => acc + t.amount, 0)),
-  }));
-
-  const topExpenses = [...transactions]
-    .filter(t => t.amount < 0)
-    .sort((a, b) => a.amount - b.amount)
-    .slice(0, 5);
-
-  // Lógica de Acerto de Contas
-  const jointExpenses = transactions.filter(t => t.division !== "Individual" && t.amount < 0);
+  // Cálculo de Despesas Conjuntas e Proporção
+  const jointExpenses = transactions.filter(t => t.division !== "Individual");
   const totalJoint = jointExpenses.reduce((acc, t) => acc + Math.abs(t.amount), 0);
   
-  // Proporção configurada
   const totalIncome = incomeJorge + incomeLilian;
   const jorgeShare = totalIncome > 0 ? incomeJorge / totalIncome : 0.5;
   const lilianShare = totalIncome > 0 ? incomeLilian / totalIncome : 0.5;
-  
+
   const jorgeShouldPay = jointExpenses.reduce((acc, t) => {
     const share = t.division === "Conjunta 50/50" ? 0.5 : jorgeShare;
     return acc + (Math.abs(t.amount) * share);
@@ -110,6 +84,24 @@ function RelatoriosPage() {
   const diff = jorgePaid - jorgeShouldPay; // Se positivo, Jorge pagou a mais. Se negativo, Jorge deve.
   const settlementAmount = Math.abs(diff);
 
+  const topExpenses = useMemo(() => {
+    return [...transactions]
+      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+      .slice(0, 5);
+  }, [transactions]);
+
+  const categoryTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    transactions.forEach(t => {
+      if (t.amount < 0) {
+        totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount);
+      }
+    });
+    return Object.entries(totals)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 4);
+  }, [transactions]);
+
   return (
     <DashboardLayout>
       <motion.div 
@@ -118,24 +110,26 @@ function RelatoriosPage() {
         animate="visible"
         className="space-y-8 pb-10"
       >
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Relatórios e Fechamento</h1>
-          <p className="text-muted-foreground italic">Análise profunda e acerto de contas do casal.</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <motion.div variants={itemVariants}>
+            <h2 className="text-sm font-bold uppercase tracking-widest text-primary/60 mb-1">Análise Mensal</h2>
+            <h1 className="text-4xl font-black tracking-tighter text-foreground">Relatórios</h1>
+          </motion.div>
+          
+          <motion.div variants={itemVariants} className="flex gap-2">
+            <Badge variant="outline" className="px-4 py-2 rounded-xl apple-glass border-primary/10 text-primary font-bold">
+              Junho, 2024
+            </Badge>
+          </motion.div>
         </div>
 
         {/* Section 1: Acerto de Contas */}
         <motion.div variants={itemVariants}>
-          <Card className={cn(
-            "apple-card apple-card-hover overflow-hidden transition-colors duration-500",
-            diff > 1 ? "bg-emerald-500/10" : diff < -1 ? "bg-rose-500/10" : ""
-          )}>
-            <CardHeader className={cn(
-              "pb-8 transition-colors",
-              diff > 1 ? "bg-emerald-500/5" : diff < -1 ? "bg-rose-500/5" : "bg-primary/5"
-            )}>
-              <div className="flex items-center gap-2 mb-2">
+          <Card className="apple-card overflow-hidden border-none shadow-2xl bg-gradient-to-br from-white to-primary/5 dark:from-[#1A1A1A] dark:to-primary/10">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2 text-primary mb-1">
                 <div className={cn(
-                  "p-2 rounded-lg transition-colors",
+                  "p-2 rounded-xl transition-colors",
                   diff > 1 ? "bg-emerald-500/10 text-emerald-600" : diff < -1 ? "bg-rose-500/10 text-rose-600" : "bg-primary/10 text-primary"
                 )}>
                   <ArrowRightLeft size={20} />
@@ -182,73 +176,65 @@ function RelatoriosPage() {
                     )}
                   </div>
                 </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                  <Button className="rounded-full gap-2 px-6 h-12 font-bold shadow-md hover:shadow-lg transition-all active:scale-95" disabled={Math.abs(diff) < 1}>
-                    <CheckCircle2 size={18} />
-                    Marcar como Resolvido
-                  </Button>
-                  <Button variant="outline" className="rounded-full gap-2 px-6 h-12 font-bold border-border/60 hover:bg-muted/50 transition-all active:scale-95">
-                    <Share2 size={18} />
-                    WhatsApp
-                  </Button>
+                <div className="h-px w-full md:w-px md:h-20 bg-border/40" />
+                <div className="flex flex-col items-center md:items-end gap-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Gastos Conjuntos</p>
+                  <p className="text-3xl font-black text-foreground">R$ {totalJoint.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant="secondary" className="bg-primary/5 text-primary text-[10px] font-bold border-none px-3">
+                      Jorge: {(jorgeShare * 100).toFixed(0)}%
+                    </Badge>
+                    <Badge variant="secondary" className="bg-primary/5 text-primary text-[10px] font-bold border-none px-3">
+                      Lilian: {(lilianShare * 100).toFixed(0)}%
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Section 2: Análise de Categorias */}
-          <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover h-full border-2 border-primary/5 dark:border-white/5">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <CardTitle>Gastos por Pessoa</CardTitle>
-                    <CardDescription>Comparação por categoria principal</CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-primary" />
-                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Jorge</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-rose-400" />
-                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Lilian</span>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="h-[350px] w-full pt-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categoryComparisonData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="category" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 600, fill: '#888' }}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fill: '#888' }} 
-                    />
-                    <Tooltip 
-                      cursor={{ fill: 'rgba(0,0,0,0.02)' }}
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-                    />
-                    <Bar dataKey="Jorge" fill="#1e1b4b" radius={[4, 4, 0, 0]} barSize={20} />
-                    <Bar dataKey="Lilian" fill="#fb7185" radius={[4, 4, 0, 0]} barSize={20} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Section 2: Resumo por Categoria */}
+          <motion.div variants={itemVariants} className="lg:col-span-1 space-y-6">
+            <h3 className="text-lg font-bold px-1 flex items-center gap-2">
+              <TrendingDown size={20} className="text-primary" />
+              Gastos por Categoria
+            </h3>
+            <div className="grid gap-4">
+              {categoryTotals.map(([category, amount]) => {
+                const Icon = CATEGORY_ICONS[category] || HelpCircle;
+                const percentage = (amount / Math.abs(transactions.reduce((acc, t) => t.amount < 0 ? acc + t.amount : acc, 0))) * 100;
+                
+                return (
+                  <Card key={category} className="apple-card apple-card-hover border-none shadow-sm group">
+                    <CardContent className="p-5 flex items-center gap-4">
+                      <div className="p-3 bg-muted rounded-2xl text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                        <Icon size={20} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-end mb-1">
+                          <p className="text-sm font-bold truncate">{category}</p>
+                          <p className="text-sm font-black">R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percentage}%` }}
+                            transition={{ duration: 1, delay: 0.5 }}
+                            className="h-full bg-primary" 
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </motion.div>
 
           {/* Section 3: Maiores Gastos */}
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="lg:col-span-2">
             <Card className="apple-card apple-card-hover h-full border-2 border-primary/5 dark:border-white/5">
               <CardHeader>
                 <CardTitle>Top Maiores Gastos</CardTitle>
@@ -281,13 +267,15 @@ function RelatoriosPage() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-center">
-                            <Avatar className="w-6 h-6 inline-block ring-1 ring-muted/20">
-                              <AvatarImage src={avatarUrl} />
-                              <AvatarFallback>{expense.responsible[0]}</AvatarFallback>
-                            </Avatar>
+                          <TableCell className="py-4">
+                            <div className="flex justify-center">
+                              <Avatar className="w-8 h-8 border border-white shadow-sm ring-1 ring-muted/20">
+                                <AvatarImage src={avatarUrl} />
+                                <AvatarFallback>{expense.responsible[0]}</AvatarFallback>
+                              </Avatar>
+                            </div>
                           </TableCell>
-                          <TableCell className="pr-6 text-right font-black text-sm dark:text-white">
+                          <TableCell className="pr-6 py-4 text-right font-black text-sm">
                             R$ {Math.abs(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </TableCell>
                         </TableRow>
@@ -299,73 +287,6 @@ function RelatoriosPage() {
             </Card>
           </motion.div>
         </div>
-
-        {/* Section 4: Evolução de Despesas */}
-        <motion.div variants={itemVariants}>
-          <Card className="apple-card apple-card-hover">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle>Evolução de Despesas Conjuntas</CardTitle>
-                <CardDescription>Comparação semana a semana vs mês anterior</CardDescription>
-              </div>
-              <div className="hidden sm:flex gap-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-primary" />
-                  <span className="text-[10px] font-bold uppercase text-muted-foreground">Junho (Atual)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
-                  <span className="text-[10px] font-bold uppercase text-muted-foreground">Maio (Anterior)</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="h-[300px] w-full pt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weeklyEvolutionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorAtual" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#1e1b4b" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#1e1b4b" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="week" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10, fill: '#888' }}
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10, fill: '#888' }} 
-                  />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-                  />
-                  <Area 
-                    name="Atual"
-                    type="monotone" 
-                    dataKey="atual" 
-                    stroke="#1e1b4b" 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorAtual)" 
-                  />
-                  <Area 
-                    name="Anterior"
-                    type="monotone" 
-                    dataKey="anterior" 
-                    stroke="#94a3b8" 
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    fill="none" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </motion.div>
       </motion.div>
     </DashboardLayout>
   );
