@@ -363,7 +363,7 @@ function CartoesPage() {
                       <div className="p-6 flex flex-col justify-between">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground mb-1">Total da Fatura</p>
-                          <h3 className="text-2xl font-bold tracking-tight">R$ {selectedCard.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                          <h3 className="text-2xl font-bold tracking-tight">{formatCurrency(selectedCard.currentBill)}</h3>
                         </div>
                         {selectedMonth === "june" && (
                           <AlertDialog>
@@ -376,7 +376,7 @@ function CartoesPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Confirmar Pagamento</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Deseja registrar o pagamento desta fatura no valor de <span className="font-bold text-foreground">R$ {selectedCard.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>?
+                                  Deseja registrar o pagamento desta fatura no valor de <span className="font-bold text-foreground">{formatCurrency(selectedCard.currentBill)}</span>?
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
