@@ -11,7 +11,7 @@ import {
   Target,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { toast } from "sonner";
 
