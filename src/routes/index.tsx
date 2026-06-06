@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -105,6 +106,51 @@ const itemVariants = {
 };
 
 function Dashboard() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 bg-white rounded-3xl border-none shadow-sm flex flex-col p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="w-10 h-10 bg-muted rounded-lg animate-pulse" />
+                  <div className="w-20 h-4 bg-muted rounded animate-pulse" />
+                </div>
+                <div className="w-32 h-8 bg-muted rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 h-[450px] bg-white rounded-3xl border-none shadow-sm p-8 space-y-4">
+              <div className="w-48 h-8 bg-muted rounded animate-pulse" />
+              <div className="w-full h-full bg-muted/50 rounded-2xl animate-pulse" />
+            </div>
+            <div className="h-[450px] bg-white rounded-3xl border-none shadow-sm p-8 space-y-6">
+              <div className="w-32 h-8 bg-muted rounded animate-pulse" />
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-muted rounded-2xl animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="w-full h-4 bg-muted rounded animate-pulse" />
+                    <div className="w-2/3 h-3 bg-muted rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <motion.div 
