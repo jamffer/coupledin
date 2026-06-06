@@ -669,7 +669,7 @@ function TransactionsPage() {
                               </DropdownMenu>
                             )}
                             <p className={`text-sm font-black mt-1 ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                              {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {tx.amount > 0 ? '+' : ''} {formatCurrency(Math.abs(tx.amount))}
                             </p>
                           </div>
                         </div>
