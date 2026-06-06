@@ -1,3 +1,4 @@
+import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +38,8 @@ import {
   Car,
   Home,
   ChevronDown,
-  Clock
+  Clock,
+  HelpCircle
 } from "lucide-react";
 
 import { 
