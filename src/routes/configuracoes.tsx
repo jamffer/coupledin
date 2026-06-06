@@ -41,6 +41,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useFinanceStore } from "@/hooks/use-finance-store";
+import { useProfile } from "@/hooks/use-profile";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -71,8 +73,7 @@ function ConfiguracoesPage() {
   const { incomeJorge, incomeLilian, setIncomes } = useFinanceStore();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
-  const [partnerProfile, setPartnerProfile] = useState<any>(null);
+  const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -94,24 +95,8 @@ function ConfiguracoesPage() {
 
   useEffect(() => {
     if (user) {
-      import("@/integrations/supabase/client").then(({ supabase }) => {
-        supabase.rpc("get_my_invite_code").then(({ data }) => {
-          setInviteCode(data as string);
-        });
-
-        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
-          setProfile(data);
-          if (data?.couple_id) {
-            supabase.from("profiles")
-              .select("*")
-              .eq("couple_id", data.couple_id)
-              .neq("id", user.id)
-              .maybeSingle()
-              .then(({ data: partnerData }) => {
-                setPartnerProfile(partnerData);
-              });
-          }
-        });
+      supabase.rpc("get_my_invite_code").then(({ data }) => {
+        setInviteCode(data as string);
       });
     }
   }, [user]);
@@ -152,10 +137,10 @@ function ConfiguracoesPage() {
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="flex -space-x-6">
                    <ProfileAvatar 
-                     url={profile?.avatar_url} 
+                     url={profile?.avatar_url || null} 
                      name={profile?.display_name || "ME"} 
-                     userId={user?.id}
-                     onUpdate={(url) => setProfile((prev: any) => ({ ...prev, avatar_url: url }))}
+                     userId={user?.id || undefined}
+                     onUpdate={() => {}} // Now handled via React Query invalidation in the modal
                    />
                   <div className="w-24 h-24 rounded-full apple-glass border-4 border-white dark:border-[#1A1A1A] flex items-center justify-center relative z-10">
                     <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center text-primary">

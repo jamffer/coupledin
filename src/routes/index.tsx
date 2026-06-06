@@ -58,6 +58,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useFinanceStore, CATEGORY_ICONS } from "@/hooks/use-finance-store";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
@@ -105,7 +106,7 @@ function Dashboard() {
   const [selectedTx, setSelectedTx] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
   const { transactions, userAvatars, setTransactions } = useFinanceStore();
-  const [profile, setProfile] = useState<any>(null);
+  const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const { 
     step, 
     message, 
@@ -155,14 +156,6 @@ function Dashboard() {
     }
   }, [user, authLoading, profile, navigate]);
 
-  // Fetch profile and sync transactions
-  useEffect(() => {
-    if (user) {
-      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
-        setProfile(data);
-      });
-    }
-  }, [user]);
 
   const fetchTransactions = useCallback(async (coupleId: string) => {
     try {
@@ -194,6 +187,8 @@ function Dashboard() {
     if (profile?.couple_id) {
       setStep(OnboardingStep.CONNECTING_REALTIME);
       
+      const coupleId = profile.couple_id;
+      
       // Connect to Realtime first or in parallel
       const channel = supabase
         .channel("dashboard-updates")
@@ -201,16 +196,16 @@ function Dashboard() {
           event: "*",
           schema: "public",
           table: "transactions",
-          filter: `couple_id=eq.${profile.couple_id}`
-        }, (payload) => {
-          fetchTransactions(profile.couple_id);
+          filter: `couple_id=eq.${coupleId}`
+        }, () => {
+          fetchTransactions(coupleId);
         });
 
       // Subscribe and only finish loading after subscription is confirmed AND initial fetch is done
       channel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           setStep(OnboardingStep.MOUNTING_DASHBOARD);
-          await fetchTransactions(profile.couple_id);
+          await fetchTransactions(coupleId);
           setStep(OnboardingStep.SUCCESS);
           
           // Reset onboarding state after a delay to clear the overlay

@@ -45,12 +45,9 @@ export function ProfileAvatar({
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        setSelectedImage(reader.result as string);
-        setIsModalOpen(true);
-      };
-      reader.readAsDataURL(file);
+      const objectUrl = URL.createObjectURL(file);
+      setSelectedImage(objectUrl);
+      setIsModalOpen(true);
     }
   };
 
@@ -95,6 +92,9 @@ export function ProfileAvatar({
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
+          if (selectedImage) {
+            URL.revokeObjectURL(selectedImage);
+          }
           setSelectedImage(null);
           if (fileInputRef.current) fileInputRef.current.value = "";
         }}
