@@ -180,8 +180,8 @@ function CartoesPage() {
             >
               <Card className={cn(
                 "relative h-64 border-none text-white shadow-xl overflow-hidden transition-all duration-300 flex flex-col justify-between p-6",
-                card.color,
-                selectedCardId === card.id ? "ring-2 ring-primary ring-offset-4 ring-offset-[#fcfbf8]" : "opacity-95 hover:opacity-100"
+                card.id === "1" ? "card-gradient-blue" : card.id === "2" ? "card-gradient-light-blue" : "card-gradient-magenta",
+                selectedCardId === card.id ? "ring-2 ring-primary ring-offset-4 dark:ring-offset-[#161616]" : "opacity-95 hover:opacity-100 hover:shadow-2xl"
               )}>
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                   <CreditCard size={140} />
@@ -235,9 +235,9 @@ function CartoesPage() {
         {/* Detalhes da Fatura Selecionada */}
         <motion.div variants={itemVariants}>
           <Card className="apple-card overflow-hidden">
-            <CardHeader className="border-b border-border/40 bg-muted/20 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <CardHeader className="border-b border-border/40 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className={cn("p-2 rounded-lg text-white", selectedCard.color)}>
+                <div className={cn("p-2 rounded-lg text-white", selectedCard.id === "1" ? "card-gradient-blue" : selectedCard.id === "2" ? "card-gradient-light-blue" : "card-gradient-magenta")}>
                   <CreditCard size={20} />
                 </div>
                 <div>

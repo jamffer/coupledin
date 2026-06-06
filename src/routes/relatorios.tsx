@@ -119,7 +119,7 @@ function RelatoriosPage() {
         className="space-y-8 pb-10"
       >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gradient-scroll">Relatórios e Fechamento</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Relatórios e Fechamento</h1>
           <p className="text-muted-foreground italic">Análise profunda e acerto de contas do casal.</p>
         </div>
 
@@ -136,7 +136,7 @@ function RelatoriosPage() {
               <div className="flex items-center gap-2 mb-2">
                 <div className={cn(
                   "p-2 rounded-lg transition-colors",
-                  diff > 1 ? "bg-emerald-100 text-emerald-600" : diff < -1 ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary"
+                  diff > 1 ? "bg-emerald-500/10 text-emerald-600" : diff < -1 ? "bg-rose-500/10 text-rose-600" : "bg-primary/10 text-primary"
                 )}>
                   <ArrowRightLeft size={20} />
                 </div>
@@ -154,7 +154,7 @@ function RelatoriosPage() {
                     </Avatar>
                     <div className={cn(
                       "w-16 h-16 rounded-full border-4 border-white shadow-lg flex items-center justify-center relative z-10 transition-colors",
-                      diff > 1 ? "bg-emerald-100 text-emerald-600" : diff < -1 ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary"
+                      diff > 1 ? "bg-emerald-500/10 text-emerald-600" : diff < -1 ? "bg-rose-500/10 text-rose-600" : "bg-primary/10 text-primary"
                     )}>
                       <ArrowRightLeft size={24} className={cn(diff < -1 && "rotate-180")} />
                     </div>
@@ -172,7 +172,7 @@ function RelatoriosPage() {
                           {diff < 0 ? "Jorge, você deve transferir" : "Lilian, você deve transferir"}
                         </h3>
                         <p className={cn(
-                          "text-3xl font-black text-gradient-scroll",
+                          "text-3xl font-black text-primary dark:text-white",
                           diff < 0 ? "opacity-90" : "opacity-100"
                         )}>
                           R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -201,7 +201,7 @@ function RelatoriosPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Section 2: Análise de Categorias */}
           <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover h-full">
+            <Card className="apple-card apple-card-hover h-full border-2 border-primary/5 dark:border-white/5">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -249,7 +249,7 @@ function RelatoriosPage() {
 
           {/* Section 3: Maiores Gastos */}
           <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover h-full">
+            <Card className="apple-card apple-card-hover h-full border-2 border-primary/5 dark:border-white/5">
               <CardHeader>
                 <CardTitle>Top Maiores Gastos</CardTitle>
                 <CardDescription>As 5 transações mais pesadas do mês</CardDescription>
@@ -272,7 +272,7 @@ function RelatoriosPage() {
                         <TableRow key={expense.id} className="group border-b border-border/40 hover:bg-muted/10 transition-colors">
                           <TableCell className="pl-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="p-2 bg-muted rounded-xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                              <div className="p-2 bg-primary/10 rounded-xl text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                                 <CategoryIcon size={16} />
                               </div>
                               <div className="min-w-0">
@@ -287,7 +287,7 @@ function RelatoriosPage() {
                               <AvatarFallback>{expense.responsible[0]}</AvatarFallback>
                             </Avatar>
                           </TableCell>
-                          <TableCell className="pr-6 text-right font-black text-sm">
+                          <TableCell className="pr-6 text-right font-black text-sm dark:text-white">
                             R$ {Math.abs(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </TableCell>
                         </TableRow>

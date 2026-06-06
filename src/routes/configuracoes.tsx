@@ -80,7 +80,7 @@ function ConfiguracoesPage() {
         className="space-y-8 pb-10"
       >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gradient-scroll">Configurações</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
           <p className="text-muted-foreground italic">Controle total sobre as regras financeiras do casal.</p>
         </div>
 
@@ -90,16 +90,16 @@ function ConfiguracoesPage() {
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="flex -space-x-6">
-                  <Avatar className="w-24 h-24 border-4 border-white shadow-xl ring-1 ring-muted/20">
+                   <Avatar className="w-24 h-24 border-4 border-white dark:border-[#1A1A1A] shadow-xl ring-1 ring-muted/20">
                     <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
                     <AvatarFallback>JO</AvatarFallback>
                   </Avatar>
-                  <div className="w-24 h-24 rounded-full apple-glass flex items-center justify-center relative z-10">
+                  <div className="w-24 h-24 rounded-full apple-glass border-4 border-white dark:border-[#1A1A1A] flex items-center justify-center relative z-10">
                     <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center text-primary">
                       <Heart size={32} className="fill-primary" />
                     </div>
                   </div>
-                  <Avatar className="w-24 h-24 border-4 border-white shadow-xl ring-1 ring-muted/20">
+                  <Avatar className="w-24 h-24 border-4 border-white dark:border-[#1A1A1A] shadow-xl ring-1 ring-muted/20">
                     <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
                     <AvatarFallback>LI</AvatarFallback>
                   </Avatar>
@@ -108,18 +108,18 @@ function ConfiguracoesPage() {
                 <div className="flex-1 text-center md:text-left space-y-2">
                   <h2 className="text-2xl font-bold">Jorge & Lilian</h2>
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full">
+                    <div className="flex items-center gap-1.5 bg-muted dark:bg-muted/10 px-3 py-1 rounded-full">
                       <Calendar size={14} />
                       Início: 12 Jan 2024
                     </div>
-                    <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-medium">
+                    <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full font-medium">
                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       Conta Conectada
                     </div>
                   </div>
                 </div>
 
-                <Button variant="outline" className="rounded-full gap-2 px-6 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all">
+                <Button variant="outline" className="rounded-full gap-2 px-6 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all apple-interactive dark:border-white/10">
                   <UserPlus size={18} />
                   Convidar Parceiro(a)
                 </Button>
@@ -151,8 +151,8 @@ function ConfiguracoesPage() {
                   <Label
                     htmlFor="fixed"
                     className={cn(
-                      "flex flex-col items-center justify-between rounded-2xl border-2 border-muted apple-glass p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full",
-                      divisionModel === "fixed" && "border-primary bg-primary/5"
+                      "flex flex-col items-center justify-between rounded-2xl border-2 border-border p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full dark:bg-card dark:border-white/5",
+                      divisionModel === "fixed" && "border-primary bg-primary/5 dark:bg-primary/10 dark:border-primary/50"
                     )}
                   >
                     <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 peer-data-[state=checked]:bg-primary/20">
@@ -170,8 +170,8 @@ function ConfiguracoesPage() {
                   <Label
                     htmlFor="proportional"
                     className={cn(
-                      "flex flex-col items-center justify-between rounded-2xl border-2 border-muted apple-glass p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full",
-                      divisionModel === "proportional" && "border-primary bg-primary/5"
+                      "flex flex-col items-center justify-between rounded-2xl border-2 border-border p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full dark:bg-card dark:border-white/5",
+                      divisionModel === "proportional" && "border-primary bg-primary/5 dark:bg-primary/10 dark:border-primary/50"
                     )}
                   >
                     <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -238,7 +238,7 @@ function ConfiguracoesPage() {
                       </div>
                     </div>
 
-                    <div className="h-4 w-full apple-glass rounded-full overflow-hidden flex shadow-inner border-none">
+                    <div className="h-4 w-full bg-muted dark:bg-black rounded-full overflow-hidden flex shadow-inner border-none">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${percentageA}%` }}
@@ -251,7 +251,7 @@ function ConfiguracoesPage() {
                       />
                     </div>
 
-                    <div className="flex items-start gap-3 apple-glass p-4 rounded-xl border-white/20">
+                    <div className="flex items-start gap-3 bg-muted dark:bg-card p-4 rounded-xl border-border">
                       <Info size={16} className="text-primary mt-0.5 shrink-0" />
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         Este percentual será aplicado automaticamente em todas as transações marcadas como <span className="font-bold text-foreground">"Divisão Proporcional"</span> na tela de lançamentos.
@@ -277,24 +277,24 @@ function ConfiguracoesPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-xl transition-colors group cursor-pointer">
+                <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold group-hover:text-primary transition-colors">Notificações de Fatura</p>
-                    <p className="text-xs text-muted-foreground italic">Lembrar dias antes do vencimento.</p>
+                    <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Lembrar dias antes do vencimento.</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
-                <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-xl transition-colors group cursor-pointer">
+                <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold group-hover:text-primary transition-colors">Alertas de Orçamento</p>
-                    <p className="text-xs text-muted-foreground italic">Avisar quando passar de 80% do limite.</p>
+                    <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Avisar quando passar de 80% do limite.</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
-                <div className="flex items-center justify-between p-2 hover:bg-muted/30 rounded-xl transition-colors group cursor-pointer">
+                <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold group-hover:text-primary transition-colors">Relatório Semanal</p>
-                    <p className="text-xs text-muted-foreground italic">Resumo por e-mail toda segunda-feira.</p>
+                    <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Resumo por e-mail toda segunda-feira.</p>
                   </div>
                   <Switch />
                 </div>
@@ -313,7 +313,7 @@ function ConfiguracoesPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group">
+                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group dark:border-white/5 apple-interactive dark:bg-card">
                   <div className="flex items-center gap-3">
                     <Download size={18} className="text-muted-foreground group-hover:text-primary" />
                     <div className="text-left">
@@ -324,7 +324,7 @@ function ConfiguracoesPage() {
                   <ChevronRight size={16} className="text-muted-foreground" />
                 </Button>
                 
-                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group">
+                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group dark:border-white/5 apple-interactive dark:bg-card">
                   <div className="flex items-center gap-3">
                     <Settings2 size={18} className="text-muted-foreground group-hover:text-primary" />
                     <div className="text-left">

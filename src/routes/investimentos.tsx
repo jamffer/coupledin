@@ -110,7 +110,7 @@ function InvestimentosPage() {
       >
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Investimentos e Metas</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Investimentos e Metas</h1>
             <p className="text-muted-foreground italic">Construindo o futuro em conjunto.</p>
           </div>
           <Button className="rounded-full shadow-sm gap-2 apple-interactive border-white/20">
@@ -129,7 +129,7 @@ function InvestimentosPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {goals.map((goal) => (
               <motion.div key={goal.id} variants={itemVariants}>
-                <Card className="apple-card apple-card-hover group overflow-hidden">
+                <Card className="apple-card apple-card-hover group overflow-hidden border-2 border-primary/5 dark:border-white/5">
                   <CardHeader className="pb-4">
                     <div className="flex justify-between items-start">
                       <div className={cn("p-3 rounded-2xl", goal.iconColor)}>
@@ -139,12 +139,12 @@ function InvestimentosPage() {
                         <Plus size={18} />
                       </Button>
                     </div>
-                    <CardTitle className="mt-4 text-lg">{goal.title}</CardTitle>
+                    <CardTitle className="mt-4 text-lg font-bold">{goal.title}</CardTitle>
                     <CardDescription className="flex justify-between items-end mt-1">
-                      <span className="text-foreground font-bold text-lg">
+                      <span className="text-foreground font-bold text-lg dark:text-white">
                         R$ {goal.current.toLocaleString('pt-BR')}
                       </span>
-                      <span className="text-xs">
+                      <span className="text-xs dark:text-white/60">
                         alvo: R$ {goal.target.toLocaleString('pt-BR')}
                       </span>
                     </CardDescription>
@@ -197,16 +197,16 @@ function InvestimentosPage() {
             {/* Patrimonio Total Card */}
             <motion.div variants={itemVariants} className="lg:col-span-1 h-full">
               <div className="grid grid-cols-1 gap-6 h-full">
-                <Card className="apple-card overflow-hidden relative bg-primary text-primary-foreground border-none">
+                <Card className="apple-card overflow-hidden relative card-gradient-blue border-none">
                   <div className="absolute top-0 right-0 p-8 opacity-10">
                     <Wallet size={120} />
                   </div>
                   <CardContent className="p-8 flex flex-col justify-between h-full">
                     <div className="space-y-1 relative z-10">
-                      <p className="text-sm font-medium opacity-80 uppercase tracking-widest">Patrimônio Total</p>
-                      <h3 className="text-4xl font-black tracking-tight">R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                      <p className="text-sm font-medium opacity-80 uppercase tracking-widest text-white">Patrimônio Total</p>
+                      <h3 className="text-4xl font-black tracking-tight text-white">R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                     </div>
-                    <div className="mt-8 flex items-center gap-2 apple-interactive w-fit px-3 py-1 rounded-full backdrop-blur-sm relative z-10 border-none">
+                    <div className="mt-8 flex items-center gap-2 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-sm relative z-10">
                       <ArrowUpRight size={16} className="text-emerald-300" />
                       <span className="text-xs font-bold text-emerald-300">+8.5% este ano</span>
                     </div>
@@ -218,9 +218,9 @@ function InvestimentosPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos Conjuntos</p>
-                        <h4 className="text-xl font-bold text-foreground">R$ 45.200,00</h4>
+                        <h4 className="text-xl font-bold text-foreground dark:text-white">R$ 45.200,00</h4>
                       </div>
-                      <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                      <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg">
                         <TrendingUp size={20} />
                       </div>
                     </div>
@@ -229,9 +229,9 @@ function InvestimentosPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos do Jorge</p>
-                        <h4 className="text-xl font-bold text-foreground">R$ 22.150,00</h4>
+                        <h4 className="text-xl font-bold text-foreground dark:text-white">R$ 22.150,00</h4>
                       </div>
-                      <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                      <div className="p-2 bg-blue-500/10 text-blue-600 rounded-lg">
                         <TrendingUp size={20} />
                       </div>
                     </div>
@@ -240,9 +240,9 @@ function InvestimentosPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos da Lilian</p>
-                        <h4 className="text-xl font-bold text-foreground">R$ 18.100,00</h4>
+                        <h4 className="text-xl font-bold text-foreground dark:text-white">R$ 18.100,00</h4>
                       </div>
-                      <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                      <div className="p-2 bg-rose-500/10 text-rose-600 rounded-lg">
                         <TrendingUp size={20} />
                       </div>
                     </div>

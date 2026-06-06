@@ -162,73 +162,73 @@ function Dashboard() {
         {/* Grid de Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover group">
+            <Card className="apple-card apple-card-hover group card-gradient-blue border-none">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                  <div className="p-2 bg-white/20 rounded-lg text-white">
                     <Wallet size={20} />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Total</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/80 bg-white/10 px-2 py-0.5 rounded-full">Total</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Saldo Total</p>
-                  <h3 className="text-2xl font-bold tracking-tight text-gradient-scroll">R$ 12.450,80</h3>
+                  <p className="text-sm font-medium text-white/80">Saldo Total</p>
+                  <h3 className="text-2xl font-bold tracking-tight text-white">R$ 12.450,80</h3>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover group">
+            <Card className="apple-card apple-card-hover group card-gradient-light-blue border-none">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
+                  <div className="p-2 bg-white/20 rounded-lg text-white">
                     <ArrowUpRight size={20} />
                   </div>
-                  <span className="text-xs font-medium text-emerald-600">+12% vs mês ant.</span>
+                  <span className="text-xs font-medium text-white/90">+12% vs mês ant.</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Entradas do Mês</p>
-                  <h3 className="text-2xl font-bold tracking-tight text-emerald-600">R$ 6.500,00</h3>
+                  <p className="text-sm font-medium text-white/80">Entradas do Mês</p>
+                  <h3 className="text-2xl font-bold tracking-tight text-white">R$ 6.500,00</h3>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover group">
+            <Card className="apple-card apple-card-hover group card-gradient-magenta border-none">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-rose-100 rounded-lg text-rose-600">
+                  <div className="p-2 bg-white/20 rounded-lg text-white">
                     <ArrowDownRight size={20} />
                   </div>
-                  <span className="text-xs font-medium text-rose-600">+5% vs mês ant.</span>
+                  <span className="text-xs font-medium text-white/90">+5% vs mês ant.</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Saídas Totais</p>
-                  <h3 className="text-2xl font-bold tracking-tight text-rose-600">R$ 4.200,00</h3>
+                  <p className="text-sm font-medium text-white/80">Saídas Totais</p>
+                  <h3 className="text-2xl font-bold tracking-tight text-white">R$ 4.200,00</h3>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover group">
+            <Card className="apple-card apple-card-hover group border-2 border-primary/20 dark:border-primary/40">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
+                  <div className="p-2 bg-primary/10 rounded-lg text-primary dark:text-primary-foreground">
                     <CreditCard size={20} />
                   </div>
                   <p className="text-xs font-medium text-muted-foreground">Cartão de Crédito</p>
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider font-bold text-rose-500">Fatura a pagar</p>
-                    <h3 className="text-xl font-bold tracking-tight text-rose-600">R$ 2.150,40</h3>
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-destructive">Fatura a pagar</p>
+                    <h3 className="text-xl font-bold tracking-tight text-foreground">R$ 2.150,40</h3>
                   </div>
-                  <div className="pt-2 border-t border-border/50 flex justify-between items-center">
+                  <div className="pt-2 border-t border-border flex justify-between items-center">
                     <span className="text-[10px] font-medium text-muted-foreground uppercase">Limite Disponível</span>
-                    <span className="text-sm font-bold text-emerald-600">R$ 8.500,00</span>
+                    <span className="text-sm font-bold text-primary">R$ 8.500,00</span>
                   </div>
                 </div>
               </CardContent>
@@ -243,7 +243,7 @@ function Dashboard() {
             <Card className="apple-card">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-bold text-gradient-scroll">Fluxo de Caixa</CardTitle>
+                  <CardTitle className="text-lg font-bold">Fluxo de Caixa</CardTitle>
                   <p className="text-xs text-muted-foreground">Visão geral dos últimos 6 meses</p>
                 </div>
               </CardHeader>

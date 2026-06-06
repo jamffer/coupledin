@@ -190,7 +190,7 @@ function TransactionsPage() {
         {/* Section 2: Filters and Table */}
         <div className="space-y-4">
           <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold tracking-tight text-gradient-scroll">Histórico</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Histórico</h2>
             
             <div className="flex flex-wrap items-center gap-2">
               <Select defaultValue="june">
