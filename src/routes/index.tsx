@@ -61,6 +61,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useSpaceOnboardingStore, OnboardingStep } from "@/store/useSpaceOnboardingStore";
+import { Progress } from "@/components/ui/progress";
 
 const chartData = [
   { name: "Jan", entradas: 4500, saidas: 3200 },
@@ -111,6 +113,23 @@ function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { transactions, userAvatars, setTransactions } = useFinanceStore();
   const [profile, setProfile] = useState<any>(null);
+  const { 
+    step, 
+    message, 
+    setStep, 
+    reset: resetOnboarding 
+  } = useSpaceOnboardingStore();
+
+  const isProcessing = step === OnboardingStep.MOUNTING_DASHBOARD || step === OnboardingStep.CONNECTING_REALTIME;
+  const progressValue = {
+    [OnboardingStep.IDLE]: 0,
+    [OnboardingStep.VALIDATING]: 20,
+    [OnboardingStep.CREATING_SPACE]: 40,
+    [OnboardingStep.CONNECTING_REALTIME]: 60,
+    [OnboardingStep.MOUNTING_DASHBOARD]: 80,
+    [OnboardingStep.SUCCESS]: 100,
+    [OnboardingStep.ERROR]: 0,
+  }[step];
   
   // Estados para os painéis laterais baseados na URL
   const activeSheet = (search.sheet as 'balance' | 'income' | 'expenses' | 'credit' | null) || null;
@@ -180,6 +199,8 @@ function Dashboard() {
     let subscription: any;
     
     if (profile?.couple_id) {
+      setStep(OnboardingStep.CONNECTING_REALTIME);
+      
       // Connect to Realtime first or in parallel
       const channel = supabase
         .channel("dashboard-updates")
@@ -195,7 +216,12 @@ function Dashboard() {
       // Subscribe and only finish loading after subscription is confirmed AND initial fetch is done
       channel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
+          setStep(OnboardingStep.MOUNTING_DASHBOARD);
           await fetchTransactions(profile.couple_id);
+          setStep(OnboardingStep.SUCCESS);
+          
+          // Reset onboarding state after a delay to clear the overlay
+          setTimeout(resetOnboarding, 1000);
         }
       });
 
@@ -378,7 +404,37 @@ function Dashboard() {
 
   return (
     <DashboardLayout>
+      {/* Mounting Overlay */}
+      <AnimatePresence>
+        {isProcessing && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm"
+          >
+            <div className="w-full max-w-md p-6 space-y-4 text-center">
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 text-primary mb-4"
+              >
+                <RefreshCcw size={40} className="animate-spin-slow" />
+              </motion.div>
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold tracking-tight">{message}</h2>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  <span>Progresso</span>
+                  <span>{progressValue}%</span>
+                </div>
+                <Progress value={progressValue} className="h-1.5" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <motion.div 
+
         variants={containerVariants}
         initial="hidden"
         animate="visible"
