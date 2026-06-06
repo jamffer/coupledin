@@ -44,7 +44,8 @@ import {
   CheckCircle2,
   Users,
   Calendar,
-  DollarSign
+  DollarSign,
+  Split
 } from "lucide-react";
 import { 
   BarChart, 
