@@ -136,7 +136,7 @@ function RelatoriosPage() {
               <div className="flex items-center gap-2 mb-2">
                 <div className={cn(
                   "p-2 rounded-lg transition-colors",
-                  diff > 1 ? "bg-emerald-100 text-emerald-600" : diff < -1 ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary"
+                  diff > 1 ? "bg-emerald-500/10 text-emerald-600" : diff < -1 ? "bg-rose-500/10 text-rose-600" : "bg-primary/10 text-primary"
                 )}>
                   <ArrowRightLeft size={20} />
                 </div>
@@ -154,7 +154,7 @@ function RelatoriosPage() {
                     </Avatar>
                     <div className={cn(
                       "w-16 h-16 rounded-full border-4 border-white shadow-lg flex items-center justify-center relative z-10 transition-colors",
-                      diff > 1 ? "bg-emerald-100 text-emerald-600" : diff < -1 ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary"
+                      diff > 1 ? "bg-emerald-500/10 text-emerald-600" : diff < -1 ? "bg-rose-500/10 text-rose-600" : "bg-primary/10 text-primary"
                     )}>
                       <ArrowRightLeft size={24} className={cn(diff < -1 && "rotate-180")} />
                     </div>
