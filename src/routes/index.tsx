@@ -67,58 +67,6 @@ export const Route = createFileRoute("/")({
  component: Dashboard,
 });
 
-const chartData = [
-  { name: "Jan", entradas: 4500, saidas: 3200 },
-  { name: "Fev", entradas: 5200, saidas: 3800 },
-  { name: "Mar", entradas: 4800, saidas: 4100 },
-  { name: "Abr", entradas: 6100, saidas: 4300 },
-  { name: "Mai", entradas: 5900, saidas: 3900 },
-  { name: "Jun", entradas: 6500, saidas: 4200 },
-];
-
-const recentTransactions = [
-  {
-    id: 1,
-    description: "Supermercado Extra",
-    category: "Alimentação",
-    icon: ShoppingBag,
-    amount: -450.0,
-    date: "Hoje, 14:20",
-    user: "Jorge",
-    userColor: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: 2,
-    description: "Salário Empresa X",
-    category: "Renda",
-    icon: TrendingUp,
-    amount: 5500.0,
-    date: "Ontem, 09:00",
-    user: "Lilian",
-    userColor: "bg-pink-100 text-pink-700",
-  },
-  {
-    id: 3,
-    description: "Starbucks",
-    category: "Lazer",
-    icon: Coffee,
-    amount: -32.5,
-    date: "04 Jun, 16:45",
-    user: "Lilian",
-    userColor: "bg-pink-100 text-pink-700",
-  },
-  {
-    id: 4,
-    description: "Posto Shell",
-    category: "Transporte",
-    icon: Car,
-    amount: -220.0,
-    date: "03 Jun, 11:30",
-    user: "Jorge",
-    userColor: "bg-blue-100 text-blue-700",
-  },
-];
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -442,7 +390,7 @@ function Dashboard() {
               </CardHeader>
               <CardContent className="pt-2">
                 <div className="space-y-6">
-                  {recentTransactions.map((tx) => (
+                  {transactions.slice(0, 4).map((tx) => (
                     <div 
                       key={tx.id} 
                       onClick={() => setSelectedTx(tx)}
@@ -450,21 +398,27 @@ function Dashboard() {
                     >
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-muted rounded-2xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                          <tx.icon size={18} />
+                          {React.createElement(CATEGORY_ICONS[tx.category] || Coffee, { size: 18 })}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold truncate">{tx.description}</p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] text-muted-foreground">{tx.date}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${tx.userColor}`}>
-                              {tx.user}
-                            </span>
+                            <span className="text-[10px] text-muted-foreground">{format(new Date(tx.date), "dd MMM, HH:mm", { locale: ptBR })}</span>
+                            <div className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
+                              <img src={AVATARS[tx.responsible]} alt={tx.responsible} className="w-3 h-3 rounded-full" />
+                              <span className="text-[10px] font-semibold text-muted-foreground">
+                                {tx.responsible}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`text-sm font-bold ${tx.amount < 0 ? 'text-foreground' : 'text-emerald-600'}`}>
-                          {tx.amount < 0 ? '-' : '+'} R$ {Math.abs(tx.amount).toFixed(2)}
+                        <p className={cn(
+                          "text-sm font-bold",
+                          tx.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'
+                        )}>
+                          {tx.type === 'Entrada' ? '+' : '-'} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
                         <p className="text-[10px] text-muted-foreground">{tx.category}</p>
                       </div>
