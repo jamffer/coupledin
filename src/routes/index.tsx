@@ -25,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -39,7 +39,9 @@ import {
   Home,
   ChevronDown,
   Clock,
-  HelpCircle
+  HelpCircle,
+  AlertCircle,
+  RefreshCcw
 } from "lucide-react";
 
 import { 
