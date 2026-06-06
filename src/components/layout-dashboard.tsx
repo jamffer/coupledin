@@ -7,7 +7,9 @@ import {
   Target,
   Settings,
   PlusCircle,
-  Menu
+  Menu,
+  Moon,
+  Sun
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -80,6 +82,22 @@ export function AppSidebar() {
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
+
+  const toggleDarkMode = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -119,6 +137,15 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
             
             <div className="flex items-center gap-3 md:gap-6">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleDarkMode}
+                className="rounded-full apple-interactive border-white/40"
+              >
+                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </Button>
+
               <Button size="sm" className="hidden md:flex gap-2 rounded-full shadow-sm apple-interactive border-white/40">
                 <PlusCircle size={18} />
                 Novo Registro

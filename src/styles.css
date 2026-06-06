@@ -106,7 +106,7 @@
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
+  --background: oklch(0.129 0.042 264.695 / 0%);
   --foreground: oklch(0.984 0.003 247.858);
   --card: oklch(0.208 0.042 265.755 / 0%);
   --card-foreground: oklch(0.984 0.003 247.858);
@@ -165,10 +165,11 @@
   }
   
   .dark .apple-glass {
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.5);
     border-color: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(32px);
     -webkit-backdrop-filter: blur(32px);
+    color: white;
   }
 
   .apple-card {
@@ -184,7 +185,7 @@
   }
 
   .dark .apple-card {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(0, 0, 0, 0.5);
     border-color: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(32px);
     -webkit-backdrop-filter: blur(32px);
