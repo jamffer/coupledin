@@ -119,7 +119,7 @@ function ConfiguracoesPage() {
                   </div>
                 </div>
 
-                <Button variant="outline" className="rounded-full gap-2 px-6 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all">
+                <Button variant="outline" className="rounded-full gap-2 px-6 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all apple-interactive dark:border-white/10">
                   <UserPlus size={18} />
                   Convidar Parceiro(a)
                 </Button>
@@ -313,7 +313,7 @@ function ConfiguracoesPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group">
+                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group dark:border-white/5 apple-interactive dark:bg-card">
                   <div className="flex items-center gap-3">
                     <Download size={18} className="text-muted-foreground group-hover:text-primary" />
                     <div className="text-left">
@@ -324,7 +324,7 @@ function ConfiguracoesPage() {
                   <ChevronRight size={16} className="text-muted-foreground" />
                 </Button>
                 
-                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group">
+                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group dark:border-white/5 apple-interactive dark:bg-card">
                   <div className="flex items-center gap-3">
                     <Settings2 size={18} className="text-muted-foreground group-hover:text-primary" />
                     <div className="text-left">
