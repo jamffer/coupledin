@@ -187,6 +187,8 @@ function Dashboard() {
     if (profile?.couple_id) {
       setStep(OnboardingStep.CONNECTING_REALTIME);
       
+      const coupleId = profile.couple_id;
+      
       // Connect to Realtime first or in parallel
       const channel = supabase
         .channel("dashboard-updates")
@@ -194,16 +196,16 @@ function Dashboard() {
           event: "*",
           schema: "public",
           table: "transactions",
-          filter: `couple_id=eq.${profile.couple_id}`
-        }, (payload) => {
-          fetchTransactions(profile.couple_id);
+          filter: `couple_id=eq.${coupleId}`
+        }, () => {
+          fetchTransactions(coupleId);
         });
 
       // Subscribe and only finish loading after subscription is confirmed AND initial fetch is done
       channel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           setStep(OnboardingStep.MOUNTING_DASHBOARD);
-          await fetchTransactions(profile.couple_id);
+          await fetchTransactions(coupleId);
           setStep(OnboardingStep.SUCCESS);
           
           // Reset onboarding state after a delay to clear the overlay

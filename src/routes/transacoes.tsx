@@ -137,11 +137,12 @@ function TransactionsPage() {
   // Sync transactions from Supabase
   useEffect(() => {
     if (profile?.couple_id) {
+      const coupleId = profile.couple_id;
       const fetchTransactions = async () => {
         const { data, error } = await supabase
           .from("transactions")
           .select("*")
-          .eq("couple_id", profile.couple_id)
+          .eq("couple_id", coupleId)
           .order("date", { ascending: false });
 
         if (!error && data) {
@@ -158,7 +159,7 @@ function TransactionsPage() {
           event: "*",
           schema: "public",
           table: "transactions",
-          filter: `couple_id=eq.${profile.couple_id}`
+          filter: `couple_id=eq.${coupleId}`
         }, (payload) => {
           if (payload.eventType === 'INSERT') {
             const newTx = payload.new as any;
@@ -240,6 +241,8 @@ function TransactionsPage() {
   const handleConfirm = async () => {
     if (!parsedData || !user || !profile?.couple_id) return;
     
+    const coupleId = profile.couple_id;
+    
     const txData = {
       description: parsedData.description,
       amount: (parsedData.type === "Entrada" ? 1 : -1) * Math.abs(parsedData.amount),
@@ -249,7 +252,7 @@ function TransactionsPage() {
       division: parsedData.division as string,
       type: parsedData.type,
       user_id: user.id,
-      couple_id: profile.couple_id,
+      couple_id: coupleId,
     };
 
     const { error } = await supabase.from("transactions").insert(txData);
@@ -266,10 +269,12 @@ function TransactionsPage() {
   };
 
   const handleSaveManual = async () => {
-    if (!formData.description || !formData.amount) {
-      toast.error("Preencha a descrição e o valor.");
+    if (!formData.description || !formData.amount || !profile?.couple_id) {
+      toast.error("Preencha a descrição, o valor e certifique-se de estar conectado.");
       return;
     }
+
+    const coupleId = profile.couple_id;
 
     const txData = {
       description: formData.description || "",
@@ -280,7 +285,7 @@ function TransactionsPage() {
       division: (formData.division as string) || "Conjunta 50/50",
       type: formData.type || "Saída",
       user_id: user!.id,
-      couple_id: profile.couple_id
+      couple_id: coupleId
     };
 
     if (editingTx) {
