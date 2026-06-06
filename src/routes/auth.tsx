@@ -159,8 +159,12 @@ function AuthPage() {
 
       if (joinError) throw joinError;
 
-      toast.success("Vinculado com sucesso!", { description: "Bem-vindo ao espaço do casal." });
-      navigate({ to: "/" });
+      toast.success("Vinculado com sucesso!", { description: "Carregando o seu novo espaço..." });
+      
+      // Immediate navigation for better engagement
+      setTimeout(() => {
+        navigate({ to: "/" });
+      }, 1000);
     } catch (error: any) {
       toast.error("Erro ao entrar", { description: error.message });
     } finally {
