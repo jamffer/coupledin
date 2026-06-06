@@ -25,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -39,7 +39,9 @@ import {
   Home,
   ChevronDown,
   Clock,
-  HelpCircle
+  HelpCircle,
+  AlertCircle,
+  RefreshCcw
 } from "lucide-react";
 
 import { 
@@ -95,6 +97,7 @@ const itemVariants = {
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<boolean>(false);
   const navigate = useNavigate();
   const [selectedTx, setSelectedTx] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
@@ -124,22 +127,33 @@ function Dashboard() {
     }
   }, [user]);
 
+  const fetchTransactions = useCallback(async (coupleId: string) => {
+    try {
+      setLoading(true);
+      setError(false);
+      
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("couple_id", coupleId)
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      
+      if (data) {
+        setTransactions(data as any);
+      }
+    } catch (err: any) {
+      console.error("Error fetching transactions:", err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [setTransactions]);
+
   useEffect(() => {
     if (profile?.couple_id) {
-      const fetchTransactions = async () => {
-        const { data, error } = await supabase
-          .from("transactions")
-          .select("*")
-          .eq("couple_id", profile.couple_id)
-          .order("date", { ascending: false });
-
-        if (!error && data) {
-          setTransactions(data as any);
-        }
-        setLoading(false);
-      };
-
-      fetchTransactions();
+      fetchTransactions(profile.couple_id);
 
       // Subscription for real-time updates
       const subscription = supabase
@@ -150,28 +164,17 @@ function Dashboard() {
           table: "transactions",
           filter: `couple_id=eq.${profile.couple_id}`
         }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newTx = payload.new as any;
-            setTransactions([newTx, ...transactions]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedTx = payload.new as any;
-            setTransactions(transactions.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = payload.old.id;
-            setTransactions(transactions.filter(tx => tx.id !== deletedId));
-          }
+          fetchTransactions(profile.couple_id);
         })
         .subscribe();
 
       return () => {
         supabase.removeChannel(subscription);
       };
-    } else if (!authLoading && !profile && !loading) {
-        // Still loading profile or no couple_id yet
     } else if (profile && !profile.couple_id) {
       setLoading(false);
     }
-  }, [profile?.couple_id, setTransactions, authLoading]);
+  }, [profile?.couple_id, fetchTransactions]);
 
   useEffect(() => {
     if (!profile) {
@@ -256,6 +259,38 @@ function Dashboard() {
               ))}
             </div>
           </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="h-[70vh] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md"
+          >
+            <Card className="apple-card p-8 text-center space-y-6 border-destructive/20 bg-destructive/5">
+              <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto">
+                <AlertCircle size={32} />
+              </div>
+              <div className="space-y-2">
+                <CardTitle className="text-xl font-bold">Não foi possível carregar os dados</CardTitle>
+                <p className="text-muted-foreground">Tivemos um problema de conexão ou o espaço não foi encontrado.</p>
+              </div>
+              <Button 
+                onClick={() => profile?.couple_id && fetchTransactions(profile.couple_id)} 
+                className="w-full h-12 rounded-xl font-bold gap-2 active:scale-95 transition-all"
+                disabled={loading}
+              >
+                <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
+                {loading ? "Tentando conectar..." : "Tentar Novamente"}
+              </Button>
+            </Card>
+          </motion.div>
         </div>
       </DashboardLayout>
     );
