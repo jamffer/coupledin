@@ -39,7 +39,7 @@ export function ImageCropperModal({
   }, []);
 
   const handleSave = async () => {
-    if (!image || !croppedAreaPixels) return;
+    if (!image || !croppedAreaPixels || !userId) return;
 
     setLoading(true);
     try {
