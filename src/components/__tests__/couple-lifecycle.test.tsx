@@ -3,22 +3,23 @@ import { render, screen, act } from '@testing-library/react';
 import { PartnerGreetingHeader } from '@/components/partner-greeting-header';
 import type { ProfileLike } from '@/lib/greeting';
 
-// Capture the realtime callback so we can manually trigger it
-let realtimeCallback: ((payload: any) => void) | null = null;
-const subscribeMock = vi.fn();
-const removeChannelMock = vi.fn();
+const mocks = vi.hoisted(() => {
+  return {
+    realtimeCallback: { current: null as ((payload: any) => void) | null },
+    subscribeMock: vi.fn(),
+    removeChannelMock: vi.fn(),
+  };
+});
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    channel: vi.fn(() => ({
+    channel: () => ({
       on: (_event: string, _filter: any, cb: (payload: any) => void) => {
-        realtimeCallback = cb;
-        return {
-          subscribe: subscribeMock,
-        };
+        mocks.realtimeCallback.current = cb;
+        return { subscribe: mocks.subscribeMock };
       },
-    })),
-    removeChannel: removeChannelMock,
+    }),
+    removeChannel: mocks.removeChannelMock,
   },
 }));
 
