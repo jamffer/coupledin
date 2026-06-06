@@ -73,6 +73,7 @@ import { parseTransactionFromText, type ParsedTransaction } from "@/lib/transact
 import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, type Transaction } from "@/hooks/use-finance-store";
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "@/components/empty-state";
+import { formatCurrency } from "@/lib/utils";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -565,7 +566,7 @@ function TransactionsPage() {
                           </TableCell>
                           <TableCell className="py-5 text-right">
                             <p className={`font-black text-sm ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                              {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {tx.amount > 0 ? '+' : ''} {formatCurrency(Math.abs(tx.amount))}
                             </p>
                           </TableCell>
                           <TableCell className="py-5">
