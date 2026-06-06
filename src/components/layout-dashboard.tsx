@@ -10,7 +10,10 @@ import {
   Menu,
   Moon,
   Sun,
-  Plus
+  Plus,
+  Camera,
+  User as UserIcon,
+  Check
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -47,6 +50,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useFinanceStore } from "@/hooks/use-finance-store";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -103,6 +107,12 @@ export function AppSidebar() {
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isNewRecordOpen, setIsNewRecordOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { userNames, userAvatars, updateUserProfile } = useFinanceStore();
+  const [currentUser, setCurrentUser] = useState<"Jorge" | "Lilian">("Jorge");
+  const [tempName, setTempName] = useState("");
+  const [tempAvatar, setTempAvatar] = useState("");
+  
   const navigate = useNavigate();
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -129,6 +139,30 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (isProfileOpen) {
+      setTempName(userNames[currentUser]);
+      setTempAvatar(userAvatars[currentUser]);
+    }
+  }, [isProfileOpen, currentUser, userNames, userAvatars]);
+
+  const handleSaveProfile = () => {
+    updateUserProfile(currentUser, tempName, tempAvatar);
+    toast.success("Perfil atualizado com sucesso!");
+    setIsProfileOpen(false);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTempAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  useEffect(() => {
     const handleScroll = () => {
       const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
       const currentScroll = window.scrollY;
@@ -152,7 +186,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               <SidebarTrigger className="md:hidden" />
               <div>
                 <h2 className="text-xs font-medium text-muted-foreground italic">Bom dia,</h2>
-                <h1 className="text-lg font-bold text-foreground">O casal preferido!</h1>
+                <h1 className="text-lg font-bold text-foreground">{userNames.Jorge} & {userNames.Lilian}</h1>
               </div>
             </div>
             
@@ -237,26 +271,93 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                 </Button>
               </DialogTrigger>
               
-              <div className="flex -space-x-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm cursor-pointer hover:scale-110 transition-transform z-10">
-                      <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
-                      <AvatarFallback>JO</AvatarFallback>
-                    </Avatar>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Perfil do Jorge</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm cursor-pointer hover:scale-110 transition-transform">
-                      <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
-                      <AvatarFallback>LI</AvatarFallback>
-                    </Avatar>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Perfil da Lilian</p></TooltipContent>
-                </Tooltip>
-              </div>
+              <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+                <div className="flex -space-x-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DialogTrigger asChild onClick={() => setCurrentUser("Jorge")}>
+                        <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm cursor-pointer hover:scale-110 transition-transform z-10">
+                          <AvatarImage src={userAvatars.Jorge} />
+                          <AvatarFallback>JO</AvatarFallback>
+                        </Avatar>
+                      </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Perfil de {userNames.Jorge}</p></TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DialogTrigger asChild onClick={() => setCurrentUser("Lilian")}>
+                        <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm cursor-pointer hover:scale-110 transition-transform">
+                          <AvatarImage src={userAvatars.Lilian} />
+                          <AvatarFallback>LI</AvatarFallback>
+                        </Avatar>
+                      </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Perfil de {userNames.Lilian}</p></TooltipContent>
+                  </Tooltip>
+                </div>
+                
+                <DialogContent className="apple-card dark:bg-[#1A1A1A] border-border/40 sm:max-w-md overflow-hidden">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black tracking-tight text-center pt-4">Editar Perfil</DialogTitle>
+                    <DialogDescription className="text-center">
+                      Personalize como você aparece no CoupleFinance.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="flex flex-col items-center gap-8 py-8">
+                    {/* Avatar Upload Section */}
+                    <div className="relative group">
+                      <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white dark:border-black shadow-2xl ring-2 ring-primary/20 relative">
+                        {tempAvatar ? (
+                          <img src={tempAvatar} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
+                            <UserIcon size={40} />
+                          </div>
+                        )}
+                      </div>
+                      <label 
+                        htmlFor="avatar-upload" 
+                        className="absolute bottom-0 right-0 p-2.5 bg-primary text-primary-foreground rounded-full shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all ring-4 ring-background"
+                      >
+                        <Camera size={18} />
+                        <input 
+                          id="avatar-upload" 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={handleAvatarChange}
+                        />
+                      </label>
+                    </div>
+
+                    {/* Name Input Section */}
+                    <div className="w-full space-y-2 px-4">
+                      <Label htmlFor="profile-name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                        Seu Nome
+                      </Label>
+                      <Input 
+                        id="profile-name" 
+                        value={tempName} 
+                        onChange={(e) => setTempName(e.target.value)}
+                        placeholder="Como quer ser chamado?" 
+                        className="h-12 text-lg font-medium rounded-2xl border-border/40 bg-muted/30 focus-visible:ring-primary/20 apple-interactive"
+                      />
+                    </div>
+                  </div>
+
+                  <DialogFooter className="px-4 pb-4">
+                    <Button 
+                      className="w-full h-12 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 apple-interactive border-none active:scale-95 transition-all gap-2"
+                      onClick={handleSaveProfile}
+                    >
+                      <Check size={18} />
+                      Salvar Alterações
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </header>
           <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
