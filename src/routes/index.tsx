@@ -62,7 +62,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSpaceOnboardingStore, OnboardingStep } from "@/store/useSpaceOnboardingStore";
-import { Progress } from "@/components/ui/progress";
+import { LoadingOverlay } from "@/components/onboarding/loading-overlay";
 
 const chartData = [
   { name: "Jan", entradas: 4500, saidas: 3200 },
