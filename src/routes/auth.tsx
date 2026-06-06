@@ -50,7 +50,18 @@ function AuthPage() {
 
   useEffect(() => {
     if (user && !generatedInviteCode) {
-      checkProfileStatus();
+      const storedName = localStorage.getItem("pending_onboarding_name");
+      if (storedName) {
+        supabase.from("profiles")
+          .update({ display_name: storedName })
+          .eq("id", user.id)
+          .then(() => {
+            localStorage.removeItem("pending_onboarding_name");
+            checkProfileStatus();
+          });
+      } else {
+        checkProfileStatus();
+      }
     }
   }, [user, generatedInviteCode]);
 
