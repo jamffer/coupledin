@@ -157,7 +157,7 @@
   }
   
   .dark .apple-glass {
-    @apply bg-black/30 border-white/10;
+    @apply bg-black/40 border-white/10 backdrop-blur-2xl;
   }
 
   .apple-card {
@@ -168,8 +168,16 @@
     @apply hover:bg-white/50 hover:shadow-lg hover:-translate-y-0.5;
   }
 
+  .dark .apple-card-hover {
+    @apply hover:bg-black/60;
+  }
+
   .apple-interactive {
     @apply bg-white/20 backdrop-blur-md border border-white/20 hover:bg-white/40 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .dark .apple-interactive {
+    @apply bg-white/5 border-white/10 hover:bg-white/10;
   }
 
   .text-gradient-scroll {
@@ -183,6 +191,19 @@
       #94C2DA,
       #E7A0CC,
       #EFE8E0
+    );
+  }
+
+  .dark .text-gradient-scroll {
+    background-image: linear-gradient(
+      to bottom,
+      #ffffff,
+      #94C2DA,
+      #E7A0CC,
+      #E84797,
+      #4E7CB2,
+      #203F9A,
+      #161616
     );
   }
 }
