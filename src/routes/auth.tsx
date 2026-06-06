@@ -263,6 +263,21 @@ function AuthPage() {
                     <CardContent className="space-y-6 pb-8">
                       <form onSubmit={handleSignIn} className="space-y-4">
                         <div className="space-y-2">
+                          <Label htmlFor="login-name">Seu Nome</Label>
+                          <div className="relative">
+                            <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                            <Input 
+                              id="login-name" 
+                              type="text" 
+                              placeholder="Como quer ser chamado?" 
+                              className="pl-10 h-12 rounded-xl"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
                           <Label htmlFor="email">E-mail</Label>
                           <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
