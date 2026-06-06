@@ -179,7 +179,7 @@ function CartoesPage() {
               className="cursor-pointer"
             >
               <Card className={cn(
-                "relative h-64 border-none text-white shadow-xl overflow-hidden transition-all duration-300 flex flex-col justify-between",
+                "relative h-64 border-none text-white shadow-xl overflow-hidden transition-all duration-300 flex flex-col justify-between p-6",
                 card.color,
                 selectedCardId === card.id ? "ring-2 ring-primary ring-offset-4 ring-offset-[#fcfbf8]" : "opacity-95 hover:opacity-100"
               )}>
