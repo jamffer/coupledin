@@ -206,7 +206,7 @@ function InvestimentosPage() {
                       <p className="text-sm font-medium opacity-80 uppercase tracking-widest">Patrimônio Total</p>
                       <h3 className="text-4xl font-black tracking-tight">R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                     </div>
-                    <div className="mt-8 flex items-center gap-2 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-sm relative z-10">
+                    <div className="mt-8 flex items-center gap-2 apple-interactive w-fit px-3 py-1 rounded-full backdrop-blur-sm relative z-10 border-none">
                       <ArrowUpRight size={16} className="text-emerald-300" />
                       <span className="text-xs font-bold text-emerald-300">+8.5% este ano</span>
                     </div>
