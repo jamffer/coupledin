@@ -97,6 +97,7 @@ const itemVariants = {
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<boolean>(false);
   const navigate = useNavigate();
   const [selectedTx, setSelectedTx] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
