@@ -172,7 +172,7 @@ function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Saldo Total</p>
-                  <h3 className="text-2xl font-bold tracking-tight">R$ 12.450,80</h3>
+                  <h3 className="text-2xl font-bold tracking-tight text-gradient-scroll">R$ 12.450,80</h3>
                 </div>
               </CardContent>
             </Card>
@@ -243,7 +243,7 @@ function Dashboard() {
             <Card className="apple-card">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-bold">Fluxo de Caixa</CardTitle>
+                  <CardTitle className="text-lg font-bold text-gradient-scroll">Fluxo de Caixa</CardTitle>
                   <p className="text-xs text-muted-foreground">Visão geral dos últimos 6 meses</p>
                 </div>
               </CardHeader>

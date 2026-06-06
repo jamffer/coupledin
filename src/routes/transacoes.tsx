@@ -133,7 +133,7 @@ function TransactionsPage() {
       >
         {/* Section 1: Smart Input */}
         <motion.div variants={itemVariants}>
-          <Card className="border-none shadow-sm bg-white overflow-hidden">
+          <Card className="apple-card overflow-hidden">
             <CardContent className="p-6 md:p-8">
               <div className="flex flex-col space-y-4">
                 <div className="flex items-center gap-2 text-primary">
@@ -190,7 +190,7 @@ function TransactionsPage() {
         {/* Section 2: Filters and Table */}
         <div className="space-y-4">
           <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold tracking-tight">Histórico</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-gradient-scroll">Histórico</h2>
             
             <div className="flex flex-wrap items-center gap-2">
               <Select defaultValue="june">
@@ -247,7 +247,7 @@ function TransactionsPage() {
 
           <motion.div variants={itemVariants}>
             {/* Desktop Table */}
-            <div className="hidden md:block bg-white rounded-3xl shadow-sm border-none overflow-hidden">
+            <div className="hidden md:block apple-card overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="border-none hover:bg-transparent">
