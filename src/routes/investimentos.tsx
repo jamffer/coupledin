@@ -133,7 +133,7 @@ function InvestimentosPage() {
   const [fiis, setFiis] = useState(initialFIIs);
   const [cripto, setCripto] = useState(initialCripto);
 
-  const fetchStockPrices = useCallback(async () => {
+  const fetchStockPrices = async () => {
     try {
       const tickers = [...acoes, ...fiis].map(a => a.ticker).join(',');
       const response = await fetch(`https://brapi.dev/api/quote/${tickers}`);
@@ -153,9 +153,9 @@ function InvestimentosPage() {
       console.error("Error fetching stocks:", error);
       toast.error("Erro ao atualizar cotações da B3");
     }
-  }, [acoes, fiis]);
+  };
 
-  const fetchCryptoPrices = useCallback(async () => {
+  const fetchCryptoPrices = async () => {
     try {
       const ids = cripto.map(c => c.id).join(',');
       const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl`);
@@ -171,7 +171,7 @@ function InvestimentosPage() {
       console.error("Error fetching crypto:", error);
       toast.error("Erro ao atualizar criptoativos");
     }
-  }, [cripto]);
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -181,7 +181,6 @@ function InvestimentosPage() {
   };
 
   useEffect(() => {
-    // Initial fetch on mount
     handleRefresh();
   }, []);
 
