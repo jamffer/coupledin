@@ -1,56 +1,36 @@
-## Objetivo
-Transformar a descrição em linguagem natural digitada no Smart Input em uma transação estruturada (data, descrição, categoria, valor, tipo, responsável, divisão) usando IA, e adicioná-la automaticamente à lista de Lançamentos.
+## Quality, Security, and Performance Review
 
-## Arquitetura
+### 1. Inconsistency in State Management
+The application currently mixes **React Query** (in `CartoesPage`) and **Zustand with Persistence** (in `TransactionsPage`) for managing the same entities (transactions). Using `persist` in Zustand can lead to stale data when the partner updates a record in a shared couple workspace.
 
-```text
-[Textarea] -> useMutation -> serverFn parseTransaction
-                                  |
-                                  v
-                          Lovable AI Gateway
-                          (google/gemini-3-flash-preview)
-                          structured output (Zod schema)
-                                  |
-                                  v
-                          { date, description, category,
-                            amount, type, responsible, division }
-                                  |
-                                  v
-                          Inserida no topo da tabela (estado local)
-```
+- **Action:** Transition `TransactionsPage` to primarily use React Query for data fetching, keeping Zustand only for UI-specific state if necessary.
 
-Sem banco de dados nesta etapa — as transações ficam em estado React (Zustand-like via `useState` no nível de `/transacoes` ou um simples store em memória). Persistência fica para uma próxima iteração.
+### 2. Performance: Redundant Loops
+In `CartoesPage`, the current implementation calculates card balances by filtering a global transaction list inside a `map` of cards ($O(N \times M)$).
 
-## Etapas
+- **Action:** Pre-calculate balances in a single pass ($O(M)$) using a `Map` or an object accumulator before rendering the card list.
 
-1. **Habilitar Lovable Cloud** para provisionar `LOVABLE_API_KEY` no servidor.
-2. **Criar helper do AI Gateway** em `src/lib/ai-gateway.server.ts` (provider OpenAI-compatible apontando para `ai.gateway.lovable.dev/v1`).
-3. **Criar server function** `src/lib/transactions.functions.ts` com `parseTransactionFromText`:
-   - Input: `{ text: string }` validado com Zod.
-   - Usa `generateText` + `Output.object` com schema Zod dos campos da transação.
-   - Categorias e tipos restritos a enums (Alimentação, Lazer, Transporte, Moradia, Renda, Outros / Crédito, Débito, Entrada / Felipe, Beatriz / Conjunta 50/50, Proporcional, Individual).
-   - Prompt do sistema em português, com a data atual e padrões (ex: se mencionar "cartão de crédito" → tipo Crédito).
-   - Retorna o objeto estruturado; trata 429/402 com mensagens claras.
-4. **Atualizar `src/routes/transacoes.tsx`**:
-   - Migrar as transações para `useState` inicializado com os mocks atuais.
-   - No clique de "Processar": chamar `useServerFn(parseTransactionFromText)` via `useMutation`.
-   - Estado de loading no botão (ícone Sparkles girando, disabled).
-   - Em sucesso: prepend a transação na lista, limpar textarea, mostrar toast (`sonner`).
-   - Em erro: toast de erro com a mensagem do servidor.
-5. **Mapear ícone** da categoria retornada para o `lucide-react` correspondente (helper local).
+### 3. Security: Storage Path Collision
+Currently, avatar uploads use `Math.random()`. While the collision risk is low, it's not zero and is not a best practice for public-facing assets.
 
-## Detalhes técnicos
+- **Action:** Use `crypto.randomUUID()` for unique, non-guessable filenames.
 
-- Modelo: `google/gemini-3-flash-preview` (padrão Lovable AI).
-- Schema enxuto para evitar limite de estados do Gemini: enums curtos, sem `format`/`pattern`.
-- `responsible` default = "Felipe" caso o modelo não consiga inferir; `division` default = "Conjunta 50/50".
-- `amount` sempre positivo no schema; o sinal vem do `type` (Entrada → positivo, Crédito/Débito → negativo) ao montar a linha.
-- `date`: o modelo retorna `YYYY-MM-DD`; formatamos para `DD MMM, YYYY` no client.
-- Avatar do responsável reaproveita os URLs `dicebear` já usados.
-- Botão "Adicionar Manualmente" continua mockado nesta etapa (sem formulário ainda).
+### 4. Security: Database Linter Warnings
+The `handle_updated_at` function lacks a fixed `search_path`, which is a security best practice to prevent search path hijacking.
 
-## Fora de escopo (próximas etapas)
-- Persistência em banco (tabela `transactions` + RLS).
-- Formulário manual real.
-- Filtros funcionais (hoje seguem mockados).
-- Autenticação / múltiplos casais.
+- **Action:** Apply a migration to set `search_path = public` on all public functions.
+
+### 5. Code Quality: Currency Formatting
+Currency formatting logic is repeated in several places with manual string manipulation.
+
+- **Action:** Centralize currency formatting in `src/lib/utils.ts` and refactor inputs to use standardized logic.
+
+## Technical Details
+
+- **File Changes:**
+  - `src/lib/utils.ts`: Add `formatCurrency` and `parseCurrency` utilities.
+  - `src/components/add-card-modal.tsx`: Refactor limit input to use new utilities.
+  - `src/components/image-cropper-modal.tsx`: Use `crypto.randomUUID()` for filenames.
+  - `src/routes/cartoes.tsx`: Optimize balance calculation.
+  - `src/routes/transacoes.tsx`: Streamline data fetching with React Query.
+  - `supabase/migrations/...`: Fix function search paths.

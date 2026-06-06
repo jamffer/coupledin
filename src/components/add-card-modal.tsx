@@ -33,6 +33,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/hooks/use-profile";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatCurrency, parseCurrencyInput } from "@/lib/utils";
 
 const cardFormSchema = z.object({
   name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
@@ -74,7 +75,7 @@ export function AddCardModal({ children }: AddCardModalProps) {
 
     setIsUploading(true);
     try {
-      const numericLimit = Number(values.totalLimit) / 100;
+      const numericLimit = parseCurrencyInput(values.totalLimit);
       
       const { error } = await supabase.from("cards").insert({
         owner_id: user.id,
@@ -157,7 +158,7 @@ export function AddCardModal({ children }: AddCardModalProps) {
                           const value = e.target.value.replace(/\D/g, "");
                           field.onChange(value);
                         }}
-                        value={field.value ? `R$ ${(Number(field.value) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ""}
+                        value={field.value ? formatCurrency(parseCurrencyInput(field.value)) : ""}
                       />
                     </FormControl>
                     <FormMessage />

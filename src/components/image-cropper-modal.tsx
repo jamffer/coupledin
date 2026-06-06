@@ -62,7 +62,7 @@ export function ImageCropperModal({
         URL.revokeObjectURL(image);
       }
 
-      const fileName = `${Math.random()}.webp`;
+      const fileName = `${crypto.randomUUID()}.webp`;
       const filePath = `${userId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
