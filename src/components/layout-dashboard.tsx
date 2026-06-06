@@ -238,10 +238,6 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     
     setPartnerProfile(partnerData);
   };
-        }
-      });
-    }
-  }, [user]);
 
   const handleCopyCode = () => {
     if (inviteCode) {
