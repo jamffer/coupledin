@@ -53,24 +53,23 @@ const itemVariants = {
 };
 
 function ConfiguracoesPage() {
+  const { incomeJorge, incomeBeatriz, setIncomes } = useFinanceStore();
   const [divisionModel, setDivisionModel] = useState("proportional");
-  const [incomeA, setIncomeA] = useState(6000);
-  const [incomeB, setIncomeB] = useState(4000);
   const [percentageA, setPercentageA] = useState(60);
   const [percentageB, setPercentageB] = useState(40);
 
   useEffect(() => {
     if (divisionModel === "proportional") {
-      const total = incomeA + incomeB;
+      const total = incomeJorge + incomeBeatriz;
       if (total > 0) {
-        setPercentageA(Math.round((incomeA / total) * 100));
-        setPercentageB(Math.round((incomeB / total) * 100));
+        setPercentageA(Math.round((incomeJorge / total) * 100));
+        setPercentageB(Math.round((incomeBeatriz / total) * 100));
       }
     } else {
       setPercentageA(50);
       setPercentageB(50);
     }
-  }, [divisionModel, incomeA, incomeB]);
+  }, [divisionModel, incomeJorge, incomeBeatriz]);
 
   return (
     <DashboardLayout>
