@@ -58,12 +58,24 @@ function ConfiguracoesPage() {
   const { incomeJorge, incomeLilian, setIncomes } = useFinanceStore();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate({ to: "/auth" });
     }
   }, [user, authLoading]);
+
+  useEffect(() => {
+    if (user) {
+      import("@/integrations/supabase/client").then(({ supabase }) => {
+        supabase.rpc("get_my_invite_code").then(({ data }) => {
+          setInviteCode(data as string);
+        });
+      });
+    }
+  }, [user]);
   const [divisionModel, setDivisionModel] = useState("proportional");
   const [percentageA, setPercentageA] = useState(60);
   const [percentageB, setPercentageB] = useState(40);
@@ -129,10 +141,17 @@ function ConfiguracoesPage() {
                   </div>
                 </div>
 
-                <Button variant="outline" className="rounded-full gap-2 px-6 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all apple-interactive dark:border-white/10 active:scale-95">
-                  <UserPlus size={18} />
-                  Convidar Parceiro(a)
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button variant="outline" className="rounded-full gap-2 px-6 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all apple-interactive dark:border-white/10 active:scale-95" onClick={() => setShowInviteDialog(true)}>
+                    <UserPlus size={18} />
+                    Convidar Parceiro(a)
+                  </Button>
+                  {inviteCode && (
+                    <div className="text-center md:text-left">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Código: <span className="text-primary font-mono">{inviteCode}</span></p>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -354,6 +373,35 @@ function ConfiguracoesPage() {
             </Card>
           </motion.div>
         </div>
+        {/* Invite Dialog */}
+        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+          <DialogContent className="apple-card">
+            <DialogHeader>
+              <DialogTitle>Convidar Parceiro(a)</DialogTitle>
+              <DialogDescription>
+                Compartilhe o código abaixo com seu parceiro para que ele(a) possa se conectar ao seu espaço.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-8 text-center">
+              <div className="bg-muted p-6 rounded-2xl mb-4">
+                <p className="text-4xl font-black tracking-widest font-mono text-primary animate-pulse uppercase">
+                  {inviteCode || "Carregando..."}
+                </p>
+              </div>
+              <Button 
+                className="w-full h-12 rounded-xl font-bold" 
+                onClick={() => {
+                  if (inviteCode) {
+                    navigator.clipboard.writeText(inviteCode);
+                    toast.success("Código copiado!");
+                  }
+                }}
+              >
+                Copiar Código
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </DashboardLayout>
   );
