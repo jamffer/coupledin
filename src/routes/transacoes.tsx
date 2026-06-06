@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
@@ -18,6 +18,7 @@ import {
   MoreVertical,
   Edit,
   Trash2,
+  Receipt
 } from "lucide-react";
 import { 
   Select, 
@@ -63,11 +64,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
-import { useState } from "react";
 import { toast } from "sonner";
 import { parseTransactionFromText, type ParsedTransaction } from "@/lib/transactions.functions";
 import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, type Transaction } from "@/hooks/use-finance-store";
 import { supabase } from "@/integrations/supabase/client";
+import { EmptyState } from "@/components/empty-state";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -108,9 +109,8 @@ function buildTransaction(parsed: ParsedTransaction, id: string, userId: string,
     division: parsed.division as string,
     user_id: userId,
     couple_id: coupleId,
-import { EmptyState } from "@/components/empty-state";
-import { Receipt } from "lucide-react";
-
+  };
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -149,8 +149,6 @@ function TransactionsPage() {
           .order("date", { ascending: false });
 
         if (!error && data) {
-          // Map snake_case from DB to camelCase in store if necessary, or ensure store uses same keys
-          // For now, let's assume they match or we adjust
           setTransactions(data as any);
         }
       };
@@ -190,6 +188,7 @@ function TransactionsPage() {
       navigate({ to: "/auth" });
     }
   }, [user, authLoading]);
+
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -197,7 +196,6 @@ function TransactionsPage() {
   const [txToDelete, setTxToDelete] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
-  // States for manual form
   const [formData, setFormData] = useState<Partial<Transaction>>({
     description: "",
     amount: 0,
@@ -208,7 +206,6 @@ function TransactionsPage() {
     type: "Saída"
   });
 
-  // States for filters synced with URL
   const filters = {
     month: search.month,
     category: search.category,
@@ -330,7 +327,7 @@ function TransactionsPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="space-y-8"
+        className="space-y-8 pb-10"
       >
         {/* Section 1: Smart Input */}
         <motion.div variants={itemVariants}>
@@ -462,340 +459,354 @@ function TransactionsPage() {
             </div>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
-            {/* Desktop Table */}
-            <div className="hidden md:block apple-card overflow-hidden">
-              <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow className="border-none hover:bg-transparent">
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 pl-8">Data</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5">Descrição</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Categoria</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-right">Valor</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Responsável</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Divisão</TableHead>
-                    <TableHead className="w-[50px] pr-8"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.length > 0 ? (
-                    transactions.map((tx) => {
+          {transactions.length > 0 ? (
+            <motion.div variants={itemVariants}>
+              {/* Desktop Table */}
+              <div className="hidden md:block apple-card overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow className="border-none hover:bg-transparent">
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 pl-8">Data</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5">Descrição</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Categoria</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-right">Valor</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Responsável</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Divisão</TableHead>
+                      <TableHead className="w-[50px] pr-8"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((tx) => {
+                      const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
+                      const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
+                      const avatarUrl = userAvatars[tx.responsible as keyof typeof userAvatars];
 
-                    const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
-                    const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                    const avatarUrl = userAvatars[tx.responsible as keyof typeof userAvatars];
-                    
-                    return (
-                      <TableRow key={tx.id} className="group border-b border-muted/50 hover:bg-muted/10 transition-colors">
-                        <TableCell className="py-4 pl-8">
-                          <span className="text-sm text-muted-foreground font-medium">{tx.date}</span>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <span className="text-sm font-bold text-foreground">{tx.description}</span>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex justify-center">
-                            <Badge variant="secondary" className="bg-muted text-muted-foreground font-semibold px-3 py-1 rounded-full border-none gap-2">
-                              <CategoryIcon size={14} />
+                      return (
+                        <TableRow key={tx.id} className="group border-b border-muted/20 hover:bg-accent/30 transition-colors">
+                          <TableCell className="py-5 pl-8 text-sm font-medium text-muted-foreground">{tx.date}</TableCell>
+                          <TableCell className="py-5">
+                            <p className="font-bold text-foreground">{tx.description}</p>
+                          </TableCell>
+                          <TableCell className="py-5 text-center">
+                            <Badge variant="secondary" className="gap-1.5 px-3 py-1 rounded-full bg-muted/50 border-none font-bold text-[10px] uppercase">
+                              <CategoryIcon size={12} className="text-primary" />
                               {tx.category}
                             </Badge>
+                          </TableCell>
+                          <TableCell className="py-5 text-right">
+                            <p className={`font-black text-sm ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                              {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                          </TableCell>
+                          <TableCell className="py-5">
+                            <div className="flex items-center justify-center gap-2">
+                              <Avatar className="w-6 h-6 border shadow-sm">
+                                <AvatarImage src={avatarUrl} />
+                                <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs font-medium">{tx.responsible}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-5">
+                            <div className="flex items-center justify-center">
+                              <TooltipProvider>
+                                <Badge variant="outline" className="gap-1 rounded-full text-[10px] font-bold border-muted/50">
+                                  <DivisionIcon size={10} />
+                                  {tx.division}
+                                </Badge>
+                              </TooltipProvider>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-5 pr-8 text-right">
+                            {tx.user_id === user?.id && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-all">
+                                    <MoreVertical size={16} />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="apple-card">
+                                  <DropdownMenuItem className="gap-2" onClick={() => handleEditClick(tx)}>
+                                    <Edit size={14} />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="gap-2 text-destructive" 
+                                    onClick={() => {
+                                      setTxToDelete(tx.id);
+                                      setIsDeleteModalOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 size={14} />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile View */}
+              <div className="md:hidden space-y-4">
+                {transactions.map((tx) => {
+                  const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
+                  const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
+                  const avatarUrl = userAvatars[tx.responsible as keyof typeof userAvatars];
+                  
+                  return (
+                    <Card key={tx.id} className="apple-card apple-card-hover overflow-hidden group">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-muted rounded-xl text-muted-foreground">
+                              <CategoryIcon size={18} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold">{tx.description}</p>
+                              <p className="text-[10px] text-muted-foreground">{tx.date} • {tx.type}</p>
+                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="py-4 text-right">
-                          <span className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                            {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex justify-center">
-                            <Avatar className="w-8 h-8 border-2 border-white shadow-sm ring-1 ring-muted/50">
+                          <div className="flex flex-col items-end">
+                            {tx.user_id === user?.id && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2 rounded-full">
+                                    <MoreVertical size={14} />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="apple-card">
+                                  <DropdownMenuItem className="gap-2" onClick={() => handleEditClick(tx)}>
+                                    <Edit size={14} />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="gap-2 text-destructive" 
+                                    onClick={() => {
+                                      setTxToDelete(tx.id);
+                                      setIsDeleteModalOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 size={14} />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                            <p className={`text-sm font-black mt-1 ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                              {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 pt-4 border-t border-muted/50 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="w-6 h-6 border shadow-sm">
                               <AvatarImage src={avatarUrl} />
                               <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
                             </Avatar>
+                            <span className="text-xs font-medium text-muted-foreground">{tx.responsible}</span>
                           </div>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex justify-center">
-                            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tighter rounded-lg border-muted/50 apple-glass gap-1 py-1">
-                              <DivisionIcon size={12} className="text-primary" />
-                              {tx.division}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4 pr-8 text-right">
-                          {tx.user_id === user?.id && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <MoreVertical size={16} />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="apple-card">
-                                <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => handleEditClick(tx)}>
-                                  <Edit size={14} />
-                                  Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="gap-2 text-destructive cursor-pointer" 
-                                  onClick={() => {
-                                    setTxToDelete(tx.id);
-                                    setIsDeleteModalOpen(true);
-                                  }}
-                                >
-                                  <Trash2 size={14} />
-                                  Excluir
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Mobile View */}
-            <div className="md:hidden space-y-4">
-              {transactions.map((tx) => {
-                const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
-                const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                const avatarUrl = userAvatars[tx.responsible as keyof typeof userAvatars];
-                
-                return (
-                  <Card key={tx.id} className="apple-card apple-card-hover overflow-hidden group">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-muted rounded-xl text-muted-foreground">
-                            <CategoryIcon size={18} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold">{tx.description}</p>
-                            <p className="text-[10px] text-muted-foreground">{tx.date} • {tx.type}</p>
+                          
+                          <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-lg">
+                            <DivisionIcon size={10} className="text-muted-foreground" />
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{tx.division}</span>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end">
-                          {tx.user_id === user?.id && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2 rounded-full">
-                                  <MoreVertical size={14} />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="apple-card">
-                                <DropdownMenuItem className="gap-2" onClick={() => handleEditClick(tx)}>
-                                  <Edit size={14} />
-                                  Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="gap-2 text-destructive" 
-                                  onClick={() => {
-                                    setTxToDelete(tx.id);
-                                    setIsDeleteModalOpen(true);
-                                  }}
-                                >
-                                  <Trash2 size={14} />
-                                  Excluir
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                          <p className={`text-sm font-black mt-1 ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                            {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4 pt-4 border-t border-muted/50 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="w-6 h-6 border shadow-sm">
-                            <AvatarImage src={avatarUrl} />
-                            <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs font-medium text-muted-foreground">{tx.responsible}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-lg">
-                          <DivisionIcon size={12} className="text-primary" />
-                          <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">{tx.division}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </motion.div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </motion.div>
+          ) : (
+            <EmptyState 
+              icon={Receipt}
+              title="Nenhuma transação ainda"
+              description="Comece a registrar seus gastos para ter controle total."
+              actionLabel="Adicionar meu primeiro lançamento"
+              onAction={handleAddManualClick}
+            />
+          )}
         </div>
+      </motion.div>
 
-        {/* Section 3: IA Confirmation Modal */}
-        <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
-          <DialogContent className="sm:max-w-[425px] rounded-3xl apple-card">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Sparkles size={20} className="text-primary" />
-                Confirmar Lançamento
-              </DialogTitle>
-              <DialogDescription>
-                A IA extraiu os seguintes dados. Deseja confirmar?
-              </DialogDescription>
-            </DialogHeader>
-            
-            {parsedData && (
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Descrição</Label>
-                  <Input
-                    value={parsedData.description}
-                    onChange={(e) => setParsedData({ ...parsedData, description: e.target.value })}
-                    className="col-span-3 rounded-xl"
+      {/* Manual Entry Modal */}
+      <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
+        <DialogContent className="apple-card sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">{editingTx ? "Editar Lançamento" : "Novo Lançamento"}</DialogTitle>
+            <DialogDescription>
+              {editingTx ? "Altere as informações da transação." : "Insira os detalhes do gasto ou entrada manualmente."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="description" className="font-bold text-xs uppercase tracking-widest opacity-60">Descrição</Label>
+              <Input 
+                id="description" 
+                className="rounded-xl" 
+                placeholder="Ex: Aluguel, Supermercado..." 
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="amount" className="font-bold text-xs uppercase tracking-widest opacity-60">Valor</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">R$</span>
+                  <Input 
+                    id="amount" 
+                    type="number" 
+                    className="pl-9 rounded-xl font-bold" 
+                    placeholder="0,00"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value) || 0})}
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Valor</Label>
-                  <Input
-                    type="number"
-                    value={parsedData.amount}
-                    onChange={(e) => setParsedData({ ...parsedData, amount: Number(e.target.value) })}
-                    className="col-span-3 rounded-xl"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Quem</Label>
-                  <Select 
-                    value={parsedData.responsible} 
-                    onValueChange={(val) => setParsedData({ ...parsedData, responsible: val as any })}
-                  >
-                    <SelectTrigger className="col-span-3 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Jorge">Jorge</SelectItem>
-                      <SelectItem value="Lilian">Lilian</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
-            )}
-            
-            <DialogFooter className="gap-2">
-              <Button variant="ghost" onClick={() => setIsConfirmModalOpen(false)} className="rounded-full">Ajustar</Button>
-              <Button onClick={handleConfirm} className="rounded-full px-8 font-bold shadow-lg">Confirmar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Section 4: Manual Add/Edit Modal */}
-        <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
-          <DialogContent className="sm:max-w-[500px] rounded-3xl apple-card">
-            <DialogHeader>
-              <DialogTitle>{editingTx ? "Editar Lançamento" : "Adicionar Manualmente"}</DialogTitle>
-              <DialogDescription>Preencha os campos abaixo para registrar sua transação.</DialogDescription>
-            </DialogHeader>
-            
-            <div className="grid gap-5 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Valor</Label>
-                <Input 
-                  type="number" 
-                  value={formData.amount} 
-                  onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                  className="col-span-3 h-12 rounded-xl text-lg font-bold"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Descrição</Label>
-                <Input 
-                  value={formData.description} 
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Ex: Jantar fora"
-                  className="col-span-3 h-11 rounded-xl"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Data</Label>
-                <Input 
-                  type="date" 
-                  value={formData.date} 
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="col-span-3 h-11 rounded-xl"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Categoria</Label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={(val) => setFormData({ ...formData, category: val })}
-                >
-                  <SelectTrigger className="col-span-3 h-11 rounded-xl">
+              <div className="grid gap-2">
+                <Label htmlFor="type" className="font-bold text-xs uppercase tracking-widest opacity-60">Tipo</Label>
+                <Select value={formData.type} onValueChange={(val: any) => setFormData({...formData, type: val})}>
+                  <SelectTrigger className="rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="apple-card">
+                    <SelectItem value="Entrada">Entrada</SelectItem>
+                    <SelectItem value="Saída">Saída / Débito</SelectItem>
+                    <SelectItem value="Crédito">Crédito</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="date" className="font-bold text-xs uppercase tracking-widest opacity-60">Data</Label>
+                <Input 
+                  id="date" 
+                  type="date" 
+                  className="rounded-xl" 
+                  value={formData.date}
+                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="category" className="font-bold text-xs uppercase tracking-widest opacity-60">Categoria</Label>
+                <Select value={formData.category} onValueChange={(val) => setFormData({...formData, category: val})}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="apple-card">
                     {Object.keys(CATEGORY_ICONS).map(cat => (
                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Quem</Label>
-                <Select 
-                  value={formData.responsible} 
-                  onValueChange={(val) => setFormData({ ...formData, responsible: val as any })}
-                >
-                  <SelectTrigger className="col-span-3 h-11 rounded-xl">
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label className="font-bold text-xs uppercase tracking-widest opacity-60">Responsável</Label>
+                <Select value={formData.responsible} onValueChange={(val) => setFormData({...formData, responsible: val})}>
+                  <SelectTrigger className="rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="apple-card">
                     <SelectItem value="Jorge">Jorge</SelectItem>
                     <SelectItem value="Lilian">Lilian</SelectItem>
-                    <SelectItem value="Conjunto">Conjunto</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Tipo</Label>
-                <Select 
-                  value={formData.type} 
-                  onValueChange={(val) => setFormData({ ...formData, type: val })}
-                >
-                  <SelectTrigger className="col-span-3 h-11 rounded-xl">
+              <div className="grid gap-2">
+                <Label className="font-bold text-xs uppercase tracking-widest opacity-60">Divisão</Label>
+                <Select value={formData.division} onValueChange={(val) => setFormData({...formData, division: val})}>
+                  <SelectTrigger className="rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Entrada">Entrada</SelectItem>
-                    <SelectItem value="Débito">Saída (Débito)</SelectItem>
-                    <SelectItem value="Crédito">Saída (Crédito)</SelectItem>
+                  <SelectContent className="apple-card">
+                    {Object.keys(DIVISION_ICONS).map(div => (
+                      <SelectItem key={div} value={div}>{div}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            
-            <DialogFooter className="gap-2">
-              <Button variant="ghost" onClick={() => setIsManualModalOpen(false)} className="rounded-full">Cancelar</Button>
-              <Button onClick={handleSaveManual} className="rounded-full px-8 font-bold shadow-lg">Salvar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" className="rounded-full" onClick={() => setIsManualModalOpen(false)}>Cancelar</Button>
+            <Button className="rounded-full px-8 shadow-lg shadow-primary/20" onClick={handleSaveManual}>Salvar Lançamento</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        {/* Section 5: Delete Confirmation */}
-        <AlertDialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-          <AlertDialogContent className="apple-card rounded-3xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Tem certeza que deseja excluir este lançamento?</AlertDialogTitle>
-              <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="rounded-full">Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm} className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </motion.div>
+      {/* Confirmation Modal for Smart Input */}
+      <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+        <DialogContent className="apple-card sm:max-w-[400px]">
+          <DialogHeader>
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
+              <Sparkles size={24} />
+            </div>
+            <DialogTitle className="text-xl font-bold">Lançamento Detectado!</DialogTitle>
+            <DialogDescription>
+              Confirme os detalhes extraídos pela nossa inteligência artificial.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {parsedData && (
+            <div className="space-y-4 py-4 bg-muted/30 p-6 rounded-3xl border border-muted-foreground/10">
+              <div className="flex justify-between items-center">
+                <p className="text-sm font-medium text-muted-foreground">O que é?</p>
+                <p className="font-bold">{parsedData.description}</p>
+              </div>
+              <div className="flex justify-between items-center">
+                <p className="text-sm font-medium text-muted-foreground">Quanto?</p>
+                <p className={`font-black ${parsedData.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'}`}>
+                  R$ {Math.abs(parsedData.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <p className="text-sm font-medium text-muted-foreground">Quando?</p>
+                <p className="font-medium">{parsedData.date}</p>
+              </div>
+              <div className="flex justify-between items-center">
+                <p className="text-sm font-medium text-muted-foreground">Categoria</p>
+                <Badge variant="outline" className="font-bold">{parsedData.category}</Badge>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" className="rounded-full flex-1" onClick={() => setIsConfirmModalOpen(false)}>Corrigir</Button>
+            <Button className="rounded-full flex-1 shadow-lg shadow-primary/20" onClick={handleConfirm}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <AlertDialogContent className="apple-card rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Transação?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O valor será removido permanentemente dos registros do casal.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteConfirm}
+            >
+              Excluir Registro
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
