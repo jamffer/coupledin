@@ -108,16 +108,42 @@ const itemVariants = {
 
 function TransactionsPage() {
   const [smartInput, setSmartInput] = useState("");
-  const { transactions, addTransaction, userAvatars } = useFinanceStore();
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars } = useFinanceStore();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [txToDelete, setTxToDelete] = useState<number | null>(null);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
+
+  // States for manual form
+  const [formData, setFormData] = useState<Partial<Transaction>>({
+    description: "",
+    amount: 0,
+    date: new Date().toISOString().split('T')[0],
+    category: "Outros",
+    responsible: "Jorge",
+    division: "Conjunta 50/50",
+    type: "Saída"
+  });
+
+  // States for filters
+  const [filters, setFilters] = useState({
+    month: "june",
+    category: "all-cats",
+    type: "all-types",
+    responsible: "both"
+  });
 
   const parseFn = useServerFn(parseTransactionFromText);
   const mutation = useMutation({
     mutationFn: (text: string) => parseFn({ data: { text } }),
     onSuccess: (parsed) => {
-      setParsedData(parsed);
-      setIsConfirmModalOpen(true);
+      // Simulando o delay de 1.5s solicitado
+      setTimeout(() => {
+        setParsedData(parsed);
+        setIsConfirmModalOpen(true);
+      }, 1500);
     },
     onError: (err: Error) => {
       toast.error("Não foi possível processar", { description: err.message });
