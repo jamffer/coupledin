@@ -96,7 +96,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full relative bg-white">
+      <div className="min-h-screen flex w-full relative bg-transparent">
         {/* Apple-style background gradient that follows scroll */}
         <div 
           className="fixed inset-0 -z-10 pointer-events-none transition-transform duration-300 ease-out"
