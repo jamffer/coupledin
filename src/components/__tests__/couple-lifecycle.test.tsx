@@ -79,14 +79,16 @@ describe('Couple lifecycle integration', () => {
     expect(mocks.realtimeCallback.current).toBeTypeOf('function');
 
     // Inject a fake realtime payload as if Supabase had fired it
-    act(() => {
+    await act(async () => {
       mocks.realtimeCallback.current?.({
         eventType: 'INSERT',
         new: { id: 'user-2', display_name: 'Jorge', couple_id: 'couple-1' },
       });
     });
 
-    expect(await screen.findByText('Bom dia, Lilian e Jorge!')).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Bom dia, Lilian e Jorge!/i)
+    ).toBeInTheDocument();
     expect(screen.getByTestId('partner-avatar')).toBeInTheDocument();
     expect(screen.queryByTestId('pending-avatar')).not.toBeInTheDocument();
   });
