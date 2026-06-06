@@ -80,13 +80,13 @@ function ConfiguracoesPage() {
         className="space-y-8 pb-10"
       >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gradient-scroll">Configurações</h1>
           <p className="text-muted-foreground italic">Controle total sobre as regras financeiras do casal.</p>
         </div>
 
         {/* Section 1: Perfil do Casal */}
         <motion.div variants={itemVariants}>
-          <Card className="border-none shadow-sm bg-white overflow-hidden">
+          <Card className="apple-card overflow-hidden">
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="flex -space-x-6">
@@ -130,7 +130,7 @@ function ConfiguracoesPage() {
 
         {/* Section 2: Regras de Divisão */}
         <motion.div variants={itemVariants}>
-          <Card className="border-none shadow-sm bg-white overflow-hidden">
+          <Card className="apple-card overflow-hidden">
             <CardHeader className="border-b border-border/40 pb-6">
               <div className="flex items-center gap-2 mb-1">
                 <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -267,7 +267,7 @@ function ConfiguracoesPage() {
         {/* Section 3: Conexões e Exportação */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm bg-white h-full">
+            <Card className="apple-card h-full">
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -303,7 +303,7 @@ function ConfiguracoesPage() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm bg-white h-full">
+            <Card className="apple-card h-full">
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-primary/10 rounded-lg text-primary">

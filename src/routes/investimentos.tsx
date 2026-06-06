@@ -214,7 +214,7 @@ function InvestimentosPage() {
                 </Card>
 
                 <div className="grid grid-cols-1 gap-4">
-                  <Card className="border-none shadow-sm bg-white p-6">
+                  <Card className="apple-card p-6">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos Conjuntos</p>
@@ -225,7 +225,7 @@ function InvestimentosPage() {
                       </div>
                     </div>
                   </Card>
-                  <Card className="border-none shadow-sm bg-white p-6">
+                  <Card className="apple-card p-6">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos do Jorge</p>
@@ -236,7 +236,7 @@ function InvestimentosPage() {
                       </div>
                     </div>
                   </Card>
-                  <Card className="border-none shadow-sm bg-white p-6">
+                  <Card className="apple-card p-6">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos da Lilian</p>
@@ -253,7 +253,7 @@ function InvestimentosPage() {
 
             {/* Allocation Chart */}
             <motion.div variants={itemVariants} className="lg:col-span-2">
-              <Card className="border-none shadow-sm bg-white h-full flex flex-col">
+              <Card className="apple-card h-full flex flex-col">
                 <CardHeader>
                   <CardTitle>Alocação da Carteira</CardTitle>
                   <CardDescription>Distribuição por classe de ativos</CardDescription>
