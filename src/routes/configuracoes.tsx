@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useFinanceStore } from "@/hooks/use-finance-store";
 
@@ -54,6 +56,14 @@ const itemVariants = {
 
 function ConfiguracoesPage() {
   const { incomeJorge, incomeLilian, setIncomes } = useFinanceStore();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/auth" });
+    }
+  }, [user, authLoading]);
   const [divisionModel, setDivisionModel] = useState("proportional");
   const [percentageA, setPercentageA] = useState(60);
   const [percentageB, setPercentageB] = useState(40);
