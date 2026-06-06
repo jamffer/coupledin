@@ -223,9 +223,9 @@ function RelatoriosPage() {
                     </Avatar>
                     <div className={cn(
                       "w-16 h-16 rounded-full border-4 border-white shadow-lg flex items-center justify-center relative z-10 transition-colors",
-                      diff > 1 ? "bg-emerald-500/10 text-emerald-600" : diff < -1 ? "bg-rose-500/10 text-rose-600" : "bg-primary/10 text-primary"
+                      isSettled ? "bg-emerald-500 text-white" : (diff > 1 ? "bg-emerald-500/10 text-emerald-600" : diff < -1 ? "bg-rose-500/10 text-rose-600" : "bg-primary/10 text-primary")
                     )}>
-                      <ArrowRightLeft size={24} className={cn(diff < -1 && "rotate-180")} />
+                      {isSettled ? <CheckCircle2 size={24} /> : <ArrowRightLeft size={24} className={cn(diff < -1 && "rotate-180")} />}
                     </div>
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
                       <AvatarImage src={userAvatars.Lilian} />
@@ -233,7 +233,9 @@ function RelatoriosPage() {
                     </Avatar>
                   </div>
                   <div className="space-y-1">
-                    {Math.abs(diff) < 1 ? (
+                    {isSettled ? (
+                      <h3 className="text-xl font-bold tracking-tight text-emerald-600">Tudo quite! Mês resolvido.</h3>
+                    ) : Math.abs(diff) < 1 ? (
                       <h3 className="text-xl font-bold tracking-tight">Tudo quite! Vocês estão empatados.</h3>
                     ) : (
                       <>
@@ -252,16 +254,38 @@ function RelatoriosPage() {
                   </div>
                 </div>
                 <div className="h-px w-full md:w-px md:h-20 bg-border/40" />
-                <div className="flex flex-col items-center md:items-end gap-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Gastos Conjuntos</p>
-                  <p className="text-3xl font-black text-foreground">R$ {totalJoint.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                  <div className="flex gap-2 mt-2">
-                    <Badge variant="secondary" className="bg-primary/5 text-primary text-[10px] font-bold border-none px-3">
-                      Jorge: {(jorgeShare * 100).toFixed(0)}%
-                    </Badge>
-                    <Badge variant="secondary" className="bg-primary/5 text-primary text-[10px] font-bold border-none px-3">
-                      Lilian: {(lilianShare * 100).toFixed(0)}%
-                    </Badge>
+                <div className="flex flex-col items-center md:items-end gap-3">
+                  <div className="text-center md:text-right">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Gastos Conjuntos</p>
+                    <p className="text-2xl font-black text-foreground">R$ {totalJoint.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="rounded-full h-10 w-10 border-emerald-100 text-emerald-600 hover:bg-emerald-50 active:scale-90 transition-all"
+                            onClick={handleShareSummary}
+                          >
+                            <MessageCircle size={18} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Compartilhar no WhatsApp</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    {!isSettled && Math.abs(diff) >= 1 && (
+                      <Button 
+                        className="rounded-full px-6 font-bold shadow-md hover:shadow-lg active:scale-95 transition-all gap-2"
+                        onClick={() => setIsSettlementModalOpen(true)}
+                      >
+                        <CheckCircle2 size={16} />
+                        Marcar como Resolvido
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
