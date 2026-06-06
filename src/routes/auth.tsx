@@ -48,10 +48,10 @@ function AuthPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
+    if (user && !generatedInviteCode) {
       checkProfileStatus();
     }
-  }, [user]);
+  }, [user, generatedInviteCode]);
 
   const checkProfileStatus = async (forceOnboarding = false) => {
     if (!user) return;
