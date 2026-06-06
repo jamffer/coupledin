@@ -439,7 +439,7 @@ function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white/80">Saldo Total</p>
-                  <h3 className="text-2xl font-bold tracking-tight text-white">R$ {totals.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                  <h3 className="text-2xl font-bold tracking-tight text-white">{formatCurrency(totals.balance)}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -459,7 +459,7 @@ function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white/80">Entradas do Mês</p>
-                  <h3 className="text-2xl font-bold tracking-tight text-white">R$ {totals.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                  <h3 className="text-2xl font-bold tracking-tight text-white">{formatCurrency(totals.income)}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -479,7 +479,7 @@ function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white/80">Saídas (Débito)</p>
-                  <h3 className="text-2xl font-bold tracking-tight text-white">R$ {totals.expenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                  <h3 className="text-2xl font-bold tracking-tight text-white">{formatCurrency(totals.expenses)}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -499,7 +499,7 @@ function Dashboard() {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-2xl font-bold tracking-tight text-foreground">R$ {totals.credit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                    <h3 className="text-2xl font-bold tracking-tight text-foreground">{formatCurrency(totals.credit)}</h3>
                   </div>
                   <div className="pt-2 border-t border-border flex justify-between items-center">
                     <span className="text-[10px] font-medium text-muted-foreground uppercase">Tudo de crédito</span>
