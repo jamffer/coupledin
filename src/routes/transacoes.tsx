@@ -144,7 +144,7 @@ function TransactionsPage() {
                 <div className="relative group">
                   <Textarea 
                     placeholder="Descreva o gasto... Ex: Paguei 120 reais de gasolina hoje no cartão de crédito."
-                    className="min-h-[120px] resize-none text-base p-4 border-muted focus:border-primary/50 transition-all rounded-2xl bg-muted/30 focus:bg-white"
+                    className="min-h-[120px] resize-none text-base p-4 border-muted focus:border-primary/50 transition-all rounded-2xl apple-interactive"
                     value={smartInput}
                     onChange={(e) => setSmartInput(e.target.value)}
                     disabled={isLoading}
@@ -296,7 +296,7 @@ function TransactionsPage() {
                         </TableCell>
                         <TableCell className="py-4 pr-8">
                           <div className="flex justify-center">
-                            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tighter rounded-lg border-muted/50 bg-white shadow-xs gap-1 py-1">
+                            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tighter rounded-lg border-muted/50 apple-glass gap-1 py-1">
                               <DivisionIcon size={12} className="text-primary" />
                               {tx.division}
                             </Badge>

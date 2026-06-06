@@ -248,7 +248,7 @@ function CartoesPage() {
 
               <div className="flex items-center gap-2">
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-[180px] rounded-full bg-white border-none shadow-sm font-medium">
+                  <SelectTrigger className="w-[180px] rounded-full apple-interactive font-medium">
                     <div className="flex items-center gap-2">
                       <CalendarIcon size={16} className="text-muted-foreground" />
                       <SelectValue placeholder="Selecione o mês" />

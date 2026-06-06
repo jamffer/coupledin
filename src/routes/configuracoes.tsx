@@ -94,7 +94,7 @@ function ConfiguracoesPage() {
                     <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
                     <AvatarFallback>JO</AvatarFallback>
                   </Avatar>
-                  <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-xl flex items-center justify-center relative z-10">
+                  <div className="w-24 h-24 rounded-full apple-glass flex items-center justify-center relative z-10">
                     <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center text-primary">
                       <Heart size={32} className="fill-primary" />
                     </div>
@@ -238,7 +238,7 @@ function ConfiguracoesPage() {
                       </div>
                     </div>
 
-                    <div className="h-4 w-full bg-white rounded-full overflow-hidden flex shadow-inner">
+                    <div className="h-4 w-full apple-glass rounded-full overflow-hidden flex shadow-inner border-none">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${percentageA}%` }}
@@ -251,7 +251,7 @@ function ConfiguracoesPage() {
                       />
                     </div>
 
-                    <div className="flex items-start gap-3 bg-white/60 p-4 rounded-xl border border-white">
+                    <div className="flex items-start gap-3 apple-glass p-4 rounded-xl border-white/20">
                       <Info size={16} className="text-primary mt-0.5 shrink-0" />
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         Este percentual será aplicado automaticamente em todas as transações marcadas como <span className="font-bold text-foreground">"Divisão Proporcional"</span> na tela de lançamentos.
