@@ -114,14 +114,16 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full relative bg-transparent">
+      <div className="min-h-screen flex w-full relative">
         {/* Apple-style background gradient that follows scroll */}
         <div 
           className="fixed inset-0 -z-10 pointer-events-none transition-transform duration-300 ease-out"
           style={{
             height: '300vh',
             transform: `translateY(-${scrollProgress * 66.6}%)`,
-            background: 'linear-gradient(to bottom, #161616, #203F9A, #4E7CB2, #E84797, #94C2DA, #E7A0CC, #EFE8E0)'
+            background: isDarkMode 
+              ? 'linear-gradient(to bottom, #000000, #161616, #1A1A1A, #0F172A)' 
+              : 'linear-gradient(to bottom, #161616, #203F9A, #4E7CB2, #E84797, #94C2DA, #E7A0CC, #EFE8E0)'
           }}
         />
 
