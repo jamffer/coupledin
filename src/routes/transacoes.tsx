@@ -496,29 +496,31 @@ function TransactionsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="py-4 pr-8 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreVertical size={16} />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="apple-card">
-                              <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => handleEditClick(tx)}>
-                                <Edit size={14} />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="gap-2 text-destructive cursor-pointer" 
-                                onClick={() => {
-                                  setTxToDelete(tx.id);
-                                  setIsDeleteModalOpen(true);
-                                }}
-                              >
-                                <Trash2 size={14} />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {tx.user_id === user?.id && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MoreVertical size={16} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="apple-card">
+                                <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => handleEditClick(tx)}>
+                                  <Edit size={14} />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="gap-2 text-destructive cursor-pointer" 
+                                  onClick={() => {
+                                    setTxToDelete(tx.id);
+                                    setIsDeleteModalOpen(true);
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
