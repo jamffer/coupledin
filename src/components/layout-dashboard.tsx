@@ -5,6 +5,7 @@ import {
   CreditCard, 
   TrendingUp, 
   Target,
+  Settings,
   PlusCircle,
   Menu
 } from "lucide-react";
@@ -32,6 +33,7 @@ const menuItems = [
   { title: "Investimentos", url: "/investimentos", icon: TrendingUp },
   { title: "Metas", url: "/investimentos", icon: Target },
   { title: "Relatórios", url: "/relatorios", icon: ReceiptText },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
