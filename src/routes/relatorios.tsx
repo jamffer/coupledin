@@ -94,8 +94,8 @@ function RelatoriosPage() {
   
   // Proporção configurada
   const totalIncome = incomeJorge + incomeLilian;
-  const jorgeShare = incomeJorge / totalIncome;
-  const lilianShare = incomeLilian / totalIncome;
+  const jorgeShare = totalIncome > 0 ? incomeJorge / totalIncome : 0.5;
+  const lilianShare = totalIncome > 0 ? incomeLilian / totalIncome : 0.5;
   
   const jorgeShouldPay = jointExpenses.reduce((acc, t) => {
     const share = t.division === "Conjunta 50/50" ? 0.5 : jorgeShare;
