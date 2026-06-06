@@ -150,10 +150,16 @@ function CartoesPage() {
 
       if (error) throw error;
       
+      // Calcular faturas atuais em uma única passagem pelas transações
+      const cardBalances = transactions.reduce((acc, tx) => {
+        if (tx.card_id) {
+          acc[tx.card_id] = (acc[tx.card_id] || 0) + Math.abs(tx.amount);
+        }
+        return acc;
+      }, {} as Record<string, number>);
+
       return data.map(card => {
-        // Calcular fatura atual baseada nas transações vinculadas a este cartão
-        const cardTransactions = transactions.filter(tx => tx.card_id === card.id);
-        const currentBill = cardTransactions.reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
+        const currentBill = cardBalances[card.id] || 0;
 
         return {
           id: card.id,
@@ -162,7 +168,7 @@ function CartoesPage() {
           brand: "Mastercard", 
           color: card.color || "card-gradient-blue",
           currentBill: currentBill,
-          limitUsed: currentBill, // Simplificado para este exemplo
+          limitUsed: currentBill,
           totalLimit: Number(card.limit_amount),
           type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
           owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
