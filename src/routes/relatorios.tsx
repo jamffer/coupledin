@@ -149,6 +149,18 @@ function RelatoriosPage() {
   const diff = jorgePaid - jorgeShouldPay; // Se positivo, Jorge pagou a mais. Se negativo, Jorge deve.
   const settlementAmount = Math.abs(diff);
 
+  const handleSettlementConfirm = () => {
+    setIsSettled(true);
+    setIsSettlementModalOpen(false);
+    toast.success("Acerto realizado com sucesso!");
+  };
+
+  const handleShareSummary = () => {
+    const summary = `Resumo Financeiro - Junho\nTotal Gastos Conjuntos: R$ ${totalJoint.toLocaleString('pt-BR')}\nStatus: ${isSettled ? 'Tudo quite!' : (diff < 0 ? "Jorge deve transferir" : "Lilian deve transferir") + " R$ " + settlementAmount.toLocaleString('pt-BR')}`;
+    navigator.clipboard.writeText(summary);
+    toast.success("Resumo copiado para a área de transferência!");
+  };
+
   const topExpenses = useMemo(() => {
     return [...transactions]
       .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
