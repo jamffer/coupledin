@@ -58,6 +58,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useFinanceStore, CATEGORY_ICONS } from "@/hooks/use-finance-store";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
@@ -105,7 +106,7 @@ function Dashboard() {
   const [selectedTx, setSelectedTx] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
   const { transactions, userAvatars, setTransactions } = useFinanceStore();
-  const [profile, setProfile] = useState<any>(null);
+  const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const { 
     step, 
     message, 
@@ -155,14 +156,6 @@ function Dashboard() {
     }
   }, [user, authLoading, profile, navigate]);
 
-  // Fetch profile and sync transactions
-  useEffect(() => {
-    if (user) {
-      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
-        setProfile(data);
-      });
-    }
-  }, [user]);
 
   const fetchTransactions = useCallback(async (coupleId: string) => {
     try {

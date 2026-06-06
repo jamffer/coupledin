@@ -137,9 +137,9 @@ function ConfiguracoesPage() {
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="flex -space-x-6">
                    <ProfileAvatar 
-                     url={profile?.avatar_url} 
+                     url={profile?.avatar_url || null} 
                      name={profile?.display_name || "ME"} 
-                     userId={user?.id}
+                     userId={user?.id || undefined}
                      onUpdate={() => {}} // Now handled via React Query invalidation in the modal
                    />
                   <div className="w-24 h-24 rounded-full apple-glass border-4 border-white dark:border-[#1A1A1A] flex items-center justify-center relative z-10">

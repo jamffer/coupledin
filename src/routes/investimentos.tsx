@@ -26,6 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/hooks/use-profile";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -123,7 +124,7 @@ function AssetTable({ data, onSelect }: { data: any[], onSelect: (asset: any) =>
 function InvestimentosPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
+  const { profile, isLoading: isProfileLoading } = useProfile();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -132,13 +133,6 @@ function InvestimentosPage() {
     }
   }, [user, authLoading]);
 
-  useEffect(() => {
-    if (user) {
-      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
-        setProfile(data);
-      });
-    }
-  }, [user]);
 
   const [acoes, setAcoes] = useState<any[]>([]);
   const [fiis, setFiis] = useState<any[]>([]);

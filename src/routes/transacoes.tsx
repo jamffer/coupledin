@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/hooks/use-profile";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout-dashboard";
@@ -129,16 +130,9 @@ function TransactionsPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/transacoes" });
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
+  const { profile, isLoading: isProfileLoading } = useProfile();
   const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars, setTransactions } = useFinanceStore();
 
-  useEffect(() => {
-    if (user) {
-      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
-        setProfile(data);
-      });
-    }
-  }, [user]);
 
   // Sync transactions from Supabase
   useEffect(() => {
