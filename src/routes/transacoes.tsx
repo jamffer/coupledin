@@ -275,10 +275,10 @@ function TransactionsPage() {
                       onClick={handleProcess}
                     >
                       {isLoading ? (
-                        <>
+                        <div className="flex items-center gap-2">
                           <Loader2 size={16} className="animate-spin" />
-                          Processando...
-                        </>
+                          <span className="animate-pulse">Processando transação com IA...</span>
+                        </div>
                       ) : (
                         <>
                           <Sparkles size={16} />
