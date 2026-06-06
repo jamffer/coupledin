@@ -12,8 +12,11 @@ import {
   Check,
   Users,
   User as UserIcon,
-  ArrowRight
+  ArrowRight,
+  RefreshCcw
 } from "lucide-react";
+import { useSpaceOnboardingStore, OnboardingStep } from "@/store/useSpaceOnboardingStore";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,7 +39,6 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [authStep, setAuthStep] = useState<"auth" | "onboarding">("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,6 +49,25 @@ function AuthPage() {
   
   const { user, session } = useAuth();
   const navigate = useNavigate();
+  const { 
+    step, 
+    message, 
+    error: onboardingError, 
+    setStep, 
+    setError: setOnboardingError, 
+    reset: resetOnboarding 
+  } = useSpaceOnboardingStore();
+
+  const isProcessing = step !== OnboardingStep.IDLE && step !== OnboardingStep.ERROR && step !== OnboardingStep.SUCCESS;
+  const progressValue = {
+    [OnboardingStep.IDLE]: 0,
+    [OnboardingStep.VALIDATING]: 20,
+    [OnboardingStep.CREATING_SPACE]: 40,
+    [OnboardingStep.CONNECTING_REALTIME]: 60,
+    [OnboardingStep.MOUNTING_DASHBOARD]: 80,
+    [OnboardingStep.SUCCESS]: 100,
+    [OnboardingStep.ERROR]: 0,
+  }[step];
 
   useEffect(() => {
     if (user && !generatedInviteCode) {
@@ -142,8 +163,7 @@ function AuthPage() {
   };
 
   const handleCreateCouple = async () => {
-    setLoading(true);
-    setError(null);
+    setStep(OnboardingStep.CREATING_SPACE);
     const toastId = toast.loading("Criando seu espaço...", { description: "Preparando o ambiente..." });
     try {
       const { data: coupleId, error: createError } = await supabase
@@ -151,6 +171,7 @@ function AuthPage() {
 
       if (createError) throw createError;
 
+      setStep(OnboardingStep.VALIDATING, "Gerando código de convite...");
       toast.loading("Gerando código de convite...", { id: toastId });
       
       const { data: inviteCode, error: codeError } = await supabase
@@ -159,6 +180,7 @@ function AuthPage() {
       if (codeError) throw codeError;
 
       setGeneratedInviteCode(inviteCode || "");
+      setStep(OnboardingStep.SUCCESS, "Espaço criado!");
       toast.success("Espaço criado!", { id: toastId, description: "Preparando o seu Dashboard..." });
       
       setTimeout(() => {
@@ -166,17 +188,14 @@ function AuthPage() {
       }, 1500);
     } catch (error: any) {
       console.error("Error creating space:", error);
-      setError("Não conseguimos criar seu espaço. Verifique sua conexão e tente novamente.");
+      setOnboardingError("Não conseguimos criar seu espaço. Verifique sua conexão e tente novamente.");
       toast.error("Erro ao criar espaço", { id: toastId, description: error.message });
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleJoinCouple = async () => {
     if (!inviteCodeInput) return;
-    setLoading(true);
-    setError(null);
+    setStep(OnboardingStep.VALIDATING);
     const toastId = toast.loading("Verificando convite...", { description: "Buscando o espaço do seu parceiro..." });
     try {
       const { data: coupleId, error: joinError } = await supabase
@@ -184,8 +203,10 @@ function AuthPage() {
 
       if (joinError) throw joinError;
 
+      setStep(OnboardingStep.CONNECTING_REALTIME);
       toast.loading("Conectando ao banco de dados...", { id: toastId });
       
+      setStep(OnboardingStep.SUCCESS, "Vinculado com sucesso!");
       toast.success("Vinculado com sucesso!", { id: toastId, description: "Preparando o seu Dashboard..." });
       
       setTimeout(() => {
@@ -193,10 +214,8 @@ function AuthPage() {
       }, 1000);
     } catch (error: any) {
       console.error("Error joining space:", error);
-      setError("Não conseguimos conectar a este espaço. Verifique o código e tente novamente.");
+      setOnboardingError("Não conseguimos conectar a este espaço. Verifique o código e tente novamente.");
       toast.error("Erro ao entrar", { id: toastId, description: error.message });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -227,6 +246,26 @@ function AuthPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-black p-4 relative overflow-hidden">
+      {/* Progress Indicator */}
+      <AnimatePresence>
+        {isProcessing && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-0 left-0 right-0 z-50 p-4 space-y-2 bg-white/10 backdrop-blur-md border-b border-white/20"
+          >
+            <div className="max-w-md mx-auto space-y-2">
+              <div className="flex justify-between items-center text-xs font-bold text-white uppercase tracking-wider">
+                <span>{message}</span>
+                <span>{progressValue}%</span>
+              </div>
+              <Progress value={progressValue} className="h-1.5 bg-white/20" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Background Gradient */}
       <div className="fixed inset-0 -z-10 pointer-events-none transition-transform duration-300 ease-out"
         style={{
@@ -410,11 +449,36 @@ function AuthPage() {
               className="space-y-6"
             >
               <div className="text-center space-y-2">
-                <h1 className="text-2xl font-black tracking-tight text-foreground">Quase lá, {name}!</h1>
-                <p className="text-muted-foreground">Como você quer começar no CoupleFinance?</p>
+                <h1 className="text-2xl font-black tracking-tight text-foreground">
+                  {step === OnboardingStep.ERROR ? "Oops!" : `Quase lá, ${name}!`}
+                </h1>
+                <p className="text-muted-foreground">
+                  {step === OnboardingStep.ERROR 
+                    ? "Algo não saiu como o esperado." 
+                    : "Como você quer começar no CoupleFinance?"}
+                </p>
               </div>
 
-              {!generatedInviteCode ? (
+              {step === OnboardingStep.ERROR ? (
+                <Card className="apple-card p-8 text-center space-y-6 border-destructive/20 bg-destructive/5 backdrop-blur-md">
+                  <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto shadow-lg animate-bounce">
+                    <AlertCircle size={32} />
+                  </div>
+                  <div className="space-y-2">
+                    <CardTitle className="text-xl font-bold text-foreground">Falha na conexão</CardTitle>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {onboardingError || 'Não conseguimos conectar a este espaço. Verifique o código e tente novamente.'}
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={resetOnboarding} 
+                    className="w-full h-12 rounded-xl font-bold gap-2 active:scale-95 transition-all shadow-md"
+                  >
+                    <RefreshCcw size={18} />
+                    Tentar Novamente
+                  </Button>
+                </Card>
+              ) : !generatedInviteCode ? (
                 <div className="grid grid-cols-1 gap-4">
                   <Card className="apple-card hover:border-primary/50 transition-all cursor-pointer group" onClick={handleCreateCouple}>
                     <CardHeader className="p-6">
@@ -442,8 +506,8 @@ function AuthPage() {
                           value={inviteCodeInput}
                           onChange={(e) => setInviteCodeInput(e.target.value)}
                         />
-                        <Button className="h-12 rounded-xl px-6" onClick={handleJoinCouple} disabled={loading || !inviteCodeInput}>
-                          {loading ? <Loader2 className="animate-spin" /> : "Entrar"}
+                        <Button className="h-12 rounded-xl px-6" onClick={handleJoinCouple} disabled={isProcessing || !inviteCodeInput}>
+                          {isProcessing ? <Loader2 className="animate-spin" /> : "Entrar"}
                         </Button>
                       </div>
                     </CardContent>
