@@ -398,7 +398,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                         <TooltipContent><p>Seu Perfil ({profile?.display_name || "Configurar"})</p></TooltipContent>
                       </Tooltip>
                       
-                      {partnerProfile && (
+                      {partnerProfile ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm transition-transform">
@@ -407,6 +407,23 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                             </Avatar>
                           </TooltipTrigger>
                           <TooltipContent><p>Perfil de {partnerProfile.display_name}</p></TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div 
+                              onClick={() => setShowInviteDialogInLayout(true)}
+                              className="border-2 border-dashed border-primary/40 bg-primary/5 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/10 transition-all active:scale-95"
+                            >
+                              <Plus size={16} className="text-primary" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-center space-y-1">
+                              <p className="font-bold">Convidar Parceiro(a)</p>
+                              <p className="text-[10px] text-muted-foreground italic">Aguardando conexão...</p>
+                            </div>
+                          </TooltipContent>
                         </Tooltip>
                       )}
                     </div>
