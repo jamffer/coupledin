@@ -89,6 +89,7 @@ function RelatoriosPage() {
   // Cálculo de Despesas Conjuntas e Proporção
   const jointExpenses = transactions.filter(t => t.division !== "Individual");
   const totalJoint = jointExpenses.reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
+
   
   const totalIncome = (incomeJorge || 0) + (incomeLilian || 0);
   const jorgeShare = totalIncome > 0 ? (incomeJorge || 0) / totalIncome : 0.5;
