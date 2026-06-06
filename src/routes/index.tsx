@@ -153,11 +153,11 @@ function Dashboard() {
   }, [setTransactions]);
 
   useEffect(() => {
+    let subscription: any;
+    
     if (profile?.couple_id) {
-      fetchTransactions(profile.couple_id);
-
-      // Subscription for real-time updates
-      const subscription = supabase
+      // Connect to Realtime first or in parallel
+      const channel = supabase
         .channel("dashboard-updates")
         .on("postgres_changes", {
           event: "*",
@@ -166,11 +166,21 @@ function Dashboard() {
           filter: `couple_id=eq.${profile.couple_id}`
         }, (payload) => {
           fetchTransactions(profile.couple_id);
-        })
-        .subscribe();
+        });
+
+      // Subscribe and only finish loading after subscription is confirmed AND initial fetch is done
+      channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await fetchTransactions(profile.couple_id);
+        }
+      });
+
+      subscription = channel;
 
       return () => {
-        supabase.removeChannel(subscription);
+        if (subscription) {
+          supabase.removeChannel(subscription);
+        }
       };
     } else if (profile && !profile.couple_id) {
       setLoading(false);
