@@ -181,10 +181,17 @@ function ConfiguracoesPage() {
                       <Calendar size={14} />
                       Início: 12 Jan 2024
                     </div>
-                    <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full font-medium">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Conta Conectada
-                    </div>
+                    {partnerProfile ? (
+                      <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full font-medium">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Conta Conectada
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-600 px-3 py-1 rounded-full font-medium">
+                        <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                        Aguardando parceiro(a)
+                      </div>
+                    )}
                   </div>
                 </div>
 
