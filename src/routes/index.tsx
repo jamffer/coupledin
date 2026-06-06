@@ -149,8 +149,17 @@ function Dashboard() {
           schema: "public",
           table: "transactions",
           filter: `couple_id=eq.${profile.couple_id}`
-        }, () => {
-          fetchTransactions();
+        }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newTx = payload.new as any;
+            setTransactions([newTx, ...transactions]);
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedTx = payload.new as any;
+            setTransactions(transactions.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = payload.old.id;
+            setTransactions(transactions.filter(tx => tx.id !== deletedId));
+          }
         })
         .subscribe();
 
