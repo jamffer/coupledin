@@ -45,6 +45,8 @@ import {
   DialogDescription, 
   DialogFooter 
 } from "@/components/ui/dialog";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
