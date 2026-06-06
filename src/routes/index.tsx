@@ -271,15 +271,37 @@ function Dashboard() {
 
   const totals = useMemo(() => {
     const now = new Date();
-    const currentMonthTxs = transactions.filter(tx => isSameMonth(new Date(tx.date), now));
+    const currentMonthTxs = transactions.filter(tx => tx && tx.date && isSameMonth(new Date(tx.date), now));
     
-    const balance = transactions.reduce((acc, tx) => acc + (tx.type === 'Entrada' ? tx.amount : tx.amount), 0);
-    const income = currentMonthTxs.filter(tx => tx.type === 'Entrada').reduce((acc, tx) => acc + tx.amount, 0);
-    const expenses = currentMonthTxs.filter(tx => tx.type === 'Débito').reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
-    const credit = transactions.filter(tx => tx.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
+    const balance = transactions.reduce((acc, tx) => acc + ((tx?.type === 'Entrada' ? tx.amount : -(tx?.amount || 0)) || 0), 0);
+    const income = currentMonthTxs.filter(tx => tx?.type === 'Entrada').reduce((acc, tx) => acc + (tx?.amount || 0), 0);
+    const expenses = currentMonthTxs.filter(tx => tx?.type === 'Débito' || tx?.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
+    const credit = transactions.filter(tx => tx?.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
 
     return { balance, income, expenses, credit };
   }, [transactions]);
+
+  const dashboardChartData = useMemo(() => {
+    // Generate last 6 months
+    const last6Months = Array.from({ length: 6 }, (_, i) => subMonths(startOfMonth(new Date()), 5 - i));
+    
+    return last6Months.map(month => {
+      const monthTxs = transactions.filter(tx => tx && tx.date && isSameMonth(new Date(tx.date), month));
+      const entradas = monthTxs.filter(tx => tx.type === 'Entrada').reduce((acc, tx) => acc + (tx.amount || 0), 0);
+      const saidas = monthTxs.filter(tx => tx.type === 'Débito' || tx.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx.amount || 0), 0);
+      
+      return {
+        name: format(month, "MMM", { locale: ptBR }),
+        entradas,
+        saidas
+      };
+    });
+  }, [transactions]);
+
+  const hasChartData = useMemo(() => {
+    return dashboardChartData.some(d => d.entradas > 0 || d.saidas > 0);
+  }, [dashboardChartData]);
+
 
   if (loading) {
     return (
