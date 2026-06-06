@@ -153,10 +153,28 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [isProfileOpen, currentUser, userNames, userAvatars]);
 
-  const handleSaveProfile = () => {
-    updateUserProfile(currentUser, tempName, tempAvatar);
-    toast.success("Perfil atualizado com sucesso!");
-    setIsProfileOpen(false);
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ 
+          display_name: tempName,
+          avatar_url: tempAvatar 
+        })
+        .eq("id", user?.id as string);
+
+      if (error) throw error;
+
+      updateUserProfile(currentUser, tempName, tempAvatar);
+      setProfile((prev: any) => ({ ...prev, display_name: tempName, avatar_url: tempAvatar }));
+      toast.success("Perfil atualizado com sucesso!");
+      setIsProfileOpen(false);
+    } catch (error: any) {
+      toast.error("Erro ao atualizar perfil: " + error.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
