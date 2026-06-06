@@ -88,7 +88,7 @@ const itemVariants = {
 
 function TransactionsPage() {
   const [smartInput, setSmartInput] = useState("");
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const { transactions, addTransaction } = useFinanceStore();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
@@ -115,7 +115,7 @@ function TransactionsPage() {
   const handleConfirm = () => {
     if (!parsedData) return;
     const tx = buildTransaction(parsedData, Date.now());
-    setTransactions((prev) => [tx, ...prev]);
+    addTransaction(tx);
     setSmartInput("");
     setIsConfirmModalOpen(false);
     setParsedData(null);
