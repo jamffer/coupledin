@@ -264,6 +264,38 @@ function Dashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="h-[70vh] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md"
+          >
+            <Card className="apple-card p-8 text-center space-y-6 border-destructive/20 bg-destructive/5">
+              <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto">
+                <AlertCircle size={32} />
+              </div>
+              <div className="space-y-2">
+                <CardTitle className="text-xl font-bold">Não foi possível carregar os dados</CardTitle>
+                <p className="text-muted-foreground">Tivemos um problema de conexão ou o espaço não foi encontrado.</p>
+              </div>
+              <Button 
+                onClick={() => profile?.couple_id && fetchTransactions(profile.couple_id)} 
+                className="w-full h-12 rounded-xl font-bold gap-2 active:scale-95 transition-all"
+                disabled={loading}
+              >
+                <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
+                {loading ? "Tentando conectar..." : "Tentar Novamente"}
+              </Button>
+            </Card>
+          </motion.div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   const renderTransactionItem = (tx: any) => {
     const Icon = CATEGORY_ICONS[tx.category] || HelpCircle;
     const avatar = userAvatars[tx.responsible as keyof typeof userAvatars];
