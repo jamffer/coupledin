@@ -197,16 +197,16 @@ function InvestimentosPage() {
             {/* Patrimonio Total Card */}
             <motion.div variants={itemVariants} className="lg:col-span-1 h-full">
               <div className="grid grid-cols-1 gap-6 h-full">
-                <Card className="apple-card overflow-hidden relative bg-primary text-primary-foreground border-none">
+                <Card className="apple-card overflow-hidden relative card-gradient-blue border-none">
                   <div className="absolute top-0 right-0 p-8 opacity-10">
                     <Wallet size={120} />
                   </div>
                   <CardContent className="p-8 flex flex-col justify-between h-full">
                     <div className="space-y-1 relative z-10">
-                      <p className="text-sm font-medium opacity-80 uppercase tracking-widest">Patrimônio Total</p>
-                      <h3 className="text-4xl font-black tracking-tight">R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                      <p className="text-sm font-medium opacity-80 uppercase tracking-widest text-white">Patrimônio Total</p>
+                      <h3 className="text-4xl font-black tracking-tight text-white">R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                     </div>
-                    <div className="mt-8 flex items-center gap-2 apple-interactive w-fit px-3 py-1 rounded-full backdrop-blur-sm relative z-10 border-none">
+                    <div className="mt-8 flex items-center gap-2 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-sm relative z-10">
                       <ArrowUpRight size={16} className="text-emerald-300" />
                       <span className="text-xs font-bold text-emerald-300">+8.5% este ano</span>
                     </div>
