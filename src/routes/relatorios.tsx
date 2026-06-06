@@ -71,12 +71,27 @@ export const Route = createFileRoute("/relatorios")({
   component: RelatoriosPage,
 });
 
-const weeklyEvolutionData = [
-  { week: "Semana 1", atual: 1200, anterior: 1100 },
-  { week: "Semana 2", atual: 950, anterior: 1300 },
-  { week: "Semana 3", atual: 1400, anterior: 1050 },
-  { week: "Semana 4", atual: 800, anterior: 1200 },
-];
+const weeklyEvolutionData = {
+  "Este Mês": [
+    { name: "Sem 1", total: 1200 },
+    { name: "Sem 2", total: 950 },
+    { name: "Sem 3", total: 1400 },
+    { name: "Sem 4", total: 800 },
+  ],
+  "Últimos 3 Meses": [
+    { name: "Abril", total: 4200 },
+    { name: "Maio", total: 3800 },
+    { name: "Junho", total: 4350 },
+  ],
+  "Este Ano": [
+    { name: "Jan", total: 3500 },
+    { name: "Fev", total: 3200 },
+    { name: "Mar", total: 4100 },
+    { name: "Abr", total: 4200 },
+    { name: "Mai", total: 3800 },
+    { name: "Jun", total: 4350 },
+  ]
+};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -98,11 +113,30 @@ function RelatoriosPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  // New States
+  const [isSettled, setIsSettled] = useState(false);
+  const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<keyof typeof weeklyEvolutionData>("Este Mês");
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate({ to: "/auth" });
     }
   }, [user, authLoading]);
+
+  const handleSettlementConfirm = () => {
+    setIsSettled(true);
+    setIsSettlementModalOpen(false);
+    toast.success("Acerto realizado com sucesso!");
+  };
+
+  const handleShareSummary = () => {
+    const summary = `Resumo Financeiro - Junho\nTotal Gastos Conjuntos: R$ ${totalJoint.toLocaleString('pt-BR')}\nStatus: ${isSettled ? 'Tudo quite!' : (diff < 0 ? "Jorge deve transferir" : "Lilian deve transferir") + " R$ " + settlementAmount.toLocaleString('pt-BR')}`;
+    navigator.clipboard.writeText(summary);
+    toast.success("Resumo copiado para a área de transferência!");
+  };
   
   // Cálculo de Despesas Conjuntas e Proporção
   const jointExpenses = transactions.filter(t => t.division !== "Individual");
