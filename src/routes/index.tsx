@@ -191,7 +191,41 @@ function Dashboard() {
   }, [transactions]);
 
   if (loading) {
-    ...
+    return (
+      <DashboardLayout>
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 apple-card flex flex-col p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="w-10 h-10 bg-muted rounded-lg animate-pulse" />
+                  <div className="w-20 h-4 bg-muted rounded animate-pulse" />
+                </div>
+                <div className="w-32 h-8 bg-muted rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 h-[450px] apple-card p-8 space-y-4">
+              <div className="w-48 h-8 bg-muted rounded animate-pulse" />
+              <div className="w-full h-full bg-muted/50 rounded-2xl animate-pulse" />
+            </div>
+            <div className="h-[450px] apple-card p-8 space-y-6">
+              <div className="w-32 h-8 bg-muted rounded animate-pulse" />
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-muted rounded-2xl animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="w-full h-4 bg-muted rounded animate-pulse" />
+                    <div className="w-2/3 h-3 bg-muted rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   const renderTransactionItem = (tx: any) => {
@@ -442,8 +476,6 @@ function Dashboard() {
             </Card>
           </motion.div>
         </div>
-      </motion.div>
-
       </motion.div>
 
       {/* Painel Lateral de Detalhes do Card */}
