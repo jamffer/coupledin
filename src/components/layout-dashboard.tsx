@@ -33,7 +33,7 @@ const menuItems = [
   { title: "Lançamentos", url: "/transacoes", icon: ReceiptText },
   { title: "Cartões", url: "/cartoes", icon: CreditCard },
   { title: "Investimentos", url: "/investimentos", icon: TrendingUp },
-  { title: "Metas", url: "/investimentos", icon: Target },
+  { title: "Metas", url: "/metas", icon: Target },
   { title: "Relatórios", url: "/relatorios", icon: ReceiptText },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
