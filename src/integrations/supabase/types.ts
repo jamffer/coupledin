@@ -38,6 +38,42 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_cards: {
+        Row: {
+          card_type: string
+          color: string | null
+          created_at: string
+          id: string
+          last_digits: string | null
+          name: string
+          total_limit: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_type: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          last_digits?: string | null
+          name: string
+          total_limit?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_type?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          last_digits?: string | null
+          name?: string
+          total_limit?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
