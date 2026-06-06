@@ -334,7 +334,7 @@ function RelatoriosPage() {
                             return (
                               <div className="apple-card p-3 shadow-xl border-none text-xs">
                                 <p className="font-black mb-1 text-primary">{label}</p>
-                                <p className="font-bold">Total: {formatCurrency(payload[0].value)}</p>
+                                <p className="font-bold">Total: {formatCurrency(Number(payload[0].value) || 0)}</p>
                               </div>
                             );
                           }
