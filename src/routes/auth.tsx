@@ -125,19 +125,22 @@ function AuthPage() {
   const handleCreateCouple = async () => {
     setLoading(true);
     setError(null);
+    const toastId = toast.loading("Criando seu espaço...", { description: "Preparando o ambiente..." });
     try {
       const { data: coupleId, error: createError } = await supabase
         .rpc("create_couple", { _name: `${name}'s Couple` });
 
       if (createError) throw createError;
 
+      toast.edit(toastId, { description: "Gerando código de convite..." });
+      
       const { data: inviteCode, error: codeError } = await supabase
         .rpc("get_my_invite_code");
 
       if (codeError) throw codeError;
 
       setGeneratedInviteCode(inviteCode || "");
-      toast.success("Espaço criado!", { description: "Redirecionando para o seu Dashboard..." });
+      toast.success("Espaço criado!", { id: toastId, description: "Preparando o seu Dashboard..." });
       
       setTimeout(() => {
         navigate({ to: "/" });
@@ -145,7 +148,7 @@ function AuthPage() {
     } catch (error: any) {
       console.error("Error creating space:", error);
       setError("Não conseguimos criar seu espaço. Verifique sua conexão e tente novamente.");
-      toast.error("Erro ao criar espaço", { description: error.message });
+      toast.error("Erro ao criar espaço", { id: toastId, description: error.message });
     } finally {
       setLoading(false);
     }
@@ -155,13 +158,16 @@ function AuthPage() {
     if (!inviteCodeInput) return;
     setLoading(true);
     setError(null);
+    const toastId = toast.loading("Verificando convite...", { description: "Buscando o espaço do seu parceiro..." });
     try {
       const { data: coupleId, error: joinError } = await supabase
         .rpc("join_couple_with_invite", { _invite_code: inviteCodeInput.toUpperCase() });
 
       if (joinError) throw joinError;
 
-      toast.success("Vinculado com sucesso!", { description: "Carregando o seu novo espaço..." });
+      toast.edit(toastId, { description: "Conectando ao banco de dados..." });
+      
+      toast.success("Vinculado com sucesso!", { id: toastId, description: "Preparando o seu Dashboard..." });
       
       setTimeout(() => {
         navigate({ to: "/" });
@@ -169,7 +175,7 @@ function AuthPage() {
     } catch (error: any) {
       console.error("Error joining space:", error);
       setError("Não conseguimos conectar a este espaço. Verifique o código e tente novamente.");
-      toast.error("Erro ao entrar", { description: error.message });
+      toast.error("Erro ao entrar", { id: toastId, description: error.message });
     } finally {
       setLoading(false);
     }
