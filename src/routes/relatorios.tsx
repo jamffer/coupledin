@@ -427,7 +427,14 @@ function RelatoriosPage() {
                       const avatarUrl = userAvatars[expense.responsible as keyof typeof userAvatars];
 
                       return (
-                        <TableRow key={expense.id} className="group border-b border-border/40 hover:bg-muted/10 transition-colors">
+                        <TableRow 
+                          key={expense.id} 
+                          className="group border-b border-border/40 hover:bg-muted/10 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setSelectedTx(expense);
+                            setIsDetailModalOpen(true);
+                          }}
+                        >
                           <TableCell className="pl-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="p-2 bg-primary/10 rounded-xl text-primary group-hover:bg-primary group-hover:text-white transition-colors">
@@ -447,7 +454,7 @@ function RelatoriosPage() {
                               </Avatar>
                             </div>
                           </TableCell>
-                          <TableCell className="pr-6 py-4 text-right font-black text-sm">
+                          <TableCell className="pr-6 py-4 text-right font-black text-sm text-rose-500">
                             R$ {Math.abs(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </TableCell>
                         </TableRow>
@@ -459,6 +466,101 @@ function RelatoriosPage() {
             </Card>
           </motion.div>
         </div>
+
+        {/* Modals */}
+        <AnimatePresence>
+          {/* Settlement Confirmation Modal */}
+          <Dialog open={isSettlementModalOpen} onOpenChange={setIsSettlementModalOpen}>
+            <DialogContent className="sm:max-w-[425px] rounded-3xl apple-card">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ArrowRightLeft size={20} className="text-primary" />
+                  Confirmar Acerto
+                </DialogTitle>
+                <DialogDescription className="pt-2">
+                  Deseja zerar os saldos e marcar o mês como resolvido? Isso registrará uma transferência de ajuste no valor de <span className="font-bold text-foreground">R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2 mt-4">
+                <Button variant="ghost" onClick={() => setIsSettlementModalOpen(false)} className="rounded-full">Cancelar</Button>
+                <Button onClick={handleSettlementConfirm} className="rounded-full px-8 font-bold shadow-lg">Confirmar Transferência</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Transaction Detail Modal */}
+          <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+            <DialogContent className="sm:max-w-[425px] rounded-3xl apple-card overflow-hidden p-0 border-none">
+              {selectedTx && (
+                <div className="relative">
+                  <div className="bg-primary/5 p-8 text-center border-b border-primary/10">
+                    <div className="mx-auto w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-primary mb-4">
+                      {(() => {
+                        const Icon = CATEGORY_ICONS[selectedTx.category] || HelpCircle;
+                        return <Icon size={32} />;
+                      })()}
+                    </div>
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-1">{selectedTx.category}</h3>
+                    <h2 className="text-2xl font-black tracking-tight">{selectedTx.description}</h2>
+                    <p className="text-3xl font-black mt-4 text-primary">
+                      R$ {Math.abs(selectedTx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  
+                  <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <Calendar size={10} /> Data
+                        </p>
+                        <p className="text-sm font-bold">{selectedTx.date}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <Users size={10} /> Pagador
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-5 h-5 border shadow-sm">
+                            <AvatarImage src={userAvatars[selectedTx.responsible as keyof typeof userAvatars]} />
+                            <AvatarFallback>{selectedTx.responsible[0]}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-bold">{selectedTx.responsible}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <ArrowRightLeft size={10} /> Divisão
+                        </p>
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const DivIcon = DIVISION_ICONS[selectedTx.division] || Split;
+                            return <DivIcon size={14} className="text-primary" />;
+                          })()}
+                          <span className="text-sm font-bold">{selectedTx.division}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <DollarSign size={10} /> Tipo
+                        </p>
+                        <Badge variant="outline" className="text-[10px] font-bold uppercase rounded-lg">
+                          {selectedTx.type}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <Button 
+                      className="w-full rounded-2xl h-12 font-bold shadow-lg mt-4"
+                      onClick={() => setIsDetailModalOpen(false)}
+                    >
+                      Fechar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </AnimatePresence>
       </motion.div>
     </DashboardLayout>
   );
