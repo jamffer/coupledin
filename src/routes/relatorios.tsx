@@ -264,30 +264,35 @@ function RelatoriosPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {topExpenses.map((expense) => (
-                      <TableRow key={expense.id} className="group border-b border-border/40 hover:bg-muted/10 transition-colors">
-                        <TableCell className="pl-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-muted rounded-xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                              <expense.icon size={16} />
+                    {topExpenses.map((expense) => {
+                      const CategoryIcon = CATEGORY_ICONS[expense.category] || HelpCircle;
+                      const avatarUrl = AVATARS[expense.responsible] || AVATARS.Jorge;
+
+                      return (
+                        <TableRow key={expense.id} className="group border-b border-border/40 hover:bg-muted/10 transition-colors">
+                          <TableCell className="pl-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-muted rounded-xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                <CategoryIcon size={16} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold truncate leading-tight">{expense.description}</p>
+                                <p className="text-[10px] text-muted-foreground">{expense.date} • {expense.category}</p>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold truncate leading-tight">{expense.description}</p>
-                              <p className="text-[10px] text-muted-foreground">{expense.date} • {expense.category}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Avatar className="w-6 h-6 inline-block ring-1 ring-muted/20">
-                            <AvatarImage src={expense.user === "Jorge" ? "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" : "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella"} />
-                            <AvatarFallback>{expense.user[0]}</AvatarFallback>
-                          </Avatar>
-                        </TableCell>
-                        <TableCell className="pr-6 text-right font-black text-sm">
-                          R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Avatar className="w-6 h-6 inline-block ring-1 ring-muted/20">
+                              <AvatarImage src={avatarUrl} />
+                              <AvatarFallback>{expense.responsible[0]}</AvatarFallback>
+                            </Avatar>
+                          </TableCell>
+                          <TableCell className="pr-6 text-right font-black text-sm">
+                            R$ {Math.abs(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
