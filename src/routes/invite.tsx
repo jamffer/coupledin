@@ -59,10 +59,11 @@ function InvitePage() {
           table: 'profiles',
           filter: `couple_id=eq.${profile.couple_id}`
         }, async () => {
+          if (!profile.couple_id) return;
           // Check if it's a new partner
-          const { data: countData } = await supabase
+          const { count } = await supabase
             .from('profiles')
-            .select('id', { count: 'exact', head: true })
+            .select('*', { count: 'exact', head: true })
             .eq('couple_id', profile.couple_id);
           
           if (countData !== null && (countData as any) >= 2) {
