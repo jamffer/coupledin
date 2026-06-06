@@ -10,8 +10,23 @@ export const getCroppedImg = async (
     throw new Error("No 2d context");
   }
 
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
+  // Resolução máxima padronizada de 512x512 pixels
+  const MAX_SIZE = 512;
+  let targetWidth = pixelCrop.width;
+  let targetHeight = pixelCrop.height;
+
+  if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
+    if (targetWidth > targetHeight) {
+      targetHeight = (MAX_SIZE / targetWidth) * targetHeight;
+      targetWidth = MAX_SIZE;
+    } else {
+      targetWidth = (MAX_SIZE / targetHeight) * targetWidth;
+      targetHeight = MAX_SIZE;
+    }
+  }
+
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
 
   ctx.drawImage(
     image,
@@ -21,18 +36,19 @@ export const getCroppedImg = async (
     pixelCrop.height,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height
+    targetWidth,
+    targetHeight
   );
 
   return new Promise((resolve, reject) => {
+    // Exportar utilizando o formato otimizado WebP com qualidade 0.8
     canvas.toBlob((blob) => {
       if (!blob) {
         reject(new Error("Canvas is empty"));
         return;
       }
       resolve(blob);
-    }, "image/jpeg");
+    }, "image/webp", 0.8);
   });
 };
 
