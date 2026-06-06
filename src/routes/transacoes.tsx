@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/use-profile";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -131,6 +132,7 @@ function TransactionsPage() {
   const search = useSearch({ from: "/transacoes" });
   const { user, loading: authLoading } = useAuth();
   const { profile, isLoading: isProfileLoading } = useProfile();
+  const queryClient = useQueryClient();
   const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars, setTransactions } = useFinanceStore();
 
   const { data: cards = [] } = useQuery({
@@ -280,6 +282,8 @@ function TransactionsPage() {
     setSmartInput("");
     setIsConfirmModalOpen(false);
     setParsedData(null);
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["cards"] });
     toast.success("Transação adicionada!");
   };
 
@@ -327,6 +331,9 @@ function TransactionsPage() {
       toast.success("Transação adicionada!");
     }
     
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["cards"] });
+    
     setIsManualModalOpen(false);
     setEditingTx(null);
   };
@@ -359,6 +366,8 @@ function TransactionsPage() {
       }
       
       toast.error("Transação excluída");
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["cards"] });
       setIsDeleteModalOpen(false);
       setTxToDelete(null);
     }
