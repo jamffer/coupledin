@@ -550,29 +550,31 @@ function TransactionsPage() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2 rounded-full">
-                                <MoreVertical size={14} />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="apple-card">
-                              <DropdownMenuItem className="gap-2" onClick={() => handleEditClick(tx)}>
-                                <Edit size={14} />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="gap-2 text-destructive" 
-                                onClick={() => {
-                                  setTxToDelete(tx.id);
-                                  setIsDeleteModalOpen(true);
-                                }}
-                              >
-                                <Trash2 size={14} />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {tx.user_id === user?.id && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2 rounded-full">
+                                  <MoreVertical size={14} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="apple-card">
+                                <DropdownMenuItem className="gap-2" onClick={() => handleEditClick(tx)}>
+                                  <Edit size={14} />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="gap-2 text-destructive" 
+                                  onClick={() => {
+                                    setTxToDelete(tx.id);
+                                    setIsDeleteModalOpen(true);
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                           <p className={`text-sm font-black mt-1 ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                             {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
