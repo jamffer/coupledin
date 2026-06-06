@@ -11,7 +11,8 @@ import {
   Copy,
   Check,
   Users,
-  User as UserIcon
+  User as UserIcon,
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -136,7 +137,7 @@ function AuthPage() {
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ couple_id: couple.id })
-        .eq("id", user?.id);
+        .eq("id", user!.id);
 
       if (profileError) throw profileError;
 
@@ -164,7 +165,7 @@ function AuthPage() {
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ couple_id: couple.id })
-        .eq("id", user?.id);
+        .eq("id", user!.id);
 
       if (profileError) throw profileError;
 
