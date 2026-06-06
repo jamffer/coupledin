@@ -213,7 +213,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               table: 'profiles',
               filter: `couple_id=eq.${data.couple_id}`
             }, () => {
-              fetchPartnerProfile(data.couple_id, user.id);
+          fetchPartnerProfile(data.couple_id as string, user.id);
             })
             .subscribe();
 
