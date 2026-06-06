@@ -119,7 +119,7 @@ function RelatoriosPage() {
         className="space-y-8 pb-10"
       >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gradient-scroll">Relatórios e Fechamento</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Relatórios e Fechamento</h1>
           <p className="text-muted-foreground italic">Análise profunda e acerto de contas do casal.</p>
         </div>
 
