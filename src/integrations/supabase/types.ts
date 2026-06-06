@@ -128,7 +128,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_invite_code: { Args: never; Returns: string }
+      join_couple_with_invite: {
+        Args: { _invite_code: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const InputSchema = z.object({
   text: z.string().min(3).max(500),
@@ -28,6 +29,7 @@ const TransactionSchema = z.object({
 export type ParsedTransaction = z.infer<typeof TransactionSchema>;
 
 export const parseTransactionFromText = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }): Promise<ParsedTransaction> => {
     const key = process.env.LOVABLE_API_KEY;
