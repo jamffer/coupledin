@@ -29,6 +29,22 @@ export function ProfileAvatar({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // 1. Validação de MIME Type
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Arquivo não suportado. Envie uma imagem JPG/PNG ou WebP.");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
+      // 2. Validação de Tamanho (Max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error("Arquivo muito grande. O limite é de 5MB.");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = () => {
         setSelectedImage(reader.result as string);
