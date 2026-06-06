@@ -73,14 +73,14 @@ const itemVariants = {
 };
 
 function RelatoriosPage() {
-  const { transactions, incomeJorge, incomeBeatriz } = useFinanceStore();
+  const { transactions, incomeJorge, incomeLilian } = useFinanceStore();
 
   const categories = ["Alimentação", "Moradia", "Transporte", "Lazer", "Saúde", "Outros"];
   
   const categoryComparisonData = categories.map(cat => ({
     category: cat,
     Jorge: Math.abs(transactions.filter(t => t.category === cat && t.responsible === "Jorge" && t.amount < 0).reduce((acc, t) => acc + t.amount, 0)),
-    Beatriz: Math.abs(transactions.filter(t => t.category === cat && t.responsible === "Beatriz" && t.amount < 0).reduce((acc, t) => acc + t.amount, 0)),
+    Lilian: Math.abs(transactions.filter(t => t.category === cat && t.responsible === "Lilian" && t.amount < 0).reduce((acc, t) => acc + t.amount, 0)),
   }));
 
   const topExpenses = [...transactions]
@@ -93,19 +93,19 @@ function RelatoriosPage() {
   const totalJoint = jointExpenses.reduce((acc, t) => acc + Math.abs(t.amount), 0);
   
   // Proporção configurada
-  const totalIncome = incomeJorge + incomeBeatriz;
+  const totalIncome = incomeJorge + incomeLilian;
   const jorgeShare = incomeJorge / totalIncome;
-  const beatrizShare = incomeBeatriz / totalIncome;
+  const lilianShare = incomeLilian / totalIncome;
   
   const jorgeShouldPay = jointExpenses.reduce((acc, t) => {
     const share = t.division === "Conjunta 50/50" ? 0.5 : jorgeShare;
     return acc + (Math.abs(t.amount) * share);
   }, 0);
   
-  const beatrizShouldPay = totalJoint - jorgeShouldPay;
+  const lilianShouldPay = totalJoint - jorgeShouldPay;
   
   const jorgePaid = jointExpenses.filter(t => t.responsible === "Jorge").reduce((acc, t) => acc + Math.abs(t.amount), 0);
-  const beatrizPaid = totalJoint - jorgePaid;
+  const lilianPaid = totalJoint - jorgePaid;
   
   const diff = jorgePaid - jorgeShouldPay; // Se positivo, Jorge pagou a mais. Se negativo, Jorge deve.
   const settlementAmount = Math.abs(diff);
@@ -159,8 +159,8 @@ function RelatoriosPage() {
                       <ArrowRightLeft size={24} className={cn(diff < -1 && "rotate-180")} />
                     </div>
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src={AVATARS.Beatriz} />
-                      <AvatarFallback>BE</AvatarFallback>
+                      <AvatarImage src={AVATARS.Lilian} />
+                      <AvatarFallback>LI</AvatarFallback>
                     </Avatar>
                   </div>
                   <div className="space-y-1">
@@ -169,7 +169,7 @@ function RelatoriosPage() {
                     ) : (
                       <>
                         <h3 className="text-xl font-bold tracking-tight">
-                          {diff < 0 ? "Jorge, você deve transferir" : "Beatriz, você deve transferir"}
+                          {diff < 0 ? "Jorge, você deve transferir" : "Lilian, você deve transferir"}
                         </h3>
                         <p className={cn(
                           "text-3xl font-black",
@@ -177,7 +177,7 @@ function RelatoriosPage() {
                         )}>
                           R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
-                        <p className="text-sm text-muted-foreground">para {diff < 0 ? "Beatriz" : "o Jorge"} para igualar os gastos conjutos.</p>
+                        <p className="text-sm text-muted-foreground">para {diff < 0 ? "Lilian" : "o Jorge"} para igualar os gastos conjutos.</p>
                       </>
                     )}
                   </div>
@@ -215,7 +215,7 @@ function RelatoriosPage() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-rose-400" />
-                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Beatriz</span>
+                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Lilian</span>
                     </div>
                   </div>
                 </div>
@@ -240,7 +240,7 @@ function RelatoriosPage() {
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                     />
                     <Bar dataKey="Jorge" fill="#1e1b4b" radius={[4, 4, 0, 0]} barSize={20} />
-                    <Bar dataKey="Beatriz" fill="#fb7185" radius={[4, 4, 0, 0]} barSize={20} />
+                    <Bar dataKey="Lilian" fill="#fb7185" radius={[4, 4, 0, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>

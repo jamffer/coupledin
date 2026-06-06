@@ -84,7 +84,7 @@ const mockCards: CardInfo[] = [
   },
   {
     id: "3",
-    name: "Cartão da Parceira",
+    name: "Cartão da Lilian",
     lastDigits: "8872",
     brand: "Visa",
     color: "bg-rose-500",
@@ -92,7 +92,7 @@ const mockCards: CardInfo[] = [
     limitUsed: 4200,
     totalLimit: 5000,
     type: "individual",
-    owner: "Beatriz",
+    owner: "Lilian",
   },
 ];
 
@@ -102,7 +102,7 @@ type BillItem = {
   description: string;
   amount: number;
   installments?: string;
-  user: "Jorge" | "Beatriz";
+  user: "Jorge" | "Lilian";
   category: string;
   icon: any;
 };
@@ -110,9 +110,9 @@ type BillItem = {
 const mockBills: Record<string, BillItem[]> = {
   "1": [
     { id: "b1", date: "05 Jun", description: "Supermercado Extra", amount: 450.00, installments: "1/1", user: "Jorge", category: "Alimentação", icon: Utensils },
-    { id: "b2", date: "04 Jun", description: "Netflix", amount: 55.90, installments: "1/1", user: "Beatriz", category: "Lazer", icon: Coffee },
+    { id: "b2", date: "04 Jun", description: "Netflix", amount: 55.90, installments: "1/1", user: "Lilian", category: "Lazer", icon: Coffee },
     { id: "b3", date: "02 Jun", description: "Posto Shell", amount: 220.00, installments: "1/1", user: "Jorge", category: "Transporte", icon: Car },
-    { id: "b4", date: "01 Jun", description: "Amazon.com", amount: 1424.50, installments: "2/10", user: "Beatriz", category: "Shopping", icon: ShoppingBag },
+    { id: "b4", date: "01 Jun", description: "Amazon.com", amount: 1424.50, installments: "2/10", user: "Lilian", category: "Shopping", icon: ShoppingBag },
   ],
   "2": [
     { id: "j1", date: "06 Jun", description: "Steam Store", amount: 150.00, installments: "1/1", user: "Jorge", category: "Lazer", icon: Coffee },
@@ -120,9 +120,9 @@ const mockBills: Record<string, BillItem[]> = {
     { id: "j3", date: "01 Jun", description: "Vivo Móvel", amount: 965.00, installments: "1/1", user: "Jorge", category: "Serviços", icon: Smartphone },
   ],
   "3": [
-    { id: "p1", date: "05 Jun", description: "Zara", amount: 350.00, installments: "1/3", user: "Beatriz", category: "Shopping", icon: ShoppingBag },
-    { id: "p2", date: "03 Jun", description: "iFood", amount: 65.00, installments: "1/1", user: "Beatriz", category: "Alimentação", icon: Utensils },
-    { id: "p3", date: "01 Jun", description: "Academia", amount: 385.00, installments: "1/1", user: "Beatriz", category: "Saúde", icon: Clock },
+    { id: "p1", date: "05 Jun", description: "Zara", amount: 350.00, installments: "1/3", user: "Lilian", category: "Shopping", icon: ShoppingBag },
+    { id: "p2", date: "03 Jun", description: "iFood", amount: 65.00, installments: "1/1", user: "Lilian", category: "Alimentação", icon: Utensils },
+    { id: "p3", date: "01 Jun", description: "Academia", amount: 385.00, installments: "1/1", user: "Lilian", category: "Saúde", icon: Clock },
   ],
 };
 
@@ -153,7 +153,7 @@ function CartoesPage() {
 
   // Calcular quebra de responsabilidade para o cartão conjunto
   const jorgePays = selectedCard.type === "conjunto" ? 1200 : selectedCard.owner === "Jorge" ? selectedCard.currentBill : 0;
-  const beatrizPays = selectedCard.type === "conjunto" ? 800 : selectedCard.owner === "Beatriz" ? selectedCard.currentBill : 0;
+  const lilianPays = selectedCard.type === "conjunto" ? 800 : selectedCard.owner === "Lilian" ? selectedCard.currentBill : 0;
 
   return (
     <DashboardLayout>
@@ -289,11 +289,11 @@ function CartoesPage() {
                   <div className="flex items-center gap-3 mb-1">
                     <Avatar className="w-5 h-5">
                       <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
-                      <AvatarFallback>BE</AvatarFallback>
+                      <AvatarFallback>LI</AvatarFallback>
                     </Avatar>
-                    <p className="text-sm font-medium text-muted-foreground">Parceira paga</p>
+                    <p className="text-sm font-medium text-muted-foreground">Lilian paga</p>
                   </div>
-                  <h3 className="text-2xl font-bold tracking-tight text-rose-600">R$ {beatrizPays.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                  <h3 className="text-2xl font-bold tracking-tight text-rose-600">R$ {lilianPays.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                 </div>
               </div>
 

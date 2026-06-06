@@ -20,7 +20,7 @@ export type Transaction = {
   category: string;
   amount: number;
   type: string;
-  responsible: "Jorge" | "Beatriz";
+  responsible: "Jorge" | "Lilian";
   division: "Conjunta 50/50" | "Proporcional" | "Individual";
 };
 
@@ -28,8 +28,8 @@ type FinanceStore = {
   transactions: Transaction[];
   addTransaction: (tx: Transaction) => void;
   incomeJorge: number;
-  incomeBeatriz: number;
-  setIncomes: (jorge: number, beatriz: number) => void;
+  incomeLilian: number;
+  setIncomes: (jorge: number, lilian: number) => void;
 };
 
 export const useFinanceStore = create<FinanceStore>()(
@@ -53,7 +53,7 @@ export const useFinanceStore = create<FinanceStore>()(
           category: "Lazer",
           amount: -55.90,
           type: "Crédito",
-          responsible: "Beatriz",
+          responsible: "Lilian",
           division: "Proporcional",
         },
         {
@@ -63,14 +63,14 @@ export const useFinanceStore = create<FinanceStore>()(
           category: "Renda",
           amount: 5200.00,
           type: "Entrada",
-          responsible: "Beatriz",
+          responsible: "Lilian",
           division: "Individual",
         },
       ],
       incomeJorge: 6000,
-      incomeBeatriz: 4000,
+      incomeLilian: 4000,
       addTransaction: (tx) => set((state) => ({ transactions: [tx, ...state.transactions] })),
-      setIncomes: (jorge, beatriz) => set({ incomeJorge: jorge, incomeBeatriz: beatriz }),
+      setIncomes: (jorge, lilian) => set({ incomeJorge: jorge, incomeLilian: lilian }),
     }),
     {
       name: "finance-storage",
@@ -96,5 +96,5 @@ export const DIVISION_ICONS: Record<string, any> = {
 
 export const AVATARS: Record<string, string> = {
   Jorge: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-  Beatriz: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
+  Lilian: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
 };
