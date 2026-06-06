@@ -48,12 +48,12 @@ function AuthPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
+    if (user && !generatedInviteCode) {
       checkProfileStatus();
     }
-  }, [user]);
+  }, [user, generatedInviteCode]);
 
-  const checkProfileStatus = async () => {
+  const checkProfileStatus = async (forceOnboarding = false) => {
     if (!user) return;
     
     const { data: profile, error } = await supabase
@@ -67,7 +67,7 @@ function AuthPage() {
       return;
     }
 
-    if (profile?.couple_id) {
+    if (profile?.couple_id && !forceOnboarding) {
       navigate({ to: "/" });
     } else {
       setAuthStep("onboarding");

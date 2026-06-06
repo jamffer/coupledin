@@ -55,6 +55,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useFinanceStore, CATEGORY_ICONS } from "@/hooks/use-finance-store";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -97,22 +98,78 @@ function Dashboard() {
   const navigate = useNavigate();
   const [selectedTx, setSelectedTx] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
-  const { transactions, userAvatars } = useFinanceStore();
+  const { transactions, userAvatars, setTransactions } = useFinanceStore();
+  const [profile, setProfile] = useState<any>(null);
   
   // Estados para os painéis laterais
   const [activeSheet, setActiveSheet] = useState<'balance' | 'income' | 'expenses' | 'credit' | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate({ to: "/auth" });
+    if (!authLoading) {
+      if (!user) {
+        navigate({ to: "/auth" });
+      } else if (profile && !profile.couple_id) {
+        navigate({ to: "/auth" });
+      }
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, profile, navigate]);
+
+  // Fetch profile and sync transactions
+  useEffect(() => {
+    if (user) {
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+        setProfile(data);
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (profile?.couple_id) {
+      const fetchTransactions = async () => {
+        const { data, error } = await supabase
+          .from("transactions")
+          .select("*")
+          .eq("couple_id", profile.couple_id)
+          .order("date", { ascending: false });
+
+        if (!error && data) {
+          setTransactions(data as any);
+        }
+        setLoading(false);
+      };
+
+      fetchTransactions();
+
+      // Subscription for real-time updates
+      const subscription = supabase
+        .channel("dashboard-updates")
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "transactions",
+          filter: `couple_id=eq.${profile.couple_id}`
+        }, () => {
+          fetchTransactions();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(subscription);
+      };
+    } else if (!authLoading && !profile && !loading) {
+        // Still loading profile or no couple_id yet
+    } else if (profile && !profile.couple_id) {
+      setLoading(false);
+    }
+  }, [profile?.couple_id, setTransactions, authLoading]);
+
+  useEffect(() => {
+    if (!profile) {
+      const timer = setTimeout(() => setLoading(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [profile]);
 
   // Gerar lista de meses para o dropdown (últimos 12 meses)
   const availableMonths = useMemo(() => {

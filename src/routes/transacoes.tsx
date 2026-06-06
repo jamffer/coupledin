@@ -220,8 +220,8 @@ function TransactionsPage() {
   };
 
   const handleConfirm = () => {
-    if (!parsedData || !user) return;
-    const tx = buildTransaction(parsedData, crypto.randomUUID(), user.id, "FIXME_COUPLE_ID");
+    if (!parsedData || !user || !profile?.couple_id) return;
+    const tx = buildTransaction(parsedData, crypto.randomUUID(), user.id, profile.couple_id);
     addTransaction(tx);
     setSmartInput("");
     setIsConfirmModalOpen(false);
@@ -252,7 +252,7 @@ function TransactionsPage() {
         division: (formData.division as string) || "Conjunta 50/50",
         type: formData.type || "Saída",
         user_id: user!.id,
-        couple_id: "FIXME_COUPLE_ID"
+        couple_id: profile.couple_id
       };
       addTransaction(newTx);
       toast.success("Transação adicionada!");
