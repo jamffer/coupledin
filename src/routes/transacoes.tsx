@@ -259,45 +259,51 @@ function TransactionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map((tx) => (
-                    <TableRow key={tx.id} className="group border-b border-muted/50 hover:bg-muted/10 transition-colors">
-                      <TableCell className="py-4 pl-8">
-                        <span className="text-sm text-muted-foreground font-medium">{tx.date}</span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="text-sm font-bold text-foreground">{tx.description}</span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex justify-center">
-                          <Badge variant="secondary" className="bg-muted text-muted-foreground font-semibold px-3 py-1 rounded-full border-none gap-2">
-                            <tx.icon size={14} />
-                            {tx.category}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 text-right">
-                        <span className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex justify-center">
-                          <Avatar className="w-8 h-8 border-2 border-white shadow-sm ring-1 ring-muted/50">
-                            <AvatarImage src={tx.avatar} />
-                            <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
-                          </Avatar>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 pr-8">
-                        <div className="flex justify-center">
-                          <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tighter rounded-lg border-muted/50 bg-white shadow-xs gap-1 py-1">
-                            <tx.divisionIcon size={12} className="text-primary" />
-                            {tx.division}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {transactions.map((tx) => {
+                    const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
+                    const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
+                    const avatarUrl = AVATARS[tx.responsible] || AVATARS.Jorge;
+                    
+                    return (
+                      <TableRow key={tx.id} className="group border-b border-muted/50 hover:bg-muted/10 transition-colors">
+                        <TableCell className="py-4 pl-8">
+                          <span className="text-sm text-muted-foreground font-medium">{tx.date}</span>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <span className="text-sm font-bold text-foreground">{tx.description}</span>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="flex justify-center">
+                            <Badge variant="secondary" className="bg-muted text-muted-foreground font-semibold px-3 py-1 rounded-full border-none gap-2">
+                              <CategoryIcon size={14} />
+                              {tx.category}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 text-right">
+                          <span className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                            {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="flex justify-center">
+                            <Avatar className="w-8 h-8 border-2 border-white shadow-sm ring-1 ring-muted/50">
+                              <AvatarImage src={avatarUrl} />
+                              <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
+                            </Avatar>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 pr-8">
+                          <div className="flex justify-center">
+                            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-tighter rounded-lg border-muted/50 bg-white shadow-xs gap-1 py-1">
+                              <DivisionIcon size={12} className="text-primary" />
+                              {tx.division}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
