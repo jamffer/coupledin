@@ -127,6 +127,19 @@ function CartoesPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  const { data: transactions = [] } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const { data: cards = [], isLoading: isCardsLoading } = useQuery({
     queryKey: ["cards"],
     queryFn: async () => {
@@ -137,20 +150,26 @@ function CartoesPage() {
 
       if (error) throw error;
       
-      return data.map(card => ({
-        id: card.id,
-        name: card.name,
-        lastDigits: card.last_four || "0000",
-        brand: "Mastercard", // Fallback for now
-        color: card.color || "card-gradient-blue",
-        currentBill: 0, // We'll calculate this next
-        limitUsed: 0,   // We'll calculate this next
-        totalLimit: Number(card.limit_amount),
-        type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
-        owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
-      }));
+      return data.map(card => {
+        // Calcular fatura atual baseada nas transações vinculadas a este cartão
+        const cardTransactions = transactions.filter(tx => tx.card_id === card.id);
+        const currentBill = cardTransactions.reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
+
+        return {
+          id: card.id,
+          name: card.name,
+          lastDigits: card.last_four || "0000",
+          brand: "Mastercard", 
+          color: card.color || "card-gradient-blue",
+          currentBill: currentBill,
+          limitUsed: currentBill, // Simplificado para este exemplo
+          totalLimit: Number(card.limit_amount),
+          type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
+          owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
+        };
+      });
     },
-    enabled: !!user,
+    enabled: !!user && !!transactions,
   });
 
   const [bills, setBills] = useState<Record<string, BillItem[]>>({});
