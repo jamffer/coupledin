@@ -525,66 +525,78 @@ function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Gráfico */}
           <motion.div variants={itemVariants} className="lg:col-span-2">
-            <Card className="apple-card">
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="apple-card overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div>
                   <CardTitle className="text-lg font-bold">Fluxo de Caixa</CardTitle>
                   <p className="text-xs text-muted-foreground">Visão geral dos últimos 6 meses</p>
                 </div>
               </CardHeader>
-              <CardContent className="h-[350px] w-full pt-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 12, fill: '#888' }}
-                      dy={10}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 12, fill: '#888' }} 
-                    />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-                    />
-                    <Legend verticalAlign="top" height={36} iconType="circle" />
-                    <Area 
-                      name="Entradas"
-                      type="monotone" 
-                      dataKey="entradas" 
-                      stroke="#10b981" 
-                      strokeWidth={3}
-                      fillOpacity={1} 
-                      fill="url(#colorEntradas)" 
-                    />
-                    <Area 
-                      name="Saídas"
-                      type="monotone" 
-                      dataKey="saidas" 
-                      stroke="#f43f5e" 
-                      strokeWidth={3}
-                      fillOpacity={1} 
-                      fill="url(#colorSaidas)" 
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <CardContent className="h-[350px] w-full pt-4 relative">
+                {hasChartData ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={dashboardChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 12, fill: '#888' }}
+                        dy={10}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 12, fill: '#888' }} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                      />
+                      <Legend verticalAlign="top" height={36} iconType="circle" />
+                      <Area 
+                        name="Entradas"
+                        type="monotone" 
+                        dataKey="entradas" 
+                        stroke="#10b981" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorEntradas)" 
+                      />
+                      <Area 
+                        name="Saídas"
+                        type="monotone" 
+                        dataKey="saidas" 
+                        stroke="#f43f5e" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorSaidas)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
+                    <div className="p-4 bg-muted rounded-full">
+                      <TrendingUp size={32} className="text-muted-foreground opacity-20" />
+                    </div>
+                    <p className="text-sm text-muted-foreground max-w-[200px]">
+                      Dados insuficientes para gerar o gráfico. Comece a registrar suas finanças para ver sua evolução.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
+
 
           {/* Transações Recentes */}
           <motion.div variants={itemVariants} id="recent-transactions">
