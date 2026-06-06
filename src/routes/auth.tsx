@@ -50,7 +50,18 @@ function AuthPage() {
 
   useEffect(() => {
     if (user && !generatedInviteCode) {
-      checkProfileStatus();
+      const storedName = localStorage.getItem("pending_onboarding_name");
+      if (storedName) {
+        supabase.from("profiles")
+          .update({ display_name: storedName })
+          .eq("id", user.id)
+          .then(() => {
+            localStorage.removeItem("pending_onboarding_name");
+            checkProfileStatus();
+          });
+      } else {
+        checkProfileStatus();
+      }
     }
   }, [user, generatedInviteCode]);
 
@@ -81,7 +92,15 @@ function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      // Effect will handle redirection or onboarding
+      
+      if (name.trim()) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("profiles")
+            .update({ display_name: name.trim() })
+            .eq("id", user.id);
+        }
+      }
     } catch (error: any) {
       toast.error("Erro ao entrar", { description: error.message });
     } finally {
@@ -189,6 +208,13 @@ function AuthPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!name.trim()) {
+      toast.error("Por favor, informe seu nome primeiro.");
+      return;
+    }
+    // We store the name in localStorage to pick it up after OAuth redirect
+    localStorage.setItem("pending_onboarding_name", name.trim());
+    
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/auth",
@@ -244,6 +270,21 @@ function AuthPage() {
                     </CardHeader>
                     <CardContent className="space-y-6 pb-8">
                       <form onSubmit={handleSignIn} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-name">Seu Nome</Label>
+                          <div className="relative">
+                            <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                            <Input 
+                              id="login-name" 
+                              type="text" 
+                              placeholder="Como quer ser chamado?" 
+                              className="pl-10 h-12 rounded-xl"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              required
+                            />
+                          </div>
+                        </div>
                         <div className="space-y-2">
                           <Label htmlFor="email">E-mail</Label>
                           <div className="relative">

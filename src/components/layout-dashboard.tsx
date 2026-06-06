@@ -14,7 +14,8 @@ import {
   User as UserIcon,
   Check,
   AlertCircle,
-  Loader2
+  Loader2,
+  Copy
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -120,6 +121,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const [tempName, setTempName] = useState("");
   const [tempAvatar, setTempAvatar] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showInviteDialogInLayout, setShowInviteDialogInLayout] = useState(false);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   
   const navigate = useNavigate();
   
@@ -197,18 +201,52 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         }
         
         if (data?.couple_id) {
-          supabase.from("profiles")
-            .select("*")
-            .eq("couple_id", data.couple_id)
-            .neq("id", user.id)
-            .maybeSingle()
-            .then(({ data: partnerData }) => {
-              setPartnerProfile(partnerData);
-            });
+          // Initial fetch
+          fetchPartnerProfile(data.couple_id, user.id);
+
+          // Subscribe to profile changes for the couple
+          const profileSubscription = supabase
+            .channel('couple-profile-changes')
+            .on('postgres_changes', {
+              event: '*',
+              schema: 'public',
+              table: 'profiles',
+              filter: `couple_id=eq.${data.couple_id}`
+            }, () => {
+          fetchPartnerProfile(data.couple_id as string, user.id);
+            })
+            .subscribe();
+
+          supabase.rpc("get_my_invite_code").then(({ data: code }) => {
+            setInviteCode(code as string);
+          });
+
+          return () => {
+            supabase.removeChannel(profileSubscription);
+          };
         }
       });
     }
   }, [user]);
+
+  const fetchPartnerProfile = async (coupleId: string, userId: string) => {
+    const { data: partnerData } = await supabase.from("profiles")
+      .select("*")
+      .eq("couple_id", coupleId)
+      .neq("id", userId)
+      .maybeSingle();
+    
+    setPartnerProfile(partnerData);
+  };
+
+  const handleCopyCode = () => {
+    if (inviteCode) {
+      navigator.clipboard.writeText(inviteCode);
+      setCopied(true);
+      toast.success("Código copiado!");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleSaveName = async () => {
     if (!tempName.trim()) {
@@ -382,7 +420,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                         <TooltipContent><p>Seu Perfil ({profile?.display_name || "Configurar"})</p></TooltipContent>
                       </Tooltip>
                       
-                      {partnerProfile && (
+                      {partnerProfile ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm transition-transform">
@@ -391,6 +429,23 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                             </Avatar>
                           </TooltipTrigger>
                           <TooltipContent><p>Perfil de {partnerProfile.display_name}</p></TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div 
+                              onClick={() => setShowInviteDialogInLayout(true)}
+                              className="border-2 border-dashed border-primary/40 bg-primary/5 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/10 transition-all active:scale-95"
+                            >
+                              <Plus size={16} className="text-primary" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-center space-y-1">
+                              <p className="font-bold">Convidar Parceiro(a)</p>
+                              <p className="text-[10px] text-muted-foreground italic">Aguardando conexão...</p>
+                            </div>
+                          </TooltipContent>
                         </Tooltip>
                       )}
                     </div>
@@ -511,6 +566,39 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                   </>
                 )}
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        {/* Modal de Convite (quando clica no parceiro vazio) */}
+        <Dialog open={showInviteDialogInLayout} onOpenChange={setShowInviteDialogInLayout}>
+          <DialogContent className="apple-card dark:bg-[#1A1A1A] border-border/40 sm:max-w-md pointer-events-auto z-[1000]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black tracking-tight text-center pt-4">Convidar Parceiro(a)</DialogTitle>
+              <DialogDescription className="text-center">
+                Compartilhe o código abaixo para que seu parceiro(a) possa se conectar a este espaço.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-6 py-8 px-4">
+              <div className="w-full flex items-center gap-3 bg-white dark:bg-black/40 p-2 pl-6 rounded-2xl border border-primary/20 shadow-inner group">
+                <span className="flex-1 text-2xl font-black font-mono tracking-widest text-primary uppercase text-center">
+                  {inviteCode || "••••••••"}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-xl hover:bg-primary/10 transition-all active:scale-95 shrink-0"
+                  onClick={handleCopyCode}
+                >
+                  {copied ? (
+                    <Check size={20} className="text-emerald-500" />
+                  ) : (
+                    <Copy size={20} className="text-primary" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center italic">
+                O seu parceiro(a) deve escolher "Ingressar em um espaço" e inserir este código no Onboarding.
+              </p>
             </div>
           </DialogContent>
         </Dialog>

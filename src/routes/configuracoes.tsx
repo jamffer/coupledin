@@ -31,7 +31,8 @@ import {
   ChevronRight,
   Info,
   ClipboardCopy,
-  Check
+  Check,
+  PlusCircle
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -150,18 +151,24 @@ function ConfiguracoesPage() {
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="flex -space-x-6">
                    <Avatar className="w-24 h-24 border-4 border-white dark:border-[#1A1A1A] shadow-xl ring-1 ring-muted/20">
-                    <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
-                    <AvatarFallback>JO</AvatarFallback>
+                    <AvatarImage src={profile?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} />
+                    <AvatarFallback>{profile?.display_name?.substring(0, 2).toUpperCase() || "ME"}</AvatarFallback>
                   </Avatar>
                   <div className="w-24 h-24 rounded-full apple-glass border-4 border-white dark:border-[#1A1A1A] flex items-center justify-center relative z-10">
                     <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center text-primary">
                       <Heart size={32} className="fill-primary" />
                     </div>
                   </div>
-                  <Avatar className="w-24 h-24 border-4 border-white dark:border-[#1A1A1A] shadow-xl ring-1 ring-muted/20">
-                    <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
-                    <AvatarFallback>LI</AvatarFallback>
-                  </Avatar>
+                  {partnerProfile ? (
+                    <Avatar className="w-24 h-24 border-4 border-white dark:border-[#1A1A1A] shadow-xl ring-1 ring-muted/20">
+                      <AvatarImage src={partnerProfile.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella"} />
+                      <AvatarFallback>{partnerProfile.display_name?.substring(0, 2).toUpperCase() || "PA"}</AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className="w-24 h-24 rounded-full border-4 border-dashed border-primary/40 bg-primary/5 flex items-center justify-center relative z-0">
+                      <PlusCircle size={32} className="text-primary/40" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex-1 text-center md:text-left space-y-2">
@@ -174,10 +181,17 @@ function ConfiguracoesPage() {
                       <Calendar size={14} />
                       Início: 12 Jan 2024
                     </div>
-                    <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full font-medium">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Conta Conectada
-                    </div>
+                    {partnerProfile ? (
+                      <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full font-medium">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Conta Conectada
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-600 px-3 py-1 rounded-full font-medium">
+                        <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                        Aguardando parceiro(a)
+                      </div>
+                    )}
                   </div>
                 </div>
 
