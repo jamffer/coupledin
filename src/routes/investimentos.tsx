@@ -218,9 +218,9 @@ function InvestimentosPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos Conjuntos</p>
-                        <h4 className="text-xl font-bold text-foreground">R$ 45.200,00</h4>
+                        <h4 className="text-xl font-bold text-foreground dark:text-white">R$ 45.200,00</h4>
                       </div>
-                      <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                      <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg">
                         <TrendingUp size={20} />
                       </div>
                     </div>
@@ -229,9 +229,9 @@ function InvestimentosPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos do Jorge</p>
-                        <h4 className="text-xl font-bold text-foreground">R$ 22.150,00</h4>
+                        <h4 className="text-xl font-bold text-foreground dark:text-white">R$ 22.150,00</h4>
                       </div>
-                      <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                      <div className="p-2 bg-blue-500/10 text-blue-600 rounded-lg">
                         <TrendingUp size={20} />
                       </div>
                     </div>
@@ -240,9 +240,9 @@ function InvestimentosPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos da Lilian</p>
-                        <h4 className="text-xl font-bold text-foreground">R$ 18.100,00</h4>
+                        <h4 className="text-xl font-bold text-foreground dark:text-white">R$ 18.100,00</h4>
                       </div>
-                      <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                      <div className="p-2 bg-rose-500/10 text-rose-600 rounded-lg">
                         <TrendingUp size={20} />
                       </div>
                     </div>
