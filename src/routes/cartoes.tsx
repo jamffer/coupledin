@@ -176,7 +176,7 @@ function CartoesPage() {
               variants={itemVariants}
               whileHover={{ y: -4 }}
               onClick={() => setSelectedCardId(card.id)}
-              className="cursor-pointer"
+              className="cursor-pointer min-w-[280px] sm:min-w-0 snap-center"
             >
               <Card className={cn(
                 "relative h-64 border-none text-white shadow-xl overflow-hidden transition-all duration-300 flex flex-col justify-between",
