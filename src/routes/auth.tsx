@@ -193,17 +193,12 @@ function AuthPage() {
       toast.error("Por favor, informe seu nome primeiro.");
       return;
     }
+    // We store the name in localStorage to pick it up after OAuth redirect
+    localStorage.setItem("pending_onboarding_name", name.trim());
+    
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/auth",
-        options: {
-          queryParams: {
-            prompt: 'select_account'
-          },
-          data: {
-            full_name: name
-          }
-        }
       });
       if (result.error) throw result.error;
     } catch (error: any) {
