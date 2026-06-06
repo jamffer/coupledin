@@ -125,10 +125,19 @@ function RelatoriosPage() {
 
         {/* Section 1: Acerto de Contas */}
         <motion.div variants={itemVariants}>
-          <Card className="border-none shadow-md bg-white overflow-hidden ring-1 ring-primary/5">
-            <CardHeader className="bg-primary/5 pb-8">
+          <Card className={cn(
+            "border-none shadow-md overflow-hidden ring-1 ring-primary/5 transition-colors duration-500",
+            diff > 1 ? "bg-emerald-50/50" : diff < -1 ? "bg-rose-50/50" : "bg-white"
+          )}>
+            <CardHeader className={cn(
+              "pb-8 transition-colors",
+              diff > 1 ? "bg-emerald-500/5" : diff < -1 ? "bg-rose-500/5" : "bg-primary/5"
+            )}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                <div className={cn(
+                  "p-2 rounded-lg transition-colors",
+                  diff > 1 ? "bg-emerald-100 text-emerald-600" : diff < -1 ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary"
+                )}>
                   <ArrowRightLeft size={20} />
                 </div>
                 <CardTitle className="text-xl">Fechamento de Junho</CardTitle>
@@ -137,29 +146,45 @@ function RelatoriosPage() {
             </CardHeader>
             <CardContent className="-mt-4">
               <div className="bg-white rounded-2xl shadow-sm border border-border/40 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-6 text-center md:text-left">
                   <div className="flex -space-x-4">
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
+                      <AvatarImage src={AVATARS.Jorge} />
                       <AvatarFallback>JO</AvatarFallback>
                     </Avatar>
-                    <div className="w-16 h-16 rounded-full bg-primary/10 border-4 border-white shadow-lg flex items-center justify-center text-primary relative z-10">
-                      <ArrowRightLeft size={24} />
+                    <div className={cn(
+                      "w-16 h-16 rounded-full border-4 border-white shadow-lg flex items-center justify-center relative z-10 transition-colors",
+                      diff > 1 ? "bg-emerald-100 text-emerald-600" : diff < -1 ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary"
+                    )}>
+                      <ArrowRightLeft size={24} className={cn(diff < -1 && "rotate-180")} />
                     </div>
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
+                      <AvatarImage src={AVATARS.Beatriz} />
                       <AvatarFallback>BE</AvatarFallback>
                     </Avatar>
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-xl font-bold tracking-tight">Jorge, você precisa transferir</h3>
-                    <p className="text-3xl font-black text-primary">R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    <p className="text-sm text-muted-foreground">para a Beatriz para igualar os gastos conjuntos.</p>
+                    {Math.abs(diff) < 1 ? (
+                      <h3 className="text-xl font-bold tracking-tight">Tudo quite! Vocês estão empatados.</h3>
+                    ) : (
+                      <>
+                        <h3 className="text-xl font-bold tracking-tight">
+                          {diff < 0 ? "Jorge, você deve transferir" : "Beatriz, você deve transferir"}
+                        </h3>
+                        <p className={cn(
+                          "text-3xl font-black",
+                          diff < 0 ? "text-rose-600" : "text-emerald-600"
+                        )}>
+                          R$ {settlementAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-sm text-muted-foreground">para {diff < 0 ? "Beatriz" : "o Jorge"} para igualar os gastos conjutos.</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                  <Button className="rounded-full gap-2 px-6 h-12 font-bold shadow-md hover:shadow-lg transition-all">
+                  <Button className="rounded-full gap-2 px-6 h-12 font-bold shadow-md hover:shadow-lg transition-all" disabled={Math.abs(diff) < 1}>
                     <CheckCircle2 size={18} />
                     Marcar como Resolvido
                   </Button>
