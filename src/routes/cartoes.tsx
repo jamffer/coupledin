@@ -65,7 +65,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { AddCardModal } from "@/components/add-card-modal";
 import { useQuery } from "@tanstack/react-query";
@@ -218,7 +218,7 @@ function CartoesPage() {
   const handlePayBill = () => {
     if (!selectedCard) return;
     toast.success("Fatura paga com sucesso!", {
-      description: `O pagamento de R$ ${selectedCard.currentBill.toLocaleString('pt-BR')} foi registrado.`,
+      description: `O pagamento de ${formatCurrency(selectedCard.currentBill)} foi registrado.`,
     });
   };
 
@@ -277,7 +277,7 @@ function CartoesPage() {
                     <div className="relative z-10 space-y-4">
                       <div className="flex flex-col gap-0">
                         <span className="text-[10px] uppercase font-bold opacity-60">Fatura Atual</span>
-                        <h3 className="text-3xl font-bold tracking-tight">R$ {card.currentBill.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                        <h3 className="text-3xl font-bold tracking-tight">{formatCurrency(card.currentBill)}</h3>
                       </div>
                       
                       <div className="space-y-2">
