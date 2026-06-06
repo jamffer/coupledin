@@ -201,18 +201,43 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         }
         
         if (data?.couple_id) {
-          supabase.from("profiles")
-            .select("*")
-            .eq("couple_id", data.couple_id)
-            .neq("id", user.id)
-            .maybeSingle()
-            .then(({ data: partnerData }) => {
-              setPartnerProfile(partnerData);
-            });
+          // Initial fetch
+          fetchPartnerProfile(data.couple_id, user.id);
+
+          // Subscribe to profile changes for the couple
+          const profileSubscription = supabase
+            .channel('couple-profile-changes')
+            .on('postgres_changes', {
+              event: '*',
+              schema: 'public',
+              table: 'profiles',
+              filter: `couple_id=eq.${data.couple_id}`
+            }, () => {
+              fetchPartnerProfile(data.couple_id, user.id);
+            })
+            .subscribe();
 
           supabase.rpc("get_my_invite_code").then(({ data: code }) => {
             setInviteCode(code as string);
           });
+
+          return () => {
+            supabase.removeChannel(profileSubscription);
+          };
+        }
+      });
+    }
+  }, [user]);
+
+  const fetchPartnerProfile = async (coupleId: string, userId: string) => {
+    const { data: partnerData } = await supabase.from("profiles")
+      .select("*")
+      .eq("couple_id", coupleId)
+      .neq("id", userId)
+      .maybeSingle();
+    
+    setPartnerProfile(partnerData);
+  };
         }
       });
     }
