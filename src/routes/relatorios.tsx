@@ -126,8 +126,8 @@ function RelatoriosPage() {
         {/* Section 1: Acerto de Contas */}
         <motion.div variants={itemVariants}>
           <Card className={cn(
-            "border-none shadow-md overflow-hidden ring-1 ring-primary/5 transition-colors duration-500",
-            diff > 1 ? "bg-emerald-50/50" : diff < -1 ? "bg-rose-50/50" : "bg-white"
+            "apple-card apple-card-hover overflow-hidden transition-colors duration-500",
+            diff > 1 ? "bg-emerald-500/10" : diff < -1 ? "bg-rose-500/10" : ""
           )}>
             <CardHeader className={cn(
               "pb-8 transition-colors",
@@ -145,7 +145,7 @@ function RelatoriosPage() {
               <CardDescription>Cálculo automático baseado nas despesas conjuntas do mês.</CardDescription>
             </CardHeader>
             <CardContent className="-mt-4">
-              <div className="bg-white rounded-2xl shadow-sm border border-border/40 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="apple-glass rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
                 <div className="flex items-center gap-6 text-center md:text-left">
                   <div className="flex -space-x-4">
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
@@ -201,7 +201,7 @@ function RelatoriosPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Section 2: Análise de Categorias */}
           <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm bg-white h-full">
+            <Card className="apple-card apple-card-hover h-full">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -249,7 +249,7 @@ function RelatoriosPage() {
 
           {/* Section 3: Maiores Gastos */}
           <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm bg-white h-full">
+            <Card className="apple-card apple-card-hover h-full">
               <CardHeader>
                 <CardTitle>Top Maiores Gastos</CardTitle>
                 <CardDescription>As 5 transações mais pesadas do mês</CardDescription>
@@ -302,7 +302,7 @@ function RelatoriosPage() {
 
         {/* Section 4: Evolução de Despesas */}
         <motion.div variants={itemVariants}>
-          <Card className="border-none shadow-sm bg-white">
+          <Card className="apple-card apple-card-hover">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="space-y-1">
                 <CardTitle>Evolução de Despesas Conjuntas</CardTitle>

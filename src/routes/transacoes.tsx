@@ -194,7 +194,7 @@ function TransactionsPage() {
             
             <div className="flex flex-wrap items-center gap-2">
               <Select defaultValue="june">
-                <SelectTrigger className="w-[130px] rounded-full border-none bg-white shadow-sm">
+                <SelectTrigger className="w-[130px] rounded-full apple-interactive">
                   <SelectValue placeholder="Mês" />
                 </SelectTrigger>
                 <SelectContent>
@@ -205,7 +205,7 @@ function TransactionsPage() {
               </Select>
 
               <Select defaultValue="all-cats">
-                <SelectTrigger className="w-[140px] rounded-full border-none bg-white shadow-sm">
+                <SelectTrigger className="w-[140px] rounded-full apple-interactive">
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -217,7 +217,7 @@ function TransactionsPage() {
               </Select>
 
               <Select defaultValue="all-types">
-                <SelectTrigger className="w-[120px] rounded-full border-none bg-white shadow-sm">
+                <SelectTrigger className="w-[120px] rounded-full apple-interactive">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -229,7 +229,7 @@ function TransactionsPage() {
               </Select>
 
               <Select defaultValue="both">
-                <SelectTrigger className="w-[130px] rounded-full border-none bg-white shadow-sm">
+                <SelectTrigger className="w-[130px] rounded-full apple-interactive">
                   <SelectValue placeholder="Responsável" />
                 </SelectTrigger>
                 <SelectContent>
@@ -239,7 +239,7 @@ function TransactionsPage() {
                 </SelectContent>
               </Select>
 
-              <Button variant="outline" size="icon" className="rounded-full bg-white border-none shadow-sm">
+              <Button variant="outline" size="icon" className="rounded-full apple-interactive">
                 <Filter size={18} className="text-muted-foreground" />
               </Button>
             </div>
@@ -317,7 +317,7 @@ function TransactionsPage() {
                 const avatarUrl = AVATARS[tx.responsible] || AVATARS.Jorge;
                 
                 return (
-                  <Card key={tx.id} className="border-none shadow-sm bg-white overflow-hidden group">
+                  <Card key={tx.id} className="apple-card apple-card-hover overflow-hidden group">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
