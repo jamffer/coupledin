@@ -128,10 +128,10 @@ function CartoesPage() {
   const navigate = useNavigate();
 
   const { data: cards = [], isLoading: isCardsLoading } = useQuery({
-    queryKey: ["credit_cards"],
+    queryKey: ["cards"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("credit_cards")
+        .from("cards")
         .select("*")
         .order("created_at", { ascending: false });
 
@@ -140,12 +140,12 @@ function CartoesPage() {
       return data.map(card => ({
         id: card.id,
         name: card.name,
-        lastDigits: card.last_digits || "0000",
+        lastDigits: card.last_four || "0000",
         brand: "Mastercard", // Fallback for now
         color: card.color || "card-gradient-blue",
-        currentBill: 0, // Should be calculated from transactions
-        limitUsed: 0,   // Should be calculated from transactions
-        totalLimit: Number(card.total_limit),
+        currentBill: 0, // We'll calculate this next
+        limitUsed: 0,   // We'll calculate this next
+        totalLimit: Number(card.limit_amount),
         type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
         owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
       }));

@@ -193,14 +193,15 @@ function TransactionsPage() {
   const [txToDelete, setTxToDelete] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
-  const [formData, setFormData] = useState<Partial<Transaction>>({
+  const [formData, setFormData] = useState<Partial<Transaction & { card_id?: string }>>({
     description: "",
     amount: 0,
     date: new Date().toISOString().split('T')[0],
     category: "Outros",
     responsible: "Jorge",
     division: "Conjunta 50/50",
-    type: "Saída"
+    type: "Saída",
+    card_id: undefined
   });
 
   const filters = {
