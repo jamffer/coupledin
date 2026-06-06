@@ -7,13 +7,14 @@ import {
   Target,
   Settings,
   PlusCircle,
-  Menu,
   Moon,
   Sun,
   Plus,
   Camera,
   User as UserIcon,
-  Check
+  Check,
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -115,52 +116,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<"Jorge" | "Lilian">("Jorge");
   const [tempName, setTempName] = useState("");
   const [tempAvatar, setTempAvatar] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    let baseGreeting = "Bom dia";
-    if (hour >= 12 && hour < 18) baseGreeting = "Boa tarde";
-    if (hour >= 18 || hour < 5) baseGreeting = "Boa noite";
-
-    if (!profile?.display_name) return `${baseGreeting},`;
-
-    const firstName = profile.display_name.split(' ')[0];
-    
-    if (partnerProfile?.display_name) {
-      const partnerFirstName = partnerProfile.display_name.split(' ')[0];
-      return `${baseGreeting}, ${firstName} e ${partnerFirstName}!`;
-    }
-
-    return `${baseGreeting}, ${firstName}!`;
-  };
-
-  const handleSaveName = async () => {
-    if (!tempName.trim()) {
-      toast.error("Por favor, insira um nome.");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ display_name: tempName.trim() })
-        .eq("id", user?.id);
-
-      if (error) throw error;
-
-      setProfile((prev: any) => ({ ...prev, display_name: tempName.trim() }));
-      setIsNameModalOpen(false);
-      toast.success("Nome salvo com sucesso!");
-    } catch (error: any) {
-      toast.error("Erro ao salvar nome: " + error.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
   
   const navigate = useNavigate();
   
@@ -215,9 +174,48 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     if (user) {
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
         setProfile(data);
+        if (data && !data.display_name) {
+          setIsNameModalOpen(true);
+        }
+        
+        if (data?.couple_id) {
+          supabase.from("profiles")
+            .select("*")
+            .eq("couple_id", data.couple_id)
+            .neq("id", user.id)
+            .maybeSingle()
+            .then(({ data: partnerData }) => {
+              setPartnerProfile(partnerData);
+            });
+        }
       });
     }
   }, [user]);
+
+  const handleSaveName = async () => {
+    if (!tempName.trim()) {
+      toast.error("Por favor, insira um nome.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ display_name: tempName.trim() })
+        .eq("id", user?.id);
+
+      if (error) throw error;
+
+      setProfile((prev: any) => ({ ...prev, display_name: tempName.trim() }));
+      setIsNameModalOpen(false);
+      toast.success("Nome salvo com sucesso!");
+    } catch (error: any) {
+      toast.error("Erro ao salvar nome: " + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -232,6 +230,24 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    let baseGreeting = "Bom dia";
+    if (hour >= 12 && hour < 18) baseGreeting = "Boa tarde";
+    if (hour >= 18 || hour < 5) baseGreeting = "Boa noite";
+
+    if (!profile?.display_name) return baseGreeting;
+
+    const firstName = profile.display_name.split(' ')[0];
+    
+    if (partnerProfile?.display_name) {
+      const partnerFirstName = partnerProfile.display_name.split(' ')[0];
+      return `${baseGreeting}, ${firstName} e ${partnerFirstName}!`;
+    }
+
+    return `${baseGreeting}, ${firstName}!`;
+  };
+
   return (
     <TooltipProvider>
       <SidebarProvider>
@@ -242,9 +258,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
                 <div>
-                  <h2 className="text-xs font-medium text-muted-foreground italic">Bom dia,</h2>
                   <h1 className="text-lg font-bold text-foreground">
-                    {profile?.display_name || user?.email?.split('@')[0] || "Usuário"}
+                    {getGreeting()}
                   </h1>
                 </div>
               </div>
@@ -426,6 +441,56 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </main>
           </div>
         </div>
+
+        {/* Modal obrigatório para definir o nome */}
+        <Dialog open={isNameModalOpen} onOpenChange={(open) => {
+          if (!open && !profile?.display_name) {
+            toast.error("Você precisa definir um nome para continuar.");
+            return;
+          }
+          setIsNameModalOpen(open);
+        }}>
+          <DialogContent className="apple-card dark:bg-[#1A1A1A] border-border/40 sm:max-w-md pointer-events-auto z-[1000]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black tracking-tight text-center pt-4">Bem-vindo(a)!</DialogTitle>
+              <DialogDescription className="text-center">
+                Como você gostaria de ser chamado(a)? Precisamos disso para personalizar sua experiência.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-6 py-6 px-4">
+              <div className="space-y-2">
+                <Label htmlFor="mandatory-name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                  Seu Nome
+                </Label>
+                <Input 
+                  id="mandatory-name" 
+                  value={tempName} 
+                  onChange={(e) => setTempName(e.target.value)}
+                  placeholder="Digite seu nome ou apelido" 
+                  className="h-14 text-xl font-medium rounded-2xl border-border/40 bg-muted/30 focus-visible:ring-primary/20 apple-interactive"
+                  autoFocus
+                />
+              </div>
+              <Button 
+                className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 apple-interactive border-none active:scale-95 transition-all gap-2"
+                onClick={handleSaveName}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    Começar a usar
+                    <Check size={20} />
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </SidebarProvider>
     </TooltipProvider>
   );
