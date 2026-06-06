@@ -151,8 +151,8 @@ function ConfiguracoesPage() {
                   <Label
                     htmlFor="fixed"
                     className={cn(
-                      "flex flex-col items-center justify-between rounded-2xl border-2 border-muted apple-glass p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full dark:bg-card",
-                      divisionModel === "fixed" && "border-primary bg-primary/5 dark:bg-primary/10"
+                      "flex flex-col items-center justify-between rounded-2xl border-2 border-border p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full dark:bg-card dark:border-white/5",
+                      divisionModel === "fixed" && "border-primary bg-primary/5 dark:bg-primary/10 dark:border-primary/50"
                     )}
                   >
                     <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 peer-data-[state=checked]:bg-primary/20">
@@ -170,8 +170,8 @@ function ConfiguracoesPage() {
                   <Label
                     htmlFor="proportional"
                     className={cn(
-                      "flex flex-col items-center justify-between rounded-2xl border-2 border-muted apple-glass p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full dark:bg-card",
-                      divisionModel === "proportional" && "border-primary bg-primary/5 dark:bg-primary/10"
+                      "flex flex-col items-center justify-between rounded-2xl border-2 border-border p-6 hover:bg-muted/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all cursor-pointer h-full dark:bg-card dark:border-white/5",
+                      divisionModel === "proportional" && "border-primary bg-primary/5 dark:bg-primary/10 dark:border-primary/50"
                     )}
                   >
                     <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
