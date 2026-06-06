@@ -124,24 +124,18 @@ function AuthPage() {
   const handleCreateCouple = async () => {
     setLoading(true);
     try {
-      const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      
-      const { data: couple, error: coupleError } = await supabase
-        .from("couples")
-        .insert({ invite_code: inviteCode, name: `${name}'s Couple` })
-        .select()
-        .single();
+      const { data: coupleId, error: createError } = await supabase
+        .rpc("create_couple", { _name: `${name}'s Couple` });
 
-      if (coupleError) throw coupleError;
+      if (createError) throw createError;
 
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ couple_id: couple.id })
-        .eq("id", user!.id);
+      // Get the invite code via the RPC we created
+      const { data: inviteCode, error: codeError } = await supabase
+        .rpc("get_my_invite_code");
 
-      if (profileError) throw profileError;
+      if (codeError) throw codeError;
 
-      setGeneratedInviteCode(inviteCode);
+      setGeneratedInviteCode(inviteCode || "");
       toast.success("Espaço criado!", { description: "Compartilhe o código com seu parceiro." });
     } catch (error: any) {
       toast.error("Erro ao criar espaço", { description: error.message });
@@ -154,20 +148,10 @@ function AuthPage() {
     if (!inviteCodeInput) return;
     setLoading(true);
     try {
-      const { data: couple, error: coupleError } = await supabase
-        .from("couples")
-        .select("id")
-        .eq("invite_code", inviteCodeInput.toUpperCase())
-        .single();
+      const { data: coupleId, error: joinError } = await supabase
+        .rpc("join_couple_with_invite", { _invite_code: inviteCodeInput.toUpperCase() });
 
-      if (coupleError || !couple) throw new Error("Código de convite inválido.");
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ couple_id: couple.id })
-        .eq("id", user!.id);
-
-      if (profileError) throw profileError;
+      if (joinError) throw joinError;
 
       toast.success("Vinculado com sucesso!", { description: "Bem-vindo ao espaço do casal." });
       navigate({ to: "/" });
