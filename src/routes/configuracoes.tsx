@@ -69,6 +69,8 @@ function ConfiguracoesPage() {
   const { incomeJorge, incomeLilian, setIncomes } = useFinanceStore();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+  const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [copied, setCopied] = useState(false);
