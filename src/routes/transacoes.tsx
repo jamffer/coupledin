@@ -267,7 +267,7 @@ function TransactionsPage() {
       type: parsedData.type,
       user_id: user.id,
       couple_id: coupleId,
-      card_id: parsedData.type === "Crédito" ? cards.find(c => c.name.toLowerCase().includes(parsedData.description.toLowerCase()))?.id : undefined,
+      card_id: (formData as any).card_id,
     };
 
     const { error } = await supabase.from("transactions").insert(txData);
@@ -767,6 +767,28 @@ function TransactionsPage() {
                 </Select>
               </div>
             </div>
+
+            {formData.type === "Crédito" && (
+              <div className="grid gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                <Label htmlFor="card" className="font-bold text-xs uppercase tracking-widest opacity-60">Cartão de Crédito</Label>
+                <Select value={formData.card_id} onValueChange={(val) => setFormData({...formData, card_id: val})}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Selecione o cartão" />
+                  </SelectTrigger>
+                  <SelectContent className="apple-card">
+                    {cards.length > 0 ? (
+                      cards.map((card: any) => (
+                        <SelectItem key={card.id} value={card.id}>
+                          {card.name} (•••• {card.last_four})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-cards" disabled>Nenhum cartão cadastrado</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label className="font-bold text-xs uppercase tracking-widest opacity-60">Responsável</Label>
@@ -835,6 +857,26 @@ function TransactionsPage() {
                 <p className="text-sm font-medium text-muted-foreground">Categoria</p>
                 <Badge variant="outline" className="font-bold">{parsedData.category}</Badge>
               </div>
+              {parsedData.type === "Crédito" && (
+                <div className="space-y-2 mt-2">
+                   <p className="text-sm font-medium text-muted-foreground">Vincular ao Cartão</p>
+                   <Select 
+                     value={(formData as any).card_id} 
+                     onValueChange={(val) => setFormData({...formData, card_id: val})}
+                   >
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue placeholder="Selecione o cartão" />
+                    </SelectTrigger>
+                    <SelectContent className="apple-card">
+                      {cards.map((card: any) => (
+                        <SelectItem key={card.id} value={card.id}>
+                          {card.name} (•••• {card.last_four})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           )}
 
