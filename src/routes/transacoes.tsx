@@ -477,7 +477,9 @@ function TransactionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map((tx) => {
+                  {transactions.length > 0 ? (
+                    transactions.map((tx) => {
+
                     const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                     const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
                     const avatarUrl = userAvatars[tx.responsible as keyof typeof userAvatars];
