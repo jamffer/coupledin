@@ -87,7 +87,7 @@ function formatDate(iso: string): string {
   return `${String(d).padStart(2, "0")} ${months[m]}, ${y}`;
 }
 
-function buildTransaction(parsed: ParsedTransaction, id: number): Transaction {
+function buildTransaction(parsed: ParsedTransaction, id: string, userId: string, coupleId: string): Transaction {
   return {
     id,
     date: formatDate(parsed.date),
@@ -95,8 +95,10 @@ function buildTransaction(parsed: ParsedTransaction, id: number): Transaction {
     category: parsed.category,
     amount: (parsed.type === "Entrada" ? 1 : -1) * Math.abs(parsed.amount),
     type: parsed.type,
-    responsible: parsed.responsible as "Jorge" | "Lilian",
-    division: parsed.division as any,
+    responsible: parsed.responsible as string,
+    division: parsed.division as string,
+    user_id: userId,
+    couple_id: coupleId,
   };
 }
 
@@ -125,7 +127,7 @@ function TransactionsPage() {
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-  const [txToDelete, setTxToDelete] = useState<number | null>(null);
+  const [txToDelete, setTxToDelete] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
   // States for manual form
@@ -170,8 +172,8 @@ function TransactionsPage() {
   };
 
   const handleConfirm = () => {
-    if (!parsedData) return;
-    const tx = buildTransaction(parsedData, Date.now());
+    if (!parsedData || !user) return;
+    const tx = buildTransaction(parsedData, crypto.randomUUID(), user.id, "FIXME_COUPLE_ID");
     addTransaction(tx);
     setSmartInput("");
     setIsConfirmModalOpen(false);
@@ -193,14 +195,16 @@ function TransactionsPage() {
       toast.success("Transação atualizada!");
     } else {
       const newTx: Transaction = {
-        id: Date.now(),
+        id: crypto.randomUUID(),
         description: formData.description || "",
         amount: (formData.type === "Entrada" ? 1 : -1) * Math.abs(formData.amount || 0),
         date: formatDate(formData.date!),
         category: formData.category || "Outros",
-        responsible: (formData.responsible as "Jorge" | "Lilian") || "Jorge",
-        division: (formData.division as any) || "Conjunta 50/50",
-        type: formData.type || "Saída"
+        responsible: (formData.responsible as string) || "Jorge",
+        division: (formData.division as string) || "Conjunta 50/50",
+        type: formData.type || "Saída",
+        user_id: user!.id,
+        couple_id: "FIXME_COUPLE_ID"
       };
       addTransaction(newTx);
       toast.success("Transação adicionada!");
