@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 interface ProfileAvatarProps {
   url: string | null;
   name: string;
-  userId: string;
+  userId?: string;
   onUpdate: (url: string) => void;
   className?: string;
   editable?: boolean;
@@ -38,7 +38,7 @@ export function ProfileAvatar({
   };
 
   const handleAvatarClick = () => {
-    if (editable) {
+    if (editable && userId) {
       fileInputRef.current?.click();
     }
   };
@@ -82,7 +82,7 @@ export function ProfileAvatar({
           if (fileInputRef.current) fileInputRef.current.value = "";
         }}
         onSuccess={onUpdate}
-        userId={userId}
+        userId={userId || ""}
       />
     </div>
   );
