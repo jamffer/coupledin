@@ -132,7 +132,7 @@ function AuthPage() {
 
       if (createError) throw createError;
 
-      toast.edit(toastId, { description: "Gerando código de convite..." });
+      toast.loading("Gerando código de convite...", { id: toastId });
       
       const { data: inviteCode, error: codeError } = await supabase
         .rpc("get_my_invite_code");
@@ -165,7 +165,7 @@ function AuthPage() {
 
       if (joinError) throw joinError;
 
-      toast.edit(toastId, { description: "Conectando ao banco de dados..." });
+      toast.loading("Conectando ao banco de dados...", { id: toastId });
       
       toast.success("Vinculado com sucesso!", { id: toastId, description: "Preparando o seu Dashboard..." });
       
