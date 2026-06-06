@@ -157,7 +157,7 @@ function TransactionsPage() {
                   />
                   <div className="absolute bottom-4 right-4 flex items-center gap-2">
                     <Button 
-                      className="rounded-full px-6 shadow-md hover:shadow-lg transition-all gap-2"
+                      className="rounded-full px-6 shadow-md hover:shadow-lg transition-all gap-2 active:scale-95"
                       disabled={!smartInput.trim() || isLoading}
                       onClick={handleProcess}
                     >
@@ -177,7 +177,7 @@ function TransactionsPage() {
                 </div>
 
                 <div className="flex items-center justify-center">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium gap-2">
+                  <Button variant="ghost" className="text-muted-foreground hover:text-primary transition-all text-sm font-medium gap-2 active:scale-95">
                     <PlusCircle size={16} />
                     Adicionar Manualmente
                   </Button>
