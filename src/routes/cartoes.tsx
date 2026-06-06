@@ -169,7 +169,7 @@ function CartoesPage() {
         </div>
 
         {/* Visão Geral dos Cartões */}
-        <div className="flex flex-row md:grid md:grid-cols-2 lg:grid-cols-3 overflow-x-auto md:overflow-visible pb-6 md:pb-0 gap-6 snap-x no-scrollbar">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {mockCards.map((card) => (
             <motion.div 
               key={card.id} 
