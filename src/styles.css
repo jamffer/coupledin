@@ -61,6 +61,14 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
