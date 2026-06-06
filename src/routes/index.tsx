@@ -63,15 +63,9 @@ import { format, parse, isSameMonth, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSpaceOnboardingStore, OnboardingStep } from "@/store/useSpaceOnboardingStore";
 import { LoadingOverlay } from "@/components/onboarding/loading-overlay";
+import { EmptyState } from "@/components/empty-state";
+import { Receipt } from "lucide-react";
 
-const chartData = [
-  { name: "Jan", entradas: 4500, saidas: 3200 },
-  { name: "Fev", entradas: 5200, saidas: 3800 },
-  { name: "Mar", entradas: 4800, saidas: 4100 },
-  { name: "Abr", entradas: 6100, saidas: 4300 },
-  { name: "Mai", entradas: 5900, saidas: 3900 },
-  { name: "Jun", entradas: 6500, saidas: 4200 },
-];
 
 export const Route = createFileRoute("/")({
  head: () => ({
