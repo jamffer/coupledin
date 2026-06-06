@@ -162,7 +162,7 @@ function Dashboard() {
         {/* Grid de Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <motion.div variants={itemVariants}>
-            <Card className="apple-card group">
+            <Card className="apple-card apple-card-hover group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -172,14 +172,14 @@ function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Saldo Total</p>
-                  <h3 className="text-2xl font-bold tracking-tight">R$ 12.450,80</h3>
+                  <h3 className="text-2xl font-bold tracking-tight text-gradient-scroll">R$ 12.450,80</h3>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="apple-card group">
+            <Card className="apple-card apple-card-hover group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
@@ -196,7 +196,7 @@ function Dashboard() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="apple-card group">
+            <Card className="apple-card apple-card-hover group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 bg-rose-100 rounded-lg text-rose-600">
@@ -213,7 +213,7 @@ function Dashboard() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="apple-card group">
+            <Card className="apple-card apple-card-hover group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
@@ -243,7 +243,7 @@ function Dashboard() {
             <Card className="apple-card">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-bold">Fluxo de Caixa</CardTitle>
+                  <CardTitle className="text-lg font-bold text-gradient-scroll">Fluxo de Caixa</CardTitle>
                   <p className="text-xs text-muted-foreground">Visão geral dos últimos 6 meses</p>
                 </div>
               </CardHeader>
@@ -303,7 +303,7 @@ function Dashboard() {
 
           {/* Transações Recentes */}
           <motion.div variants={itemVariants}>
-            <Card className="apple-card">
+            <Card className="apple-card apple-card-hover">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold">Transações</CardTitle>

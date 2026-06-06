@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -42,8 +42,8 @@ export function AppSidebar() {
   });
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/50">
-      <SidebarHeader className="h-16 flex items-center px-6">
+    <Sidebar collapsible="icon" className="border-r border-white/10 bg-white/20 backdrop-blur-xl">
+      <SidebarHeader className="h-16 flex items-center px-6 border-b border-white/10">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-primary">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
             <TrendingUp size={20} />
@@ -79,18 +79,37 @@ export function AppSidebar() {
 }
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const currentScroll = window.scrollY;
+      if (totalScroll > 0) {
+        setScrollProgress(currentScroll / totalScroll);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-white relative">
+      <div className="min-h-screen flex w-full relative bg-white">
         {/* Apple-style background gradient that follows scroll */}
-        <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-white to-rose-500/5 opacity-50" />
-          <div className="absolute top-0 left-0 right-0 h-screen bg-linear-to-b from-white via-transparent to-transparent" />
-        </div>
+        <div 
+          className="fixed inset-0 -z-10 pointer-events-none transition-transform duration-300 ease-out"
+          style={{
+            height: '300vh',
+            transform: `translateY(-${scrollProgress * 66.6}%)`,
+            background: 'linear-gradient(to bottom, #161616, #203F9A, #4E7CB2, #E84797, #94C2DA, #E7A0CC, #EFE8E0)'
+          }}
+        />
 
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0 relative z-10">
-          <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-border/10 bg-white/40 backdrop-blur-xl sticky top-0 z-20">
+          <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-white/20 bg-white/30 backdrop-blur-xl sticky top-0 z-20">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
               <div>
@@ -100,11 +119,11 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
             
             <div className="flex items-center gap-3 md:gap-6">
-              <Button size="sm" className="hidden md:flex gap-2 rounded-full shadow-sm hover:shadow-md transition-all bg-primary/80 backdrop-blur-sm border border-white/20">
+              <Button size="sm" className="hidden md:flex gap-2 rounded-full shadow-sm apple-interactive border-white/40">
                 <PlusCircle size={18} />
                 Novo Registro
               </Button>
-              <Button size="icon" variant="ghost" className="md:hidden rounded-full">
+              <Button size="icon" variant="ghost" className="md:hidden rounded-full apple-interactive border-white/40">
                 <PlusCircle size={22} />
               </Button>
               

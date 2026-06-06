@@ -234,7 +234,7 @@ function CartoesPage() {
 
         {/* Detalhes da Fatura Selecionada */}
         <motion.div variants={itemVariants}>
-          <Card className="border-none shadow-sm bg-white overflow-hidden">
+          <Card className="apple-card overflow-hidden">
             <CardHeader className="border-b border-border/40 bg-muted/20 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className={cn("p-2 rounded-lg text-white", selectedCard.color)}>
