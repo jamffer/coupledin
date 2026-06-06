@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import { ImageCropperModal } from "./image-cropper-modal";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ProfileAvatarProps {
   url: string | null;
