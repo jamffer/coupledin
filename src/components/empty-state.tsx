@@ -10,6 +10,7 @@ interface EmptyStateProps {
   actionLabel?: string;
   onAction?: () => void;
   className?: string;
+  children?: React.ReactNode;
 }
 
 export function EmptyState({
@@ -18,7 +19,8 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
-  className
+  className,
+  children
 }: EmptyStateProps) {
   return (
     <motion.div
@@ -38,14 +40,14 @@ export function EmptyState({
           {description}
         </p>
       </div>
-      {actionLabel && onAction && (
+      {children ? children : (actionLabel && onAction && (
         <Button 
           onClick={onAction}
           className="rounded-full shadow-lg shadow-primary/20 active:scale-95 transition-all font-bold"
         >
           {actionLabel}
         </Button>
-      )}
+      ))}
     </motion.div>
   );
 }
