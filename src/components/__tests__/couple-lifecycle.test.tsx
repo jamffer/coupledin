@@ -28,9 +28,9 @@ const partnerProfile: ProfileLike = { display_name: 'Jorge' };
 
 describe('Couple lifecycle integration', () => {
   beforeEach(() => {
-    realtimeCallback = null;
-    subscribeMock.mockClear();
-    removeChannelMock.mockClear();
+    mocks.realtimeCallback.current = null;
+    mocks.subscribeMock.mockClear();
+    mocks.removeChannelMock.mockClear();
     // Force a deterministic time (morning -> "Bom dia")
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 5, 6, 9, 0, 0));
@@ -76,11 +76,11 @@ describe('Couple lifecycle integration', () => {
     );
 
     expect(screen.getByTestId('greeting')).toHaveTextContent('Bom dia, Lilian!');
-    expect(realtimeCallback).toBeTypeOf('function');
+    expect(mocks.realtimeCallback.current).toBeTypeOf('function');
 
     // Inject a fake realtime payload as if Supabase had fired it
     act(() => {
-      realtimeCallback?.({
+      mocks.realtimeCallback.current?.({
         eventType: 'INSERT',
         new: { id: 'user-2', display_name: 'Jorge', couple_id: 'couple-1' },
       });
