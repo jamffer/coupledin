@@ -414,7 +414,7 @@ function Dashboard() {
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[10px] text-muted-foreground">{format(new Date(tx.date), "dd MMM, HH:mm", { locale: ptBR })}</span>
                             <div className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
-                              <img src={AVATARS[tx.responsible]} alt={tx.responsible} className="w-3 h-3 rounded-full" />
+                              <img src={userAvatars[tx.responsible as keyof typeof userAvatars]} alt={tx.responsible} className="w-3 h-3 rounded-full" />
                               <span className="text-[10px] font-semibold text-muted-foreground">
                                 {tx.responsible}
                               </span>
