@@ -53,23 +53,23 @@ const itemVariants = {
 };
 
 function ConfiguracoesPage() {
-  const { incomeJorge, incomeBeatriz, setIncomes } = useFinanceStore();
+  const { incomeJorge, incomeLilian, setIncomes } = useFinanceStore();
   const [divisionModel, setDivisionModel] = useState("proportional");
   const [percentageA, setPercentageA] = useState(60);
   const [percentageB, setPercentageB] = useState(40);
 
   useEffect(() => {
     if (divisionModel === "proportional") {
-      const total = incomeJorge + incomeBeatriz;
+      const total = incomeJorge + incomeLilian;
       if (total > 0) {
         setPercentageA(Math.round((incomeJorge / total) * 100));
-        setPercentageB(Math.round((incomeBeatriz / total) * 100));
+        setPercentageB(Math.round((incomeLilian / total) * 100));
       }
     } else {
       setPercentageA(50);
       setPercentageB(50);
     }
-  }, [divisionModel, incomeJorge, incomeBeatriz]);
+  }, [divisionModel, incomeJorge, incomeLilian]);
 
   return (
     <DashboardLayout>
@@ -101,12 +101,12 @@ function ConfiguracoesPage() {
                   </div>
                   <Avatar className="w-24 h-24 border-4 border-white shadow-xl ring-1 ring-muted/20">
                     <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" />
-                    <AvatarFallback>BE</AvatarFallback>
+                    <AvatarFallback>LI</AvatarFallback>
                   </Avatar>
                 </div>
 
                 <div className="flex-1 text-center md:text-left space-y-2">
-                  <h2 className="text-2xl font-bold">Jorge & Beatriz</h2>
+                  <h2 className="text-2xl font-bold">Jorge & Lilian</h2>
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full">
                       <Calendar size={14} />
@@ -199,20 +199,20 @@ function ConfiguracoesPage() {
                         <Input 
                           id="incomeA" 
                           type="number" 
-                          value={incomeJorge} 
-                          onChange={(e) => setIncomes(Number(e.target.value), incomeBeatriz)}
+                           value={incomeJorge} 
+                           onChange={(e) => setIncomes(Number(e.target.value), incomeLilian)}
                           className="pl-10 h-12 rounded-xl border-muted focus:border-primary/50"
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="incomeB" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal da Beatriz</Label>
+                      <Label htmlFor="incomeB" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal da Lilian</Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
                         <Input 
                           id="incomeB" 
                           type="number" 
-                          value={incomeBeatriz} 
+                          value={incomeLilian} 
                           onChange={(e) => setIncomes(incomeJorge, Number(e.target.value))}
                           className="pl-10 h-12 rounded-xl border-muted focus:border-primary/50"
                         />
@@ -224,7 +224,7 @@ function ConfiguracoesPage() {
                     <div className="flex justify-between items-end mb-2">
                       <div className="space-y-1">
                         <p className="text-sm font-bold">Resultado do Cálculo</p>
-                        <p className="text-xs text-muted-foreground italic">Jorge paga {percentageA}% / Beatriz paga {percentageB}%</p>
+                        <p className="text-xs text-muted-foreground italic">Jorge paga {percentageA}% / Lilian paga {percentageB}%</p>
                       </div>
                       <div className="flex gap-4">
                         <div className="flex items-center gap-1.5">
@@ -233,7 +233,7 @@ function ConfiguracoesPage() {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-3 h-3 rounded-full bg-rose-400" />
-                          <span className="text-[10px] font-bold uppercase text-muted-foreground">Beatriz</span>
+                          <span className="text-[10px] font-bold uppercase text-muted-foreground">Lilian</span>
                         </div>
                       </div>
                     </div>

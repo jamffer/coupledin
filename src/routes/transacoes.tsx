@@ -72,7 +72,7 @@ function buildTransaction(parsed: ParsedTransaction, id: number): Transaction {
     category: parsed.category,
     amount: (parsed.type === "Entrada" ? 1 : -1) * Math.abs(parsed.amount),
     type: parsed.type,
-    responsible: parsed.responsible as "Jorge" | "Beatriz",
+    responsible: parsed.responsible as "Jorge" | "Lilian",
     division: parsed.division as any,
   };
 }
@@ -235,7 +235,7 @@ function TransactionsPage() {
                 <SelectContent>
                   <SelectItem value="both">O Casal</SelectItem>
                   <SelectItem value="felipe">Felipe</SelectItem>
-                  <SelectItem value="beatriz">Beatriz</SelectItem>
+                  <SelectItem value="lilian">Lilian</SelectItem>
                 </SelectContent>
               </Select>
 

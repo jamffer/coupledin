@@ -46,7 +46,7 @@ const goals = [
     current: 5000,
     contributors: [
       { name: "Jorge", amount: 3000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" },
-      { name: "Beatriz", amount: 2000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" },
+      { name: "Lilian", amount: 2000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" },
     ]
   },
   {
@@ -58,7 +58,7 @@ const goals = [
     current: 12500,
     contributors: [
       { name: "Jorge", amount: 6000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" },
-      { name: "Beatriz", amount: 6500, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" },
+      { name: "Lilian", amount: 6500, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" },
     ]
   },
   {
@@ -70,7 +70,7 @@ const goals = [
     current: 18000,
     contributors: [
       { name: "Jorge", amount: 9000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" },
-      { name: "Beatriz", amount: 9000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" },
+      { name: "Lilian", amount: 9000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" },
     ]
   }
 ];
@@ -239,7 +239,7 @@ function InvestimentosPage() {
                   <Card className="border-none shadow-sm bg-white p-6">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos da Beatriz</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Investimentos da Lilian</p>
                         <h4 className="text-xl font-bold text-foreground">R$ 18.100,00</h4>
                       </div>
                       <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">

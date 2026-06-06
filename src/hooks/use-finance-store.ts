@@ -20,7 +20,7 @@ export type Transaction = {
   category: string;
   amount: number;
   type: string;
-  responsible: "Jorge" | "Beatriz";
+  responsible: "Jorge" | "Lilian";
   division: "Conjunta 50/50" | "Proporcional" | "Individual";
 };
 
@@ -28,8 +28,8 @@ type FinanceStore = {
   transactions: Transaction[];
   addTransaction: (tx: Transaction) => void;
   incomeJorge: number;
-  incomeBeatriz: number;
-  setIncomes: (jorge: number, beatriz: number) => void;
+  incomeLilian: number;
+  setIncomes: (jorge: number, lilian: number) => void;
 };
 
 export const useFinanceStore = create<FinanceStore>()(
@@ -96,5 +96,5 @@ export const DIVISION_ICONS: Record<string, any> = {
 
 export const AVATARS: Record<string, string> = {
   Jorge: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-  Beatriz: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
+  Lilian: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
 };
