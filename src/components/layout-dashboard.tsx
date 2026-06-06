@@ -110,12 +110,57 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isNewRecordOpen, setIsNewRecordOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const { userNames, userAvatars, updateUserProfile } = useFinanceStore();
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-  const [currentUser, setCurrentUser] = useState<"Jorge" | "Lilian">("Jorge");
+  const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [tempName, setTempName] = useState("");
   const [tempAvatar, setTempAvatar] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    let baseGreeting = "Bom dia";
+    if (hour >= 12 && hour < 18) baseGreeting = "Boa tarde";
+    if (hour >= 18 || hour < 5) baseGreeting = "Boa noite";
+
+    if (!profile?.display_name) return `${baseGreeting},`;
+
+    const firstName = profile.display_name.split(' ')[0];
+    
+    if (partnerProfile?.display_name) {
+      const partnerFirstName = partnerProfile.display_name.split(' ')[0];
+      return `${baseGreeting}, ${firstName} e ${partnerFirstName}!`;
+    }
+
+    return `${baseGreeting}, ${firstName}!`;
+  };
+
+  const handleSaveName = async () => {
+    if (!tempName.trim()) {
+      toast.error("Por favor, insira um nome.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ display_name: tempName.trim() })
+        .eq("id", user?.id);
+
+      if (error) throw error;
+
+      setProfile((prev: any) => ({ ...prev, display_name: tempName.trim() }));
+      setIsNameModalOpen(false);
+      toast.success("Nome salvo com sucesso!");
+    } catch (error: any) {
+      toast.error("Erro ao salvar nome: " + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
   
   const navigate = useNavigate();
   
