@@ -172,7 +172,21 @@ function CartoesPage() {
     enabled: !!user && !!transactions,
   });
 
-  const [bills, setBills] = useState<Record<string, BillItem[]>>({});
+  // Derivar itens da fatura das transações reais
+  const currentBillItems = selectedCardId 
+    ? transactions
+        .filter(tx => tx.card_id === selectedCardId)
+        .map(tx => ({
+          id: tx.id,
+          date: new Date(tx.date).toLocaleDateString('pt-BR'),
+          description: tx.description,
+          amount: Math.abs(tx.amount),
+          user: tx.responsible,
+          category: tx.category,
+          icon: CreditCard, // Fallback
+          installments: '1/1'
+        }))
+    : [];
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -187,7 +201,7 @@ function CartoesPage() {
   }, [cards, selectedCardId]);
 
   const selectedCard = cards.find(c => c.id === selectedCardId);
-  const currentBillItems = selectedCardId ? (bills[selectedCardId] || []) : [];
+  // const currentBillItems = selectedCardId ? (bills[selectedCardId] || []) : [];
 
   const usagePercentage = selectedCard ? (selectedCard.limitUsed / selectedCard.totalLimit) * 100 : 0;
   
