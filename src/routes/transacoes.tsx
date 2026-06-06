@@ -311,46 +311,52 @@ function TransactionsPage() {
 
             {/* Mobile View */}
             <div className="md:hidden space-y-4">
-              {transactions.map((tx) => (
-                <Card key={tx.id} className="border-none shadow-sm bg-white overflow-hidden group">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-muted rounded-xl text-muted-foreground">
-                          <tx.icon size={18} />
+              {transactions.map((tx) => {
+                const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
+                const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
+                const avatarUrl = AVATARS[tx.responsible] || AVATARS.Jorge;
+                
+                return (
+                  <Card key={tx.id} className="border-none shadow-sm bg-white overflow-hidden group">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-muted rounded-xl text-muted-foreground">
+                            <CategoryIcon size={18} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold">{tx.description}</p>
+                            <p className="text-[10px] text-muted-foreground">{tx.date} • {tx.type}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold">{tx.description}</p>
-                          <p className="text-[10px] text-muted-foreground">{tx.date} • {tx.type}</p>
+                        <div className="text-right">
+                          <p className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                            {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                          <Badge variant="outline" className="text-[9px] py-0 h-4 mt-1">
+                            {tx.category}
+                          </Badge>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          {tx.amount > 0 ? '+' : ''} R$ {Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <Badge variant="outline" className="text-[9px] py-0 h-4 mt-1">
-                          {tx.category}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 pt-4 border-t border-muted/50 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-6 h-6 border shadow-sm">
-                          <AvatarImage src={tx.avatar} />
-                          <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs font-medium text-muted-foreground">{tx.responsible}</span>
                       </div>
                       
-                      <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-lg">
-                        <tx.divisionIcon size={12} className="text-primary" />
-                        <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">{tx.division}</span>
+                      <div className="mt-4 pt-4 border-t border-muted/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-6 h-6 border shadow-sm">
+                            <AvatarImage src={avatarUrl} />
+                            <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs font-medium text-muted-foreground">{tx.responsible}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-lg">
+                          <DivisionIcon size={12} className="text-primary" />
+                          <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">{tx.division}</span>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </motion.div>
         </div>
