@@ -108,8 +108,9 @@ function buildTransaction(parsed: ParsedTransaction, id: string, userId: string,
     division: parsed.division as string,
     user_id: userId,
     couple_id: coupleId,
-  };
-}
+import { EmptyState } from "@/components/empty-state";
+import { Receipt } from "lucide-react";
+
 
 const containerVariants = {
   hidden: { opacity: 0 },
