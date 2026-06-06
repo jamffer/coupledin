@@ -419,7 +419,7 @@ function Dashboard() {
                 transition={{ repeat: Infinity, duration: 2 }}
                 className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 text-primary mb-4"
               >
-                <RefreshCcw size={40} className="animate-spin-slow" />
+                <RefreshCcw size={40} className="animate-spin" />
               </motion.div>
               <div className="space-y-2">
                 <h2 className="text-xl font-bold tracking-tight">{message}</h2>
