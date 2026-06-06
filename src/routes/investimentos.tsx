@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -5,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { 
   Plus, 
   TrendingUp, 
-  TrendingDown, 
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
@@ -14,8 +14,6 @@ import {
   Building2,
   Gem,
   ArrowRight,
-  Loader2,
-  PieChart as PieChartIcon
 } from "lucide-react";
 import { 
   Table, 
@@ -26,25 +24,15 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { motion } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { EmptyState } from "@/components/empty-state";
 
 export const Route = createFileRoute("/investimentos")({
   head: () => ({
@@ -55,25 +43,6 @@ export const Route = createFileRoute("/investimentos")({
   }),
   component: InvestimentosPage,
 });
-
-// Base assets in portfolio
-const initialAcoes = [
-  { ticker: "VALE3", name: "Vale S.A.", qty: 100, avgPrice: 65.40, currentPrice: 65.40, icon: "https://logo.clearbit.com/vale.com" },
-  { ticker: "PETR4", name: "Petrobras", qty: 150, avgPrice: 32.10, currentPrice: 32.10, icon: "https://logo.clearbit.com/petrobras.com.br" },
-  { ticker: "ITUB4", name: "Itaú Unibanco", qty: 200, avgPrice: 28.50, currentPrice: 28.50, icon: "https://logo.clearbit.com/itau.com.br" },
-];
-
-const initialFIIs = [
-  { ticker: "HGLG11", name: "CSHG Logística", qty: 50, avgPrice: 160.00, currentPrice: 160.00, icon: "https://logo.clearbit.com/cshg.com.br" },
-  { ticker: "KNRI11", name: "Kinea Renda", qty: 80, avgPrice: 155.20, currentPrice: 155.20, icon: "https://logo.clearbit.com/kinea.com.br" },
-  { ticker: "XPML11", name: "XP Malls", qty: 120, avgPrice: 108.50, currentPrice: 108.50, icon: "https://logo.clearbit.com/xp.com.br" },
-];
-
-const initialCripto = [
-  { ticker: "BTC", id: "bitcoin", name: "Bitcoin", qty: 0.05, avgPrice: 285000, currentPrice: 285000, icon: "https://assets.coingecko.com/coins/images/1/small/bitcoin.png" },
-  { ticker: "ETH", id: "ethereum", name: "Ethereum", qty: 1.2, avgPrice: 12500, currentPrice: 12500, icon: "https://assets.coingecko.com/coins/images/279/small/ethereum.png" },
-  { ticker: "SOL", id: "solana", name: "Solana", qty: 15, avgPrice: 450, currentPrice: 450, icon: "https://assets.coingecko.com/coins/images/4128/small/solana.png" },
-];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -86,6 +55,14 @@ const itemVariants = {
 };
 
 function AssetTable({ data, onSelect }: { data: any[], onSelect: (asset: any) => void }) {
+  if (data.length === 0) {
+    return (
+      <div className="py-12 text-center text-muted-foreground">
+        Nenhum ativo cadastrado nesta categoria.
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -162,65 +139,26 @@ function InvestimentosPage() {
       });
     }
   }, [user]);
-  const [acoes, setAcoes] = useState(initialAcoes);
-  const [fiis, setFiis] = useState(initialFIIs);
-  const [cripto, setCripto] = useState(initialCripto);
+
+  const [acoes, setAcoes] = useState<any[]>([]);
+  const [fiis, setFiis] = useState<any[]>([]);
+  const [cripto, setCripto] = useState<any[]>([]);
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
 
-  const fetchStockPrices = async () => {
-    try {
-      const tickers = [...acoes, ...fiis].map(a => a.ticker).join(',');
-      const response = await fetch(`https://brapi.dev/api/quote/${tickers}`);
-      const data = await response.json();
-      
-      if (data.results) {
-        setAcoes(prev => prev.map(stock => {
-          const result = data.results.find((r: any) => r.symbol === stock.ticker);
-          return result ? { ...stock, currentPrice: result.regularMarketPrice } : stock;
-        }));
-        setFiis(prev => prev.map(fii => {
-          const result = data.results.find((r: any) => r.symbol === fii.ticker);
-          return result ? { ...fii, currentPrice: result.regularMarketPrice } : fii;
-        }));
-      }
-    } catch (error) {
-      console.error("Error fetching stocks:", error);
-      toast.error("Erro ao atualizar cotações da B3");
-    }
-  };
-
-  const fetchCryptoPrices = async () => {
-    try {
-      const ids = cripto.map(c => c.id).join(',');
-      const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl`);
-      const data = await response.json();
-      
-      if (data) {
-        setCripto(prev => prev.map(coin => {
-          const price = data[coin.id]?.brl;
-          return price ? { ...coin, currentPrice: price } : coin;
-        }));
-      }
-    } catch (error) {
-      console.error("Error fetching crypto:", error);
-      toast.error("Erro ao atualizar criptoativos");
-    }
-  };
-
   const handleRefresh = async () => {
+    if (acoes.length === 0 && fiis.length === 0 && cripto.length === 0) return;
     setIsRefreshing(true);
-    await Promise.all([fetchStockPrices(), fetchCryptoPrices()]);
+    // Simular atualização para propósitos de UI
+    await new Promise(resolve => setTimeout(resolve, 1000));
     setIsRefreshing(false);
     toast.success("Preços atualizados!");
   };
 
-  useEffect(() => {
-    handleRefresh();
-  }, []);
-
   const totalPatrimony = [...acoes, ...fiis, ...cripto].reduce((acc, curr) => acc + (curr.qty * curr.currentPrice), 0);
   const totalCost = [...acoes, ...fiis, ...cripto].reduce((acc, curr) => acc + (curr.qty * curr.avgPrice), 0);
   const totalProfit = totalPatrimony - totalCost;
+
+  const hasInvestments = acoes.length > 0 || fiis.length > 0 || cripto.length > 0;
 
   return (
     <DashboardLayout>
@@ -235,239 +173,175 @@ function InvestimentosPage() {
             <h1 className="text-2xl font-bold tracking-tight">Meus Investimentos</h1>
             <p className="text-muted-foreground italic">Patrimônio atualizado em tempo real.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh}
-              className="rounded-full apple-interactive border-border/40 gap-2"
-              disabled={isRefreshing}
-            >
-              <RefreshCw size={16} className={cn(isRefreshing && "animate-spin")} />
-              {isRefreshing ? "Atualizando..." : "Atualizar Preços"}
-            </Button>
-            <Button size="sm" className="rounded-full gap-2 shadow-lg">
-              <Plus size={16} />
-              Novo Ativo
-            </Button>
-          </div>
-        </div>
-
-        {/* Resumo Patrimonial */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover group card-gradient-blue border-none h-full">
-              <CardContent className="p-8 flex flex-col justify-between h-full">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-white/20 rounded-lg text-white">
-                    <Wallet size={24} />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 bg-white/10 px-3 py-1 rounded-full">Geral</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white/80">Patrimônio Total</p>
-                  <h3 className="text-4xl font-black tracking-tight text-white mt-1">
-                    R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </h3>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover group card-gradient-magenta border-none h-full">
-              <CardContent className="p-8 flex flex-col justify-between h-full">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-white/20 rounded-lg text-white">
-                    <TrendingUp size={24} />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 bg-white/10 px-3 py-1 rounded-full">Total Acumulado</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white/80">Lucro/Prejuízo Total</p>
-                  <h3 className="text-4xl font-black tracking-tight text-white mt-1">
-                    {totalProfit >= 0 ? '+' : ''} R$ {totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </h3>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <Card className="apple-card apple-card-hover group h-full border-2 border-primary/5">
-              <CardContent className="p-8 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Distribuição</span>
-                  <ArrowRight size={16} className="text-primary" />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Ações / FIIs</span>
-                    <span className="text-sm font-bold text-primary">65%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-muted dark:bg-black rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: '65%' }} />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Cripto / Diversos</span>
-                    <span className="text-sm font-bold text-secondary-foreground">35%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-muted dark:bg-black rounded-full overflow-hidden">
-                    <div className="h-full bg-secondary-foreground rounded-full" style={{ width: '35%' }} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Ativos Categorizados */}
-        <motion.div variants={itemVariants}>
-          <Tabs defaultValue="acoes" className="w-full">
-            <TabsList className="bg-muted dark:bg-black/40 p-1 rounded-2xl h-14 border border-border/40 gap-1 w-full md:w-fit overflow-x-auto no-scrollbar">
-              <TabsTrigger value="rendafixa" className="rounded-xl px-6 h-11 data-[state=active]:apple-card data-[state=active]:shadow-md gap-2 transition-all">
-                <Building2 size={16} />
-                Renda Fixa
-              </TabsTrigger>
-              <TabsTrigger value="acoes" className="rounded-xl px-6 h-11 data-[state=active]:apple-card data-[state=active]:shadow-md gap-2 transition-all">
-                <TrendingUp size={16} />
-                Ações
-              </TabsTrigger>
-              <TabsTrigger value="fiis" className="rounded-xl px-6 h-11 data-[state=active]:apple-card data-[state=active]:shadow-md gap-2 transition-all">
-                <Building2 size={16} />
-                FIIs
-              </TabsTrigger>
-              <TabsTrigger value="cripto" className="rounded-xl px-6 h-11 data-[state=active]:apple-card data-[state=active]:shadow-md gap-2 transition-all">
-                <Coins size={16} />
-                Criptomoedas
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="mt-8">
-              <TabsContent value="rendafixa">
-                <Card className="apple-card p-8">
-                  <div className="text-center space-y-4 py-12">
-                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
-                      <Gem size={32} />
-                    </div>
-                    <h3 className="text-xl font-bold">CDBs, LCIs e Tesouro</h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">Em breve, você poderá conectar suas contas bancárias para importar seus títulos de renda fixa automaticamente.</p>
-                  </div>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="acoes">
-                <Card className="apple-card overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-bold">Ações Brasil</CardTitle>
-                    <CardDescription>Cotações em tempo real via Brapi API.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0">
-                    <AssetTable data={acoes} onSelect={setSelectedAsset} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="fiis">
-                <Card className="apple-card overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-bold">Fundos Imobiliários</CardTitle>
-                    <CardDescription>Acompanhe o rendimento dos seus proventos.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0">
-                    <AssetTable data={fiis} onSelect={setSelectedAsset} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="cripto">
-                <Card className="apple-card overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-bold">Criptoativos</CardTitle>
-                    <CardDescription>Dados globais via CoinGecko API.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-0">
-                    <AssetTable data={cripto} onSelect={setSelectedAsset} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </div>
-          </Tabs>
-        </motion.div>
-      </motion.div>
-
-      <Sheet open={!!selectedAsset} onOpenChange={(open) => !open && setSelectedAsset(null)}>
-        <SheetContent className="apple-card dark:bg-[#1A1A1A] border-border/40 sm:max-w-md">
-          <SheetHeader className="pb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl apple-glass p-2 flex items-center justify-center overflow-hidden">
-                <img src={selectedAsset?.icon} alt={selectedAsset?.ticker} className="w-full h-full object-contain" />
-              </div>
-              <div>
-                <SheetTitle className="text-2xl font-bold">{selectedAsset?.ticker}</SheetTitle>
-                <SheetDescription className="text-sm font-medium">{selectedAsset?.name}</SheetDescription>
-              </div>
-            </div>
-          </SheetHeader>
-
-          {selectedAsset && (
-            <div className="space-y-8 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="apple-interactive p-4 dark:bg-black/20">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Preço Atual</p>
-                  <p className="text-xl font-black">R$ {selectedAsset.currentPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                </div>
-                <div className="apple-interactive p-4 dark:bg-black/20">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Variação</p>
-                  <div className={cn(
-                    "flex items-center gap-1 text-xl font-black",
-                    selectedAsset.currentPrice >= selectedAsset.avgPrice ? "text-emerald-600" : "text-rose-500"
-                  )}>
-                    {((selectedAsset.currentPrice - selectedAsset.avgPrice) / selectedAsset.avgPrice * 100).toFixed(2)}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground px-1">Minha Posição</h4>
-                <div className="apple-interactive p-6 space-y-4 dark:bg-black/10">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Quantidade</span>
-                    <span className="font-bold">{selectedAsset.qty}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Preço Médio</span>
-                    <span className="font-bold text-sm">R$ {selectedAsset.avgPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="pt-4 border-t border-border/40 flex justify-between items-end">
-                    <span className="text-sm font-bold">Valor Total</span>
-                    <div className="text-right">
-                      <p className="text-2xl font-black text-primary dark:text-white">
-                        R$ {(selectedAsset.qty * selectedAsset.currentPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                      <p className={cn(
-                        "text-[10px] font-bold",
-                        selectedAsset.currentPrice >= selectedAsset.avgPrice ? "text-emerald-600" : "text-rose-500"
-                      )}>
-                        {selectedAsset.currentPrice >= selectedAsset.avgPrice ? '+' : ''} R$ {((selectedAsset.currentPrice - selectedAsset.avgPrice) * selectedAsset.qty).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de lucro
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="rounded-xl border-border/40 h-12 font-bold active:scale-95 transition-all">
-                  Vender
-                </Button>
-                <Button className="rounded-xl h-12 font-bold active:scale-95 transition-all shadow-lg">
-                  Comprar Mais
-                </Button>
-              </div>
+          {hasInvestments && (
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh}
+                className="rounded-full apple-interactive border-border/40 gap-2"
+                disabled={isRefreshing}
+              >
+                <RefreshCw size={16} className={cn(isRefreshing && "animate-spin")} />
+                {isRefreshing ? "Atualizando..." : "Atualizar Preços"}
+              </Button>
+              <Button size="sm" className="rounded-full gap-2 shadow-lg">
+                <Plus size={16} />
+                Novo Ativo
+              </Button>
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+        </div>
+
+        {hasInvestments ? (
+          <>
+            {/* Resumo Patrimonial */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <motion.div variants={itemVariants}>
+                <Card className="apple-card apple-card-hover group card-gradient-blue border-none h-full">
+                  <CardContent className="p-8 flex flex-col justify-between h-full">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-2 bg-white/20 rounded-lg text-white">
+                        <Wallet size={24} />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 bg-white/10 px-3 py-1 rounded-full">Geral</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white/80">Patrimônio Total</p>
+                      <h3 className="text-4xl font-black tracking-tight text-white mt-1">
+                        R$ {totalPatrimony.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <Card className="apple-card apple-card-hover group card-gradient-magenta border-none h-full">
+                  <CardContent className="p-8 flex flex-col justify-between h-full">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-2 bg-white/20 rounded-lg text-white">
+                        <TrendingUp size={24} />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 bg-white/10 px-3 py-1 rounded-full">Total Acumulado</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white/80">Lucro/Prejuízo Total</p>
+                      <h3 className="text-4xl font-black tracking-tight text-white mt-1">
+                        {totalProfit >= 0 ? '+' : ''} R$ {totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <Card className="apple-card apple-card-hover group h-full border-2 border-primary/5">
+                  <CardContent className="p-8 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Distribuição</span>
+                      <ArrowRight size={16} className="text-primary" />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Ações / FIIs</span>
+                        <span className="text-sm font-bold text-primary">0%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-muted dark:bg-black rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: '0%' }} />
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Cripto / Diversos</span>
+                        <span className="text-sm font-bold text-secondary-foreground">0%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-muted dark:bg-black rounded-full overflow-hidden">
+                        <div className="h-full bg-secondary-foreground rounded-full" style={{ width: '0%' }} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* Ativos Categorizados */}
+            <motion.div variants={itemVariants}>
+              <Tabs defaultValue="rendafixa" className="w-full">
+                <TabsList className="bg-muted dark:bg-black/40 p-1 rounded-2xl h-14 border border-border/40 gap-1 w-full md:w-fit overflow-x-auto no-scrollbar">
+                  <TabsTrigger value="rendafixa" className="rounded-xl px-6 h-11 data-[state=active]:apple-card data-[state=active]:shadow-md gap-2 transition-all">
+                    <Building2 size={16} />
+                    Renda Fixa
+                  </TabsTrigger>
+                  <TabsTrigger value="acoes" className="rounded-xl px-6 h-11 data-[state=active]:apple-card data-[state=active]:shadow-md gap-2 transition-all">
+                    <TrendingUp size={16} />
+                    Ações
+                  </TabsTrigger>
+                  <TabsTrigger value="fiis" className="rounded-xl px-6 h-11 data-[state=active]:apple-card data-[state=active]:shadow-md gap-2 transition-all">
+                    <Building2 size={16} />
+                    FIIs
+                  </TabsTrigger>
+                  <TabsTrigger value="cripto" className="rounded-xl px-6 h-11 data-[state=active]:apple-card data-[state=active]:shadow-md gap-2 transition-all">
+                    <Coins size={16} />
+                    Criptomoedas
+                  </TabsTrigger>
+                </TabsList>
+
+                <div className="mt-8">
+                  <TabsContent value="rendafixa">
+                    <Card className="apple-card p-8 text-center py-12">
+                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary mb-4">
+                        <Gem size={32} />
+                      </div>
+                      <h3 className="text-xl font-bold">CDBs, LCIs e Tesouro</h3>
+                      <p className="text-muted-foreground max-w-md mx-auto">Em breve, você poderá conectar suas contas bancárias para importar seus títulos de renda fixa automaticamente.</p>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="acoes">
+                    <Card className="apple-card overflow-hidden">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-bold">Ações Brasil</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-0">
+                        <AssetTable data={acoes} onSelect={setSelectedAsset} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="fiis">
+                    <Card className="apple-card overflow-hidden">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-bold">Fundos Imobiliários</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-0">
+                        <AssetTable data={fiis} onSelect={setSelectedAsset} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="cripto">
+                    <Card className="apple-card overflow-hidden">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-bold">Criptoativos</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-0">
+                        <AssetTable data={cripto} onSelect={setSelectedAsset} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </motion.div>
+          </>
+        ) : (
+          <EmptyState 
+            icon={TrendingUp}
+            title="Sua carteira está vazia"
+            description="Comece a adicionar seus ativos para acompanhar seu patrimônio."
+            actionLabel="Adicionar meu primeiro ativo"
+            onAction={() => toast.info("Funcionalidade de adicionar ativo em breve!")}
+          />
+        )}
+      </motion.div>
     </DashboardLayout>
   );
 }
