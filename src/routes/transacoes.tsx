@@ -217,7 +217,7 @@ function TransactionsPage() {
 
   const setFilters = (newFilters: any) => {
     navigate({
-      search: (prev: any) => ({ ...prev, ...newFilters }),
+      search: { ...search, ...newFilters },
     });
   };
 

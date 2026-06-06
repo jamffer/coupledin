@@ -116,7 +116,7 @@ function Dashboard() {
   const activeSheet = (search.sheet as 'balance' | 'income' | 'expenses' | 'credit' | null) || null;
   const setActiveSheet = (sheet: string | null) => {
     navigate({
-      search: (prev: any) => ({ ...prev, sheet: sheet || undefined }),
+      search: { ...search, sheet: sheet || undefined },
     });
   };
 
@@ -129,7 +129,7 @@ function Dashboard() {
 
   const setSelectedMonth = (date: Date) => {
     navigate({
-      search: (prev: any) => ({ ...prev, month: format(date, 'yyyy-MM') }),
+      search: { ...search, month: format(date, 'yyyy-MM') },
     });
   };
 
