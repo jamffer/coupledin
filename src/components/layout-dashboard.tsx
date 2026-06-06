@@ -7,7 +7,9 @@ import {
   Target,
   Settings,
   PlusCircle,
-  Menu
+  Menu,
+  Moon,
+  Sun
 } from "lucide-react";
 import { 
   Sidebar, 
@@ -80,6 +82,22 @@ export function AppSidebar() {
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
+
+  const toggleDarkMode = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -96,14 +114,16 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full relative bg-transparent">
+      <div className="min-h-screen flex w-full relative">
         {/* Apple-style background gradient that follows scroll */}
         <div 
           className="fixed inset-0 -z-10 pointer-events-none transition-transform duration-300 ease-out"
           style={{
             height: '300vh',
             transform: `translateY(-${scrollProgress * 66.6}%)`,
-            background: 'linear-gradient(to bottom, #161616, #203F9A, #4E7CB2, #E84797, #94C2DA, #E7A0CC, #EFE8E0)'
+            background: isDarkMode 
+              ? 'linear-gradient(to bottom, #000000, #161616, #1A1A1A, #0F172A)' 
+              : 'linear-gradient(to bottom, #161616, #203F9A, #4E7CB2, #E84797, #94C2DA, #E7A0CC, #EFE8E0)'
           }}
         />
 
@@ -119,6 +139,15 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
             
             <div className="flex items-center gap-3 md:gap-6">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleDarkMode}
+                className="rounded-full apple-interactive border-white/40"
+              >
+                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </Button>
+
               <Button size="sm" className="hidden md:flex gap-2 rounded-full shadow-sm apple-interactive border-white/40">
                 <PlusCircle size={18} />
                 Novo Registro
