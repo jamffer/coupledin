@@ -110,7 +110,7 @@ function InvestimentosPage() {
       >
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Investimentos e Metas</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Investimentos e Metas</h1>
             <p className="text-muted-foreground italic">Construindo o futuro em conjunto.</p>
           </div>
           <Button className="rounded-full shadow-sm gap-2 apple-interactive border-white/20">
@@ -139,7 +139,7 @@ function InvestimentosPage() {
                         <Plus size={18} />
                       </Button>
                     </div>
-                    <CardTitle className="mt-4 text-lg">{goal.title}</CardTitle>
+                    <CardTitle className="mt-4 text-lg font-bold">{goal.title}</CardTitle>
                     <CardDescription className="flex justify-between items-end mt-1">
                       <span className="text-foreground font-bold text-lg">
                         R$ {goal.current.toLocaleString('pt-BR')}
