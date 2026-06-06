@@ -42,7 +42,7 @@ export function AppSidebar() {
   });
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-white/10 bg-white/20 backdrop-blur-xl">
+    <Sidebar collapsible="icon" className="border-r border-white/10 bg-transparent backdrop-blur-xl">
       <SidebarHeader className="h-16 flex items-center px-6 border-b border-white/10">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-primary">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
