@@ -28,21 +28,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
 const cardFormSchema = z.object({
   name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
-  totalLimit: z.string().refine((val) => !isNaN(Number(val.replace(/[^\d.-]/g, ""))), {
-    message: "Informe um valor numérico válido",
-  }),
-  cardType: z.enum(["Meu Cartão", "Cartão do Parceiro(a)", "Cartão Conjunto"], {
-    required_error: "Selecione o tipo de cartão",
-  }),
+  totalLimit: z.string().min(1, "O limite é obrigatório"),
+  cardType: z.enum(["Meu Cartão", "Cartão do Parceiro(a)", "Cartão Conjunto"]),
   lastDigits: z.string().max(4, "Máximo de 4 dígitos").optional(),
-  color: z.string().default("card-gradient-blue"),
+  color: z.string(),
 });
 
 type CardFormValues = z.infer<typeof cardFormSchema>;
@@ -73,7 +69,7 @@ export function AddCardModal({ children }: AddCardModalProps) {
 
     setIsUploading(true);
     try {
-      const numericLimit = Number(values.totalLimit.replace(/[^\d.-]/g, ""));
+      const numericLimit = Number(values.totalLimit) / 100;
       
       const { error } = await supabase.from("credit_cards").insert({
         user_id: user.id,
@@ -150,7 +146,6 @@ export function AddCardModal({ children }: AddCardModalProps) {
                     <FormControl>
                       <Input 
                         placeholder="R$ 0,00" 
-                        {...field} 
                         disabled={isUploading}
                         onChange={(e) => {
                           const value = e.target.value.replace(/\D/g, "");
