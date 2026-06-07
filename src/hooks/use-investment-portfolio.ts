@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchBrapiQuote, fetchCryptoQuote, calculateFixedIncomeCurrentValue } from "@/services/api/finance";
+import { fetchBrapiQuote, fetchCryptoQuote, fetchTreasuryQuote, calculateFixedIncomeCurrentValue } from "@/services/api/finance";
 import { useProfile } from "./use-profile";
 import { Database } from "@/integrations/supabase/types";
 
@@ -40,13 +40,21 @@ export function useInvestmentPortfolio() {
           const quote = await fetchCryptoQuote(inv.ticker);
           if (quote !== null) current_price = quote;
         } else if (inv.asset_type === "FIXED_INCOME") {
-          const totalVal = calculateFixedIncomeCurrentValue(
-            Number(inv.average_price),
-            Number(inv.quantity),
-            inv.purchase_date,
-            Number(inv.custom_rate || 0)
-          );
-          current_price = Number(inv.quantity) > 0 ? totalVal / Number(inv.quantity) : 0;
+          const customRate = Number(inv.custom_rate || 0);
+          if (customRate > 0) {
+            // Título Privado (CDB/LCI com taxa mensal manual)
+            const totalVal = calculateFixedIncomeCurrentValue(
+              Number(inv.average_price),
+              Number(inv.quantity),
+              inv.purchase_date,
+              customRate
+            );
+            current_price = Number(inv.quantity) > 0 ? totalVal / Number(inv.quantity) : 0;
+          } else {
+            // Tesouro Direto (Busca na Brapi)
+            const quote = await fetchTreasuryQuote(inv.ticker);
+            if (quote !== null) current_price = quote;
+          }
         }
 
         const quantity = Number(inv.quantity);

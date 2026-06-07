@@ -14,7 +14,10 @@ import {
   Building2,
   Gem,
   ArrowRight,
-  Activity
+  Activity,
+  MoreVertical,
+  Pencil,
+  Trash2
 } from "lucide-react";
 import { 
   Table, 
@@ -32,6 +35,24 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { useInvestmentPortfolio, EnrichedInvestment } from "@/hooks/use-investment-portfolio";
 import { NewAssetModal } from "@/components/investments/new-asset-modal";
+import { EditAssetModal } from "@/components/investments/edit-asset-modal";
+import { useDeleteInvestment } from "@/hooks/use-investment-mutations";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/investimentos")({
   head: () => ({
@@ -53,7 +74,15 @@ const itemVariants = {
   visible: { y: 0, opacity: 1 }
 };
 
-function AssetTable({ data }: { data: EnrichedInvestment[] }) {
+function AssetTable({ 
+  data, 
+  onEdit, 
+  onDelete 
+}: { 
+  data: EnrichedInvestment[],
+  onEdit: (asset: EnrichedInvestment) => void,
+  onDelete: (asset: EnrichedInvestment) => void 
+}) {
   if (data.length === 0) {
     return (
       <div className="py-12 text-center text-muted-foreground font-medium">
@@ -72,6 +101,7 @@ function AssetTable({ data }: { data: EnrichedInvestment[] }) {
             <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">P. Médio</TableHead>
             <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">Valor Atual</TableHead>
             <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">P&L</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -113,6 +143,25 @@ function AssetTable({ data }: { data: EnrichedInvestment[] }) {
                     </span>
                   </div>
                 </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                        <MoreVertical size={16} className="text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="apple-card rounded-xl w-40">
+                      <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onEdit(asset)}>
+                        <Pencil size={14} />
+                        Editar Aporte
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer gap-2 text-rose-500 focus:text-rose-600 focus:bg-rose-500/10" onClick={() => onDelete(asset)}>
+                        <Trash2 size={14} />
+                        Excluir Ativo
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             );
           })}
@@ -126,6 +175,10 @@ function InvestimentosPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [assetToEdit, setAssetToEdit] = useState<EnrichedInvestment | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<EnrichedInvestment | null>(null);
+
+  const deleteMutation = useDeleteInvestment();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -147,6 +200,16 @@ function InvestimentosPage() {
   const handleRefresh = async () => {
     await refetch();
     toast.success("Preços atualizados via API!");
+  };
+
+  const handleConfirmDelete = () => {
+    if (assetToDelete) {
+      deleteMutation.mutate(assetToDelete.id, {
+        onSuccess: () => {
+          setAssetToDelete(null);
+        }
+      });
+    }
   };
 
   const totalProfit = totalPatrimony - totalInvested;
@@ -176,6 +239,32 @@ function InvestimentosPage() {
   return (
     <DashboardLayout>
       <NewAssetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <EditAssetModal isOpen={!!assetToEdit} onClose={() => setAssetToEdit(null)} asset={assetToEdit} />
+
+      <AlertDialog open={!!assetToDelete} onOpenChange={(open) => !open && setAssetToDelete(null)}>
+        <AlertDialogContent className="apple-card rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Ativo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover <strong className="uppercase">{assetToDelete?.ticker}</strong> da sua carteira? Esta ação não pode ser desfeita e afetará o histórico do seu patrimônio.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending} className="rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmDelete();
+              }}
+              disabled={deleteMutation.isPending} 
+              className="bg-rose-500 hover:bg-rose-600 text-white rounded-xl gap-2"
+            >
+              {deleteMutation.isPending && <RefreshCw size={14} className="animate-spin" />}
+              Sim, Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       <motion.div 
         variants={containerVariants}
@@ -314,7 +403,7 @@ function InvestimentosPage() {
                         <CardTitle className="text-lg font-bold">Todos os Ativos</CardTitle>
                       </CardHeader>
                       <CardContent className="px-0">
-                        <AssetTable data={investments} />
+                        <AssetTable data={investments} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -325,7 +414,7 @@ function InvestimentosPage() {
                         <CardTitle className="text-lg font-bold">Ações e FIIs</CardTitle>
                       </CardHeader>
                       <CardContent className="px-0">
-                        <AssetTable data={[...acoes, ...fiis]} />
+                        <AssetTable data={[...acoes, ...fiis]} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -336,7 +425,7 @@ function InvestimentosPage() {
                         <CardTitle className="text-lg font-bold">Criptoativos</CardTitle>
                       </CardHeader>
                       <CardContent className="px-0">
-                        <AssetTable data={cripto} />
+                        <AssetTable data={cripto} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -347,7 +436,7 @@ function InvestimentosPage() {
                         <CardTitle className="text-lg font-bold">Títulos e Aplicações</CardTitle>
                       </CardHeader>
                       <CardContent className="px-0">
-                        <AssetTable data={rendafixa} />
+                        <AssetTable data={rendafixa} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
                       </CardContent>
                     </Card>
                   </TabsContent>
