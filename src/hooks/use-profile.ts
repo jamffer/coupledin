@@ -50,31 +50,53 @@ export function useProfile() {
   });
 
   useEffect(() => {
-    if (!user || !profile?.couple_id) return;
+    if (!user) return;
 
-    const channel = supabase
-      .channel("profile-updates")
+    // Subscribe to current user's profile changes
+    const userChannel = supabase
+      .channel(`user-profile-${user.id}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "profiles",
-          filter: `couple_id=eq.${profile.couple_id}`,
+          filter: `id=eq.${user.id}`,
         },
         (payload) => {
-          const updatedProfile = payload.new as Profile;
-          if (updatedProfile.id === user.id) {
-            queryClient.setQueryData(["profile", user.id], updatedProfile);
-          } else {
-            queryClient.setQueryData(["partnerProfile", profile.couple_id, user.id], updatedProfile);
-          }
+          queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
         }
       )
       .subscribe();
 
+    // Subscribe to partner's profile changes if in a couple
+    let partnerChannel: any = null;
+    if (profile?.couple_id) {
+      partnerChannel = supabase
+        .channel(`partner-profile-${profile.couple_id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "profiles",
+            filter: `couple_id=eq.${profile.couple_id}`,
+          },
+          (payload) => {
+            const updatedProfile = payload.new as Profile;
+            if (updatedProfile.id !== user.id) {
+              queryClient.invalidateQueries({ queryKey: ["partnerProfile", profile.couple_id, user.id] });
+            }
+          }
+        )
+        .subscribe();
+    }
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(userChannel);
+      if (partnerChannel) {
+        supabase.removeChannel(partnerChannel);
+      }
     };
   }, [user, profile?.couple_id, queryClient]);
 

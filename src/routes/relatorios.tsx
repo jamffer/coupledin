@@ -28,6 +28,7 @@ import {
   HelpCircle,
   MessageCircle,
   CheckCircle2,
+  PlusCircle,
 } from "lucide-react";
 import { 
   BarChart, 
@@ -45,6 +46,8 @@ import { toast } from "sonner";
 import { useFinanceStore, CATEGORY_ICONS, type Transaction } from "@/hooks/use-finance-store";
 import { format, subMonths, startOfMonth, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+import { useProfile } from "@/hooks/use-profile";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
@@ -74,11 +77,15 @@ const itemVariants = {
 function RelatoriosPage() {
   const { transactions, incomeJorge, incomeLilian, userAvatars } = useFinanceStore();
   const { user, loading: authLoading } = useAuth();
+  const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const navigate = useNavigate();
 
   const [isSettled, setIsSettled] = useState(false);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<"Este Mês" | "Últimos 3 Meses" | "Este Ano">("Este Mês");
+
+  const userName = profile?.display_name || "Jorge";
+  const partnerName = partnerProfile?.display_name || "Lilian";
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -210,8 +217,8 @@ function RelatoriosPage() {
                 <div className="flex items-center gap-6 text-center md:text-left">
                   <div className="flex -space-x-4">
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src={userAvatars.Jorge} />
-                      <AvatarFallback>JO</AvatarFallback>
+                      <AvatarImage src={profile?.avatar_url || userAvatars.Jorge} />
+                      <AvatarFallback>{userName.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className={cn(
                       "w-16 h-16 rounded-full border-4 border-white shadow-lg flex items-center justify-center relative z-10 transition-colors",
@@ -219,14 +226,25 @@ function RelatoriosPage() {
                     )}>
                       {isSettled ? <CheckCircle2 size={24} /> : <ArrowRightLeft size={24} className={cn(diff < -1 && "rotate-180")} />}
                     </div>
-                    <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src={userAvatars.Lilian} />
-                      <AvatarFallback>LI</AvatarFallback>
-                    </Avatar>
+                    {partnerProfile ? (
+                      <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
+                        <AvatarImage src={partnerProfile.avatar_url || userAvatars.Lilian} />
+                        <AvatarFallback>{partnerName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <div className="w-16 h-16 rounded-full border-4 border-dashed border-primary/40 bg-primary/5 flex items-center justify-center relative z-0">
+                        <PlusCircle size={20} className="text-primary/40" />
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-1">
                     {totalJoint === 0 ? (
                       <h3 className="text-xl font-bold tracking-tight">Nenhum gasto conjunto este mês.</h3>
+                    ) : !partnerProfile ? (
+                      <div className="space-y-1">
+                        <h3 className="text-xl font-bold tracking-tight text-amber-600">Aguardando parceiro(a)</h3>
+                        <p className="text-sm text-muted-foreground">Convide seu parceiro(a) nas configurações para habilitar o acerto de contas automático.</p>
+                      </div>
                     ) : isSettled ? (
                       <h3 className="text-xl font-bold tracking-tight text-emerald-600">Tudo quite! Mês resolvido.</h3>
                     ) : Math.abs(diff) < 1 ? (
@@ -234,7 +252,7 @@ function RelatoriosPage() {
                     ) : (
                       <>
                         <h3 className="text-xl font-bold tracking-tight">
-                          {diff < 0 ? "Jorge, você deve transferir" : "Lilian, você deve transferir"}
+                          {diff < 0 ? `${userName}, você deve transferir` : `${partnerName}, deve transferir`}
                         </h3>
                         <p className={cn(
                           "text-3xl font-black text-primary dark:text-white",
@@ -242,7 +260,7 @@ function RelatoriosPage() {
                         )}>
                           {formatCurrency(settlementAmount)}
                         </p>
-                        <p className="text-sm text-muted-foreground">para {diff < 0 ? "Lilian" : "o Jorge"} para igualar os gastos conjutos.</p>
+                        <p className="text-sm text-muted-foreground">para {diff < 0 ? partnerName : userName} para igualar os gastos conjuntos.</p>
                       </>
                     )}
                   </div>
