@@ -217,7 +217,7 @@ function RelatoriosPage() {
                 <div className="flex items-center gap-6 text-center md:text-left">
                   <div className="flex -space-x-4">
                     <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                      <AvatarImage src={profile?.avatar_url || userAvatars.Jorge} />
+                      <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.display_name || "user"}`} />
                       <AvatarFallback>{userName.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className={cn(
@@ -228,7 +228,7 @@ function RelatoriosPage() {
                     </div>
                     {partnerProfile ? (
                       <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-1 ring-muted/20">
-                        <AvatarImage src={partnerProfile.avatar_url || userAvatars.Lilian} />
+                        <AvatarImage src={partnerProfile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${partnerProfile.display_name || "partner"}`} />
                         <AvatarFallback>{partnerName.substring(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                     ) : (

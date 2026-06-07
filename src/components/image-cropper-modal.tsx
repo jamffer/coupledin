@@ -62,7 +62,8 @@ export function ImageCropperModal({
         URL.revokeObjectURL(image);
       }
 
-      const fileName = `${crypto.randomUUID()}.webp`;
+      // Usa um nome fixo para evitar lixo no storage (SSOT no banco)
+      const fileName = `profile.webp`;
       const filePath = `${userId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -78,9 +79,12 @@ export function ImageCropperModal({
         .from("avatars")
         .getPublicUrl(filePath);
 
+      // Estratégia de Cache Busting (crucial para o React atualizar a tag img)
+      const bustedUrl = `${publicUrl}?t=${new Date().getTime()}`;
+
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: bustedUrl })
         .eq("id", userId);
 
       if (updateError) throw updateError;

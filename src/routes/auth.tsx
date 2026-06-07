@@ -98,7 +98,7 @@ function AuthPage() {
     
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("couple_id")
+      .select("couple_id, display_name")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -110,6 +110,10 @@ function AuthPage() {
     if (profile?.couple_id && !forceOnboarding) {
       navigate({ to: "/" });
     } else {
+      if (profile?.display_name) {
+        setName(profile.display_name);
+        setStep(OnboardingStep.CREATE_OR_JOIN);
+      }
       setAuthStep("onboarding");
     }
   };
@@ -151,16 +155,10 @@ function AuthPage() {
       });
       if (error) throw error;
       
-      // Auto-create profile record via trigger or manual insert if needed
-      // For this demo, let's assume we need to create the profile record
-      if (data.user) {
-        await supabase.from("profiles").insert({
-          id: data.user.id,
-          display_name: name
-        });
-      }
+      // O perfil agora é criado automaticamente pelo trigger do banco de dados (handle_new_user)
 
-      toast.success("Conta criada!", { description: "Verifique seu e-mail ou continue para o onboarding." });
+      toast.success("Conta criada!", { description: "Continuando para a criação do espaço." });
+      setStep(OnboardingStep.CREATE_OR_JOIN);
       setAuthStep("onboarding");
     } catch (error: any) {
       toast.error("Erro ao criar conta", { description: error.message });

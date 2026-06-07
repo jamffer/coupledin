@@ -149,7 +149,7 @@ function ConfiguracoesPage() {
                   </div>
                   {partnerProfile ? (
                     <Avatar className="w-24 h-24 border-4 border-white dark:border-[#1A1A1A] shadow-xl ring-1 ring-muted/20">
-                      <AvatarImage src={partnerProfile.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella"} />
+                      <AvatarImage src={partnerProfile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${partnerProfile.display_name || "partner"}`} />
                       <AvatarFallback>{partnerProfile.display_name?.substring(0, 2).toUpperCase() || "PA"}</AvatarFallback>
                     </Avatar>
                   ) : (
@@ -167,7 +167,7 @@ function ConfiguracoesPage() {
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5 bg-muted dark:bg-muted/10 px-3 py-1 rounded-full">
                       <Calendar size={14} />
-                      Início: 12 Jan 2024
+                      Início: {profile?.created_at ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(profile.created_at)) : '...'}
                     </div>
                     {partnerProfile ? (
                       <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full font-medium">

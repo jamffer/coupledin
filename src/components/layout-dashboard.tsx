@@ -368,7 +368,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                             setTempName(profile?.display_name || "");
                           }}>
                             <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm cursor-pointer hover:scale-110 transition-transform z-10">
-                              <AvatarImage src={profile?.avatar_url || userAvatars.Jorge} />
+                              <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.display_name || "user"}`} />
                               <AvatarFallback>{profile?.display_name?.substring(0, 2).toUpperCase() || "ME"}</AvatarFallback>
                             </Avatar>
                           </DialogTrigger>
@@ -380,7 +380,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm transition-transform">
-                              <AvatarImage src={partnerProfile.avatar_url || userAvatars.Lilian} />
+                              <AvatarImage src={partnerProfile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${partnerProfile.display_name || "partner"}`} />
                               <AvatarFallback>{partnerProfile.display_name?.substring(0, 2).toUpperCase() || "PA"}</AvatarFallback>
                             </Avatar>
                           </TooltipTrigger>
