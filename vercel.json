@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build && cp -r node_modules/tslib .vercel/output/functions/__server.func/node_modules/tslib",
+  "buildCommand": "npm run build && node scripts/patch-tslib.mjs",
   "outputDirectory": ".vercel/output",
   "framework": null
 }
