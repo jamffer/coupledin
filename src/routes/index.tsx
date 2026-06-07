@@ -191,7 +191,7 @@ function Dashboard() {
       
       // Connect to Realtime first or in parallel
       const channel = supabase
-        .channel("dashboard-updates")
+        .channel(`dashboard-updates-${Math.random()}`)
         .on("postgres_changes", {
           event: "*",
           schema: "public",

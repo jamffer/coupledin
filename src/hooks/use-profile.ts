@@ -54,7 +54,7 @@ export function useProfile() {
 
     // Subscribe to current user's profile changes
     const userChannel = supabase
-      .channel(`user-profile-${user.id}`)
+      .channel(`user-profile-${user.id}-${Math.random()}`)
       .on(
         "postgres_changes",
         {
@@ -73,7 +73,7 @@ export function useProfile() {
     let partnerChannel: any = null;
     if (profile?.couple_id) {
       partnerChannel = supabase
-        .channel(`partner-profile-${profile.couple_id}`)
+        .channel(`partner-profile-${profile.couple_id}-${Math.random()}`)
         .on(
           "postgres_changes",
           {
