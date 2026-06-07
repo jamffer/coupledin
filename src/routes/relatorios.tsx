@@ -28,6 +28,7 @@ import {
   HelpCircle,
   MessageCircle,
   CheckCircle2,
+  PlusCircle,
 } from "lucide-react";
 import { 
   BarChart, 
