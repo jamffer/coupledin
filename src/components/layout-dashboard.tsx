@@ -15,8 +15,10 @@ import {
   Check,
   AlertCircle,
   Loader2,
-  Copy
+  Copy,
+  LogOut
 } from "lucide-react";
+import { ProfileAvatar } from "./profile-avatar";
 import { 
   Sidebar, 
   SidebarContent, 
@@ -114,12 +116,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const [isNewRecordOpen, setIsNewRecordOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
-  const { userNames, userAvatars, updateUserProfile } = useFinanceStore();
+  const { userNames, userAvatars } = useFinanceStore();
   const { user, signOut } = useAuth();
   const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
-  const [currentUser, setCurrentUser] = useState<"Jorge" | "Lilian">("Jorge");
   const [tempName, setTempName] = useState("");
-  const [tempAvatar, setTempAvatar] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showInviteDialogInLayout, setShowInviteDialogInLayout] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
@@ -151,43 +151,34 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (isProfileOpen) {
-      setTempName(userNames[currentUser] || "");
-      setTempAvatar(userAvatars[currentUser] || "");
+    if (isProfileOpen && profile) {
+      setTempName(profile.display_name || "");
     }
-  }, [isProfileOpen, currentUser, userNames, userAvatars]);
+  }, [isProfileOpen, profile]);
 
   const handleSaveProfile = async () => {
+    if (!tempName.trim()) {
+      toast.error("Por favor, insira um nome.");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const { error } = await supabase
         .from("profiles")
         .update({ 
-          display_name: tempName,
-          avatar_url: tempAvatar 
+          display_name: tempName.trim()
         })
         .eq("id", user?.id as string);
 
       if (error) throw error;
 
-      updateUserProfile(currentUser, tempName, tempAvatar);
       toast.success("Perfil atualizado com sucesso!");
       setIsProfileOpen(false);
     } catch (error: any) {
       toast.error("Erro ao atualizar perfil: " + error.message);
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTempAvatar(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -370,9 +361,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <DialogTrigger asChild onClick={() => {
-                            setCurrentUser("Jorge");
                             setTempName(profile?.display_name || "");
-                            setTempAvatar(profile?.avatar_url || userAvatars.Jorge);
                           }}>
                             <Avatar className="border-2 border-white/50 dark:border-black/50 w-8 h-8 md:w-10 md:h-10 shadow-sm cursor-pointer hover:scale-110 transition-transform z-10">
                               <AvatarImage src={profile?.avatar_url || userAvatars.Jorge} />

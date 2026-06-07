@@ -1,36 +1,24 @@
-## Quality, Security, and Performance Review
+I will implement reactive synchronization for the profile photo and name, fix the bug in the reports page where a partner was incorrectly shown, and ensure the image cropper works correctly everywhere.
 
-### 1. Inconsistency in State Management
-The application currently mixes **React Query** (in `CartoesPage`) and **Zustand with Persistence** (in `TransactionsPage`) for managing the same entities (transactions). Using `persist` in Zustand can lead to stale data when the partner updates a record in a shared couple workspace.
+### 1. Unified State Management (SSoT)
+- **`src/components/layout-dashboard.tsx`**:
+    - Replace local avatar/name editing logic with the `ProfileAvatar` component to ensure consistency and cropper functionality.
+    - Ensure all UI elements consume data from the `useProfile` hook instead of local variables or the static `useFinanceStore` defaults.
+    - Update the sidebar and header to be fully reactive to profile changes.
 
-- **Action:** Transition `TransactionsPage` to primarily use React Query for data fetching, keeping Zustand only for UI-specific state if necessary.
+### 2. Reports Page Fix (Partner Bug)
+- **`src/routes/relatorios.tsx`**:
+    - Use `useProfile` to determine if a partner actually exists.
+    - Replace hardcoded names (\"Jorge\", \"Lilian\") with dynamic names from the user profiles.
+    - Adjust calculations and UI to handle cases where there is no partner, showing appropriate states rather than empty or bugged partner placeholders.
 
-### 2. Performance: Redundant Loops
-In `CartoesPage`, the current implementation calculates card balances by filtering a global transaction list inside a `map` of cards ($O(N \times M)$).
+### 3. Image Cropper Optimization
+- **`src/components/profile-avatar.tsx`**:
+    - Ensure the cropper is triggered for any avatar edit.
+    - Verify that memory cleanup (`URL.revokeObjectURL`) is correctly implemented to prevent leaks.
+- **`src/components/image-cropper-modal.tsx`**:
+    - Refine the upload process to ensure the global state (React Query) is invalidated immediately after a successful upload, triggering a reactive update across all tabs.
 
-- **Action:** Pre-calculate balances in a single pass ($O(M)$) using a `Map` or an object accumulator before rendering the card list.
-
-### 3. Security: Storage Path Collision
-Currently, avatar uploads use `Math.random()`. While the collision risk is low, it's not zero and is not a best practice for public-facing assets.
-
-- **Action:** Use `crypto.randomUUID()` for unique, non-guessable filenames.
-
-### 4. Security: Database Linter Warnings
-The `handle_updated_at` function lacks a fixed `search_path`, which is a security best practice to prevent search path hijacking.
-
-- **Action:** Apply a migration to set `search_path = public` on all public functions.
-
-### 5. Code Quality: Currency Formatting
-Currency formatting logic is repeated in several places with manual string manipulation.
-
-- **Action:** Centralize currency formatting in `src/lib/utils.ts` and refactor inputs to use standardized logic.
-
-## Technical Details
-
-- **File Changes:**
-  - `src/lib/utils.ts`: Add `formatCurrency` and `parseCurrency` utilities.
-  - `src/components/add-card-modal.tsx`: Refactor limit input to use new utilities.
-  - `src/components/image-cropper-modal.tsx`: Use `crypto.randomUUID()` for filenames.
-  - `src/routes/cartoes.tsx`: Optimize balance calculation.
-  - `src/routes/transacoes.tsx`: Streamline data fetching with React Query.
-  - `supabase/migrations/...`: Fix function search paths.
+### 4. Code Quality & Consistency
+- Clean up redundant code in `layout-dashboard.tsx` that was manually handling profile updates.
+- Standardize the use of the `useProfile` hook as the Single Source of Truth for identity data across the application.
