@@ -83,7 +83,7 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
       queryClient.setQueryData(["investments", profile?.couple_id], (old: any) => {
         const optimisticAsset = {
           ...newAsset,
-          id: crypto.randomUUID(),
+          id: `temp-${Math.random().toString(36).substring(2, 15)}`,
           couple_id: profile?.couple_id,
           custom_rate: (newAsset.asset_type === 'FIXED_INCOME' && newAsset.fixed_income_type === 'PUBLIC') ? 0 : newAsset.custom_rate,
           created_at: new Date().toISOString(),

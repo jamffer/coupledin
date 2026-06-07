@@ -40,6 +40,8 @@ const cardFormSchema = z.object({
   totalLimit: z.string().min(1, "O limite é obrigatório"),
   cardType: z.enum(["Meu Cartão", "Cartão do Parceiro(a)", "Cartão Conjunto"]),
   lastDigits: z.string().max(4, "Máximo de 4 dígitos").optional(),
+  dueDay: z.string().min(1, "Obrigatório").refine(v => parseInt(v) >= 1 && parseInt(v) <= 31, "Dia inválido (1-31)"),
+  closingDay: z.string().min(1, "Obrigatório").refine(v => parseInt(v) >= 1 && parseInt(v) <= 31, "Dia inválido (1-31)"),
   color: z.string(),
 });
 
@@ -63,7 +65,9 @@ export function AddCardModal({ children }: AddCardModalProps) {
       totalLimit: "",
       cardType: "Meu Cartão",
       lastDigits: "",
-      color: "card-gradient-blue",
+      dueDay: "",
+      closingDay: "",
+      color: "#203F9A",
     },
   });
 
@@ -84,6 +88,8 @@ export function AddCardModal({ children }: AddCardModalProps) {
         limit_amount: numericLimit,
         card_type: values.cardType,
         last_four: values.lastDigits || null,
+        due_day: parseInt(values.dueDay),
+        closing_day: parseInt(values.closingDay),
         color: values.color,
       });
 
@@ -102,12 +108,13 @@ export function AddCardModal({ children }: AddCardModalProps) {
   }
 
   const colors = [
-    { name: "Azul", value: "card-gradient-blue" },
-    { name: "Roxo", value: "card-gradient-purple" },
-    { name: "Verde", value: "card-gradient-green" },
-    { name: "Laranja", value: "card-gradient-orange" },
-    { name: "Rosa", value: "card-gradient-pink" },
-    { name: "Escuro", value: "card-gradient-dark" },
+    { name: "Azul Royal", value: "#203F9A" },
+    { name: "Rosa Magenta", value: "#E84797" },
+    { name: "Escuro", value: "#161616" },
+    { name: "Azul Claro", value: "#94C2DA" },
+    { name: "Rosa Claro", value: "#E7A0CC" },
+    { name: "Azul Aço", value: "#4E7CB2" },
+    { name: "Cinza", value: "#737373" },
   ];
 
   return (
@@ -181,6 +188,50 @@ export function AddCardModal({ children }: AddCardModalProps) {
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="closingDay"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dia de Fechamento</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Ex: 5" 
+                        type="number" 
+                        min={1} 
+                        max={31} 
+                        disabled={isUploading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dueDay"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dia de Vencimento</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Ex: 10" 
+                        type="number" 
+                        min={1} 
+                        max={31} 
+                        disabled={isUploading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="cardType"
@@ -215,9 +266,10 @@ export function AddCardModal({ children }: AddCardModalProps) {
                       <button
                         key={color.value}
                         type="button"
-                        className={`w-8 h-8 rounded-full ${color.value} border-2 ${
-                          field.value === color.value ? "border-primary scale-110" : "border-transparent"
+                        className={`w-8 h-8 rounded-full border-2 ${
+                          field.value === color.value ? "border-primary ring-2 ring-primary ring-offset-2 scale-110" : "border-transparent"
                         } transition-all`}
+                        style={{ backgroundColor: color.value }}
                         onClick={() => field.onChange(color.value)}
                         disabled={isUploading}
                         title={color.name}

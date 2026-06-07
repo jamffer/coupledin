@@ -75,7 +75,7 @@ const itemVariants = {
 };
 
 function RelatoriosPage() {
-  const { transactions, incomeJorge, incomeLilian, userAvatars } = useFinanceStore();
+  const { transactions, incomeJorge, incomeLilian } = useFinanceStore();
   const { user, loading: authLoading } = useAuth();
   const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const navigate = useNavigate();

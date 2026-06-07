@@ -164,7 +164,7 @@ function Dashboard() {
       
       const { data, error } = await supabase
         .from("transactions")
-        .select("*")
+        .select("*, profiles(display_name, avatar_url)")
         .eq("couple_id", coupleId)
         .order("date", { ascending: false });
 
@@ -372,7 +372,8 @@ function Dashboard() {
 
   const renderTransactionItem = (tx: any) => {
     const Icon = CATEGORY_ICONS[tx.category] || HelpCircle;
-    const avatar = userAvatars[tx.responsible as keyof typeof userAvatars];
+    const avatar = tx.profiles?.avatar_url || userAvatars[tx.responsible as keyof typeof userAvatars];
+    const responsibleName = tx.profiles?.display_name || tx.responsible;
 
     return (
       <div 
@@ -389,9 +390,9 @@ function Dashboard() {
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-[10px] text-muted-foreground">{tx.date ? format(new Date(tx.date), "dd MMM, HH:mm", { locale: ptBR }) : ''}</span>
               <div className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
-                <img src={avatar} alt={tx.responsible} className="w-3 h-3 rounded-full" />
+                <img src={avatar} alt={responsibleName} className="w-3 h-3 rounded-full" />
                 <span className="text-[10px] font-semibold text-muted-foreground">
-                  {tx.responsible}
+                  {responsibleName}
                 </span>
               </div>
             </div>
@@ -615,9 +616,9 @@ function Dashboard() {
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-[10px] text-muted-foreground">{tx.date ? format(new Date(tx.date), "dd MMM, HH:mm", { locale: ptBR }) : ''}</span>
                               <div className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
-                                <img src={userAvatars[tx.responsible as keyof typeof userAvatars]} alt={tx.responsible} className="w-3 h-3 rounded-full" />
+                                <img src={tx.profiles?.avatar_url || userAvatars[tx.responsible as keyof typeof userAvatars]} alt={tx.profiles?.display_name || tx.responsible} className="w-3 h-3 rounded-full" />
                                 <span className="text-[10px] font-semibold text-muted-foreground">
-                                  {tx.responsible}
+                                  {tx.profiles?.display_name || tx.responsible}
                                 </span>
                               </div>
                             </div>
@@ -757,8 +758,8 @@ function Dashboard() {
                 <div className="apple-interactive p-4 dark:bg-black/20">
                   <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Responsável</p>
                   <div className="flex items-center gap-2">
-                    <img src={userAvatars[selectedTx.responsible as keyof typeof userAvatars]} alt={selectedTx.responsible} className="w-6 h-6 rounded-full" />
-                    <p className="font-bold">{selectedTx.responsible}</p>
+                    <img src={selectedTx.profiles?.avatar_url || userAvatars[selectedTx.responsible as keyof typeof userAvatars]} alt={selectedTx.profiles?.display_name || selectedTx.responsible} className="w-6 h-6 rounded-full" />
+                    <p className="font-bold">{selectedTx.profiles?.display_name || selectedTx.responsible}</p>
                   </div>
                 </div>
                 <div className="apple-interactive p-4 dark:bg-black/20">

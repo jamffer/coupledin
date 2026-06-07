@@ -91,13 +91,15 @@ export function ImageCropperModal({
 
       // Single Source of Truth: Invalidate queries to sync throughout the app
       await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      await queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      await queryClient.invalidateQueries({ queryKey: ["cards"] });
       
       onSuccess(publicUrl);
       toast.success("Foto de perfil atualizada com sucesso!");
       onClose();
     } catch (error: any) {
       console.error("Error saving cropped image:", error);
-      toast.error("Falha ao salvar a imagem. Verifique sua conexão e tente novamente.");
+      toast.error(`Falha ao salvar a imagem: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setIsUploading(false);
     }

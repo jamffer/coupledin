@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/use-profile";
 import { useServerFn } from "@tanstack/react-start";
+import { calculateBillingMonth } from "@/lib/billing-engine";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -157,7 +158,7 @@ function TransactionsPage() {
       if (!profile?.couple_id) return [];
       const { data, error } = await supabase
         .from("transactions")
-        .select("*")
+        .select("*, profiles(display_name, avatar_url)")
         .eq("couple_id", profile.couple_id)
         .order("date", { ascending: false });
       if (error) throw error;
@@ -263,6 +264,15 @@ function TransactionsPage() {
     
     const coupleId = profile.couple_id;
     
+    let billing_date = parsedData.date ? parsedData.date.substring(0, 8) + "01" : new Date().toISOString().substring(0, 8) + "01";
+    const cardId = (formData as any).card_id;
+    if (cardId) {
+      const card = cards.find((c: any) => c.id === cardId);
+      if (card && card.closing_day) {
+        billing_date = calculateBillingMonth(parsedData.date, card.closing_day);
+      }
+    }
+
     const txData = {
       description: parsedData.description,
       amount: (parsedData.type === "Entrada" ? 1 : -1) * Math.abs(parsedData.amount),
@@ -273,7 +283,8 @@ function TransactionsPage() {
       type: parsedData.type,
       user_id: user.id,
       couple_id: coupleId,
-      card_id: (formData as any).card_id,
+      card_id: cardId,
+      billing_date: billing_date,
     };
 
     const { error } = await supabase.from("transactions").insert(txData);
@@ -299,6 +310,14 @@ function TransactionsPage() {
 
     const coupleId = profile.couple_id;
 
+    let billing_date = formData.date ? formData.date.substring(0, 8) + "01" : new Date().toISOString().substring(0, 8) + "01";
+    if (formData.card_id) {
+      const card = cards.find((c: any) => c.id === formData.card_id);
+      if (card && card.closing_day) {
+        billing_date = calculateBillingMonth(formData.date!, card.closing_day);
+      }
+    }
+
     const txData = {
       description: formData.description || "",
       amount: (formData.type === "Entrada" ? 1 : -1) * Math.abs(formData.amount || 0),
@@ -309,7 +328,8 @@ function TransactionsPage() {
       type: formData.type || "Saída",
       user_id: user!.id,
       couple_id: coupleId,
-      card_id: formData.card_id
+      card_id: formData.card_id,
+      billing_date: billing_date,
     };
 
     if (editingTx) {
@@ -550,7 +570,8 @@ function TransactionsPage() {
                     {transactions.map((tx) => {
                       const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                       const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                      const avatarUrl = userAvatars[tx.responsible as keyof typeof userAvatars];
+                      const avatarUrl = tx.profiles?.avatar_url || userAvatars[tx.responsible as keyof typeof userAvatars];
+                      const responsibleName = tx.profiles?.display_name || tx.responsible;
 
                       return (
                         <TableRow key={tx.id} className="group border-b border-muted/20 hover:bg-accent/30 transition-colors">
@@ -573,9 +594,9 @@ function TransactionsPage() {
                             <div className="flex items-center justify-center gap-2">
                               <Avatar className="w-6 h-6 border shadow-sm">
                                 <AvatarImage src={avatarUrl} />
-                                <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
+                                <AvatarFallback>{responsibleName[0]}</AvatarFallback>
                               </Avatar>
-                              <span className="text-xs font-medium">{tx.responsible}</span>
+                              <span className="text-xs font-medium">{responsibleName}</span>
                             </div>
                           </TableCell>
                           <TableCell className="py-5">
@@ -627,7 +648,8 @@ function TransactionsPage() {
                 {transactions.map((tx) => {
                   const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                   const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                  const avatarUrl = userAvatars[tx.responsible as keyof typeof userAvatars];
+                  const avatarUrl = tx.profiles?.avatar_url || userAvatars[tx.responsible as keyof typeof userAvatars];
+                  const responsibleName = tx.profiles?.display_name || tx.responsible;
                   
                   return (
                     <Card key={tx.id} className="apple-card apple-card-hover overflow-hidden group">
@@ -678,9 +700,9 @@ function TransactionsPage() {
                           <div className="flex items-center gap-2">
                             <Avatar className="w-6 h-6 border shadow-sm">
                               <AvatarImage src={avatarUrl} />
-                              <AvatarFallback>{tx.responsible[0]}</AvatarFallback>
+                              <AvatarFallback>{responsibleName[0]}</AvatarFallback>
                             </Avatar>
-                            <span className="text-xs font-medium text-muted-foreground">{tx.responsible}</span>
+                            <span className="text-xs font-medium text-muted-foreground">{responsibleName}</span>
                           </div>
                           
                           <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-lg">

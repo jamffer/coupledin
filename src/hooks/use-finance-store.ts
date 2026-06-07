@@ -24,6 +24,10 @@ export type Transaction = {
   division: string;
   user_id: string;
   couple_id: string;
+  profiles?: {
+    display_name: string;
+    avatar_url: string;
+  };
 };
 
 type FinanceStore = {

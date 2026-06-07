@@ -70,6 +70,8 @@ import { EmptyState } from "@/components/empty-state";
 import { AddCardModal } from "@/components/add-card-modal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { startOfMonth, subMonths, format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/cartoes")({
   head: () => ({
@@ -122,8 +124,9 @@ const itemVariants = {
 };
 
 function CartoesPage() {
+  const currentMonth = format(startOfMonth(new Date()), "yyyy-MM-01");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState("june");
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -132,7 +135,7 @@ function CartoesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("transactions")
-        .select("*")
+        .select("*, profiles(display_name, avatar_url)")
         .order("date", { ascending: false });
       if (error) throw error;
       return data;
@@ -150,9 +153,9 @@ function CartoesPage() {
 
       if (error) throw error;
       
-      // Calcular faturas atuais em uma única passagem pelas transações
+      // Calcular faturas atuais filtrando pela data de billing selecionada (selectedMonth)
       const cardBalances = transactions.reduce((acc, tx) => {
-        if (tx.card_id) {
+        if (tx.card_id && tx.billing_date === selectedMonth) {
           acc[tx.card_id] = (acc[tx.card_id] || 0) + Math.abs(tx.amount);
         }
         return acc;
@@ -178,16 +181,17 @@ function CartoesPage() {
     enabled: !!user && !!transactions,
   });
 
-  // Derivar itens da fatura das transações reais
+  // Derivar itens da fatura das transações reais usando o billing_date
   const currentBillItems = selectedCardId 
     ? transactions
-        .filter(tx => tx.card_id === selectedCardId)
+        .filter(tx => tx.card_id === selectedCardId && tx.billing_date === selectedMonth)
         .map(tx => ({
           id: tx.id,
           date: new Date(tx.date).toLocaleDateString('pt-BR'),
           description: tx.description,
           amount: Math.abs(tx.amount),
-          user: tx.responsible,
+          user: tx.profiles?.display_name || tx.responsible,
+          avatarUrl: tx.profiles?.avatar_url,
           category: tx.category,
           icon: CreditCard, // Fallback
           installments: '1/1'
@@ -222,6 +226,19 @@ function CartoesPage() {
     });
   };
 
+  const getCardColorStyle = (colorStr?: string) => {
+    if (!colorStr) return { backgroundColor: '#737373' };
+    if (colorStr.startsWith('#')) return { backgroundColor: colorStr };
+    // Fallback de contenção de erros para dados legados (ex: card-gradient-blue)
+    return { backgroundColor: '#737373' };
+  };
+
+  const availableMonths = [
+    currentMonth,
+    format(subMonths(parseISO(currentMonth), 1), "yyyy-MM-01"),
+    format(subMonths(parseISO(currentMonth), 2), "yyyy-MM-01"),
+  ];
+
   return (
     <DashboardLayout>
       <TooltipProvider>
@@ -253,11 +270,13 @@ function CartoesPage() {
                   onClick={() => setSelectedCardId(card.id)}
                   className="cursor-pointer"
                 >
-                  <Card className={cn(
-                    "relative h-64 border-none text-white shadow-xl overflow-hidden transition-all duration-300 flex flex-col justify-between p-6",
-                    card.color || "card-gradient-blue",
-                    selectedCardId === card.id ? "ring-2 ring-primary ring-offset-4 dark:ring-offset-[#161616]" : "opacity-95 hover:opacity-100 hover:shadow-2xl"
-                  )}>
+                  <Card 
+                    className={cn(
+                      "relative h-64 border-none text-white shadow-xl overflow-hidden transition-all duration-300 flex flex-col justify-between p-6",
+                      selectedCardId === card.id ? "ring-2 ring-primary ring-offset-4 dark:ring-offset-[#161616]" : "opacity-95 hover:opacity-100 hover:shadow-2xl"
+                    )}
+                    style={getCardColorStyle(card.color)}
+                  >
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                       <CreditCard size={140} />
                     </div>
@@ -313,7 +332,10 @@ function CartoesPage() {
                 <Card className="apple-card overflow-hidden">
                   <CardHeader className="border-b border-border/40 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className={cn("p-2 rounded-lg text-white", selectedCard.color || "card-gradient-blue")}>
+                      <div 
+                        className="p-2 rounded-lg text-white"
+                        style={getCardColorStyle(selectedCard.color)}
+                      >
                         <CreditCard size={20} />
                       </div>
                       <div>
@@ -329,32 +351,26 @@ function CartoesPage() {
                             <div className="flex items-center gap-2">
                               <CalendarIcon size={16} className="text-muted-foreground" />
                               <span>
-                                {selectedMonth === "june" ? "Junho (Aberta)" : 
-                                 selectedMonth === "may" ? "Maio (Fechada)" : 
-                                 "Abril (Paga)"}
+                                {format(parseISO(selectedMonth), "MMMM (yyyy)", { locale: ptBR })}
                               </span>
                             </div>
                             <ChevronRight size={14} className="rotate-90 opacity-50" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="apple-card w-[180px]">
-                          <DropdownMenuItem onClick={() => setSelectedMonth("june")} className="cursor-pointer">
-                            Junho (Aberta)
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setSelectedMonth("may")} className="cursor-pointer">
-                            Maio (Fechada)
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setSelectedMonth("april")} className="cursor-pointer">
-                            Abril (Paga)
-                          </DropdownMenuItem>
+                          {availableMonths.map((m) => (
+                            <DropdownMenuItem key={m} onClick={() => setSelectedMonth(m)} className="cursor-pointer capitalize">
+                              {format(parseISO(m), "MMMM (yyyy)", { locale: ptBR })}
+                            </DropdownMenuItem>
+                          ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
 
-                      <Badge variant={selectedMonth === "june" ? "outline" : "secondary"} className={cn(
+                      <Badge variant={selectedMonth === currentMonth ? "outline" : "secondary"} className={cn(
                         "px-3 py-1 rounded-full border-none h-9 flex items-center",
-                        selectedMonth === "june" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" : "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
+                        selectedMonth === currentMonth ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" : "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
                       )}>
-                        {selectedMonth === "june" ? "Fatura Aberta" : "Fatura Paga"}
+                        {selectedMonth === currentMonth ? "Fatura Aberta" : "Fatura Paga"}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -420,7 +436,14 @@ function CartoesPage() {
                                 <TableCell className="font-bold">{item.description}</TableCell>
                                 <TableCell>{item.category}</TableCell>
                                 <TableCell>{item.installments || '1/1'}</TableCell>
-                                <TableCell>{item.user}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    {item.avatarUrl && (
+                                      <img src={item.avatarUrl} alt={item.user} className="w-5 h-5 rounded-full border shadow-sm" />
+                                    )}
+                                    <span>{item.user}</span>
+                                  </div>
+                                </TableCell>
                                 <TableCell className="text-right pr-6">
                                   <Button variant="ghost" size="icon" className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                     <MoreVertical size={16} />

@@ -112,7 +112,7 @@ function AuthPage() {
     } else {
       if (profile?.display_name) {
         setName(profile.display_name);
-        setStep(OnboardingStep.CREATE_OR_JOIN);
+        setStep(OnboardingStep.IDLE);
       }
       setAuthStep("onboarding");
     }
@@ -158,7 +158,7 @@ function AuthPage() {
       // O perfil agora é criado automaticamente pelo trigger do banco de dados (handle_new_user)
 
       toast.success("Conta criada!", { description: "Continuando para a criação do espaço." });
-      setStep(OnboardingStep.CREATE_OR_JOIN);
+      setStep(OnboardingStep.IDLE);
       setAuthStep("onboarding");
     } catch (error: any) {
       toast.error("Erro ao criar conta", { description: error.message });
