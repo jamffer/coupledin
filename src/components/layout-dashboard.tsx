@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { 
   LayoutDashboard, 
   ReceiptText, 
@@ -112,6 +113,7 @@ export function AppSidebar() {
 }
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isNewRecordOpen, setIsNewRecordOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -173,6 +175,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
+      await queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
       toast.success("Perfil atualizado com sucesso!");
       setIsProfileOpen(false);
     } catch (error: any) {
@@ -218,6 +221,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
+      await queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
       setIsNameModalOpen(false);
       toast.success("Nome salvo com sucesso!");
     } catch (error: any) {
