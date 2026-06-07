@@ -412,33 +412,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     </DialogHeader>
                     
                     <div className="flex flex-col items-center gap-8 py-8">
-                      {/* Avatar Upload Section */}
-                      <div className="relative group">
-                        <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white dark:border-black shadow-2xl ring-2 ring-primary/20 relative">
-                          {tempAvatar ? (
-                            <img src={tempAvatar} alt="Profile" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
-                              <UserIcon size={40} />
-                            </div>
-                          )}
-                        </div>
-                        <label 
-                          htmlFor="avatar-upload" 
-                          className="absolute bottom-0 right-0 p-2.5 bg-primary text-primary-foreground rounded-full shadow-lg cursor-pointer hover:scale-110 active:scale-95 transition-all ring-4 ring-background"
-                        >
-                          <Camera size={18} />
-                          <input 
-                            id="avatar-upload" 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden" 
-                            onChange={handleAvatarChange}
-                          />
-                        </label>
-                      </div>
-
-                      {/* Name Input Section */}
+                      <ProfileAvatar 
+                        url={profile?.avatar_url || null} 
+                        name={profile?.display_name || "ME"} 
+                        userId={user?.id || undefined}
+                        onUpdate={() => {}}
+                        className="w-32 h-32 scale-110"
+                      />
+                      
                       <div className="w-full space-y-2 px-4">
                         <Label htmlFor="profile-name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
                           Seu Nome
@@ -453,12 +434,24 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                       </div>
                     </div>
 
-                    <DialogFooter className="px-4 pb-4">
+                    <DialogFooter className="flex-col sm:flex-row gap-3 px-4 pb-4">
                       <Button 
-                        className="w-full h-12 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 apple-interactive border-none active:scale-95 transition-all gap-2"
-                        onClick={handleSaveProfile}
+                        variant="ghost" 
+                        onClick={() => {
+                          signOut();
+                          setIsProfileOpen(false);
+                        }}
+                        className="rounded-2xl text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 gap-2 order-2 sm:order-1 h-12"
                       >
-                        <Check size={18} />
+                        <LogOut size={18} />
+                        Sair da Conta
+                      </Button>
+                      <Button 
+                        className="flex-1 h-12 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 apple-interactive border-none active:scale-95 transition-all gap-2 order-1 sm:order-2"
+                        onClick={handleSaveProfile}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check size={18} />}
                         Salvar Alterações
                       </Button>
                     </DialogFooter>
