@@ -240,6 +240,11 @@ function RelatoriosPage() {
                   <div className="space-y-1">
                     {totalJoint === 0 ? (
                       <h3 className="text-xl font-bold tracking-tight">Nenhum gasto conjunto este mês.</h3>
+                    ) : !partnerProfile ? (
+                      <div className="space-y-1">
+                        <h3 className="text-xl font-bold tracking-tight text-amber-600">Aguardando parceiro(a)</h3>
+                        <p className="text-sm text-muted-foreground">Convide seu parceiro(a) nas configurações para habilitar o acerto de contas automático.</p>
+                      </div>
                     ) : isSettled ? (
                       <h3 className="text-xl font-bold tracking-tight text-emerald-600">Tudo quite! Mês resolvido.</h3>
                     ) : Math.abs(diff) < 1 ? (
