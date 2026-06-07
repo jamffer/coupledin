@@ -1,5 +1,5 @@
 globalThis.__nitro_main__ = import.meta.url;
-import { H as HTTPError, d as defineLazyEventHandler, a as H3Core } from "./_libs/h3.mjs";
+import { d as defineLazyEventHandler, H as HTTPError, a as H3Core } from "./_libs/h3.mjs";
 import { N as NodeResponse } from "./_libs/srvx.mjs";
 import "./_libs/rou3.mjs";
 import "node:stream";
@@ -21,6 +21,32 @@ const services = {
   ["ssr"]: lazyService(() => import("./_ssr/index.mjs"))
 };
 globalThis.__nitro_vite_envs__ = services;
+const headers = ((m) => function headersRouteRule(event) {
+  for (const [key, value] of Object.entries(m.options || {})) {
+    event.res.headers.set(key, value);
+  }
+});
+const findRouteRules = /* @__PURE__ */ (() => {
+  const $0 = [{ name: "headers", route: "/assets/**", handler: headers, options: { "cache-control": "public, max-age=31536000, immutable" } }];
+  return (m, p) => {
+    let r = [];
+    if (p.charCodeAt(p.length - 1) === 47) p = p.slice(0, -1) || "/";
+    let s = p.split("/"), l = s.length;
+    if (l > 1) {
+      if (s[1] === "assets") {
+        r.unshift({ data: $0, params: { "_": s.slice(2).join("/") } });
+      }
+    }
+    return r;
+  };
+})();
+const _lazy_2KAqui = defineLazyEventHandler(() => import("./_chunks/ssr-renderer.mjs"));
+const findRoute = /* @__PURE__ */ (() => {
+  const data = { route: "/**", handler: _lazy_2KAqui };
+  return ((_m, p) => {
+    return { data, params: { "_": p.slice(1) } };
+  });
+})();
 const errorHandler$1 = (error, event) => {
   const res = defaultHandler(error, event);
   return new NodeResponse(typeof res.body === "string" ? res.body : JSON.stringify(res.body, null, 2), res);
@@ -71,32 +97,51 @@ async function errorHandler(error, event) {
     }
   }
 }
-const headers = ((m) => function headersRouteRule(event) {
-  for (const [key, value] of Object.entries(m.options || {})) {
-    event.res.headers.set(key, value);
-  }
-});
-const findRouteRules = /* @__PURE__ */ (() => {
-  const $0 = [{ name: "headers", route: "/assets/**", handler: headers, options: { "cache-control": "public, max-age=31536000, immutable" } }];
-  return (m, p) => {
-    let r = [];
-    if (p.charCodeAt(p.length - 1) === 47) p = p.slice(0, -1) || "/";
-    let s = p.split("/"), l = s.length;
-    if (l > 1) {
-      if (s[1] === "assets") {
-        r.unshift({ data: $0, params: { "_": s.slice(2).join("/") } });
+function createNitroApp() {
+  const captureError = (error, errorCtx) => {
+    if (errorCtx?.event) {
+      const errors = errorCtx.event.req.context?.nitro?.errors;
+      if (errors) {
+        errors.push({ error, context: errorCtx });
       }
     }
-    return r;
   };
-})();
-const _lazy_2KAqui = defineLazyEventHandler(() => import("./_chunks/ssr-renderer.mjs"));
-const findRoute = /* @__PURE__ */ (() => {
-  const data = { route: "/**", handler: _lazy_2KAqui };
-  return ((_m, p) => {
-    return { data, params: { "_": p.slice(1) } };
+  const h3App = createH3App({
+    onError(error, event) {
+      return errorHandler(error, event);
+    }
   });
-})();
+  let appHandler = (req) => {
+    req.context ||= {};
+    req.context.nitro = req.context.nitro || { errors: [] };
+    return h3App.fetch(req);
+  };
+  return {
+    fetch: appHandler,
+    h3: h3App,
+    hooks: void 0,
+    captureError
+  };
+}
+function createH3App(config) {
+  const h3App = new H3Core(config);
+  h3App["~findRoute"] = (event) => findRoute(event.req.method, event.url.pathname);
+  h3App["~getMiddleware"] = (event, route) => {
+    const pathname = event.url.pathname;
+    const method = event.req.method;
+    const middleware = [];
+    const routeRules = getRouteRules(method, pathname);
+    event.context.routeRules = routeRules?.routeRules;
+    if (routeRules?.routeRuleMiddleware.length) {
+      middleware.push(...routeRules.routeRuleMiddleware);
+    }
+    if (route?.data?.middleware?.length) {
+      middleware.push(...route.data.middleware);
+    }
+    return middleware;
+  };
+  return h3App;
+}
 const APP_ID = "default";
 function useNitroApp() {
   let instance = useNitroApp._instance;
@@ -107,58 +152,6 @@ function useNitroApp() {
   globalThis.__nitro__ = globalThis.__nitro__ || {};
   globalThis.__nitro__[APP_ID] = instance;
   return instance;
-}
-function createNitroApp() {
-  const hooks = void 0;
-  const captureError = (error, errorCtx) => {
-    if (errorCtx?.event) {
-      const errors = errorCtx.event.req.context?.nitro?.errors;
-      if (errors) {
-        errors.push({
-          error,
-          context: errorCtx
-        });
-      }
-    }
-  };
-  const h3App = createH3App({ onError(error, event) {
-    return errorHandler(error, event);
-  } });
-  let appHandler = (req) => {
-    req.context ||= {};
-    req.context.nitro = req.context.nitro || { errors: [] };
-    return h3App.fetch(req);
-  };
-  const app = {
-    fetch: appHandler,
-    h3: h3App,
-    hooks,
-    captureError
-  };
-  return app;
-}
-function createH3App(config) {
-  const h3App = new H3Core(config);
-  h3App["~findRoute"] = (event) => findRoute(event.req.method, event.url.pathname);
-  {
-    h3App["~getMiddleware"] = (event, route) => {
-      const pathname = event.url.pathname;
-      const method = event.req.method;
-      const middleware = [];
-      {
-        const routeRules = getRouteRules(method, pathname);
-        event.context.routeRules = routeRules?.routeRules;
-        if (routeRules?.routeRuleMiddleware.length) {
-          middleware.push(...routeRules.routeRuleMiddleware);
-        }
-      }
-      if (route?.data?.middleware?.length) {
-        middleware.push(...route.data.middleware);
-      }
-      return middleware;
-    };
-  }
-  return h3App;
 }
 function getRouteRules(method, pathname) {
   const m = findRouteRules(method, pathname);
