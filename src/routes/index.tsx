@@ -70,7 +70,7 @@ import { EmptyState } from "@/components/empty-state";
 export const Route = createFileRoute("/")({
  head: () => ({
    meta: [
-     { title: "Dashboard | CoupleFinance" },
+     { title: "Dashboard | CoupledIn" },
      { name: "description", content: "Finanças do casal em um só lugar." },
    ],
  }),

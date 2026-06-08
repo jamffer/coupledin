@@ -79,10 +79,10 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar z-[100] shadow-xl transition-all duration-300 pointer-events-auto">
       <SidebarHeader className="h-16 flex items-center px-6 border-b border-white/10">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-primary">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-            <TrendingUp size={20} />
+          <div className="w-8 h-8 flex items-center justify-center">
+            <img src="/coupledin.png" alt="CoupledIn" className="w-full h-full object-contain" />
           </div>
-          <span className="group-data-[collapsible=icon]:hidden">CoupleFinance</span>
+          <span className="group-data-[collapsible=icon]:hidden">CoupledIn</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -411,7 +411,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-black tracking-tight text-center pt-4">Editar Perfil</DialogTitle>
                       <DialogDescription className="text-center">
-                        Personalize como você aparece no CoupleFinance.
+                        Personalize como você aparece no CoupledIn.
                       </DialogDescription>
                     </DialogHeader>
                     

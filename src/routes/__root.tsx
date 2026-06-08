@@ -89,8 +89,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@CoupledIn" },
       { name: "twitter:title", content: "CoupledIn" },
       { name: "twitter:description", content: "CoupledIn is a responsive web app for couples to manage shared finances." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/01b0888b-1ce7-4b29-b08c-6f2e69caabd3/id-preview-e6b8ca8b--51739a71-96c3-4b17-8299-c490a181d143.lovable.app-1780629009601.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/01b0888b-1ce7-4b29-b08c-6f2e69caabd3/id-preview-e6b8ca8b--51739a71-96c3-4b17-8299-c490a181d143.lovable.app-1780629009601.png" },
+      { property: "og:image", content: "/coupledin.png" },
+      { name: "twitter:image", content: "/coupledin.png" },
     ],
     links: [
       {

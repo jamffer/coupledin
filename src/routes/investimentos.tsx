@@ -57,7 +57,7 @@ import {
 export const Route = createFileRoute("/investimentos")({
   head: () => ({
     meta: [
-      { title: "Investimentos | CoupleFinance" },
+      { title: "Investimentos | CoupledIn" },
       { name: "description", content: "Acompanhe seus ativos em tempo real." },
     ],
   }),

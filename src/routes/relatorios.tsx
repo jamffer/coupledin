@@ -52,7 +52,7 @@ import { useProfile } from "@/hooks/use-profile";
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
     meta: [
-      { title: "Relatórios | CoupleFinance" },
+      { title: "Relatórios | CoupledIn" },
       { name: "description", content: "Análise de gastos e fechamento do mês do casal." },
     ],
   }),

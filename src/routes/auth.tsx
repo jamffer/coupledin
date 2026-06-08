@@ -37,7 +37,7 @@ const inviteCodeSchema = z.string()
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Entrar | CoupleFinance" },
+      { title: "Entrar | CoupledIn" },
       { name: "description", content: "Faça login para gerenciar suas finanças a dois." },
     ],
   }),
@@ -336,10 +336,10 @@ function AuthPage() {
               className="space-y-8"
             >
               <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-primary text-primary-foreground shadow-xl mb-4">
-                  <Heart size={32} className="fill-current" />
+                <div className="inline-flex items-center justify-center w-20 h-20 mb-4">
+                  <img src="/coupledin.png" alt="CoupledIn" className="w-full h-full object-contain drop-shadow-xl" />
                 </div>
-                <h1 className="text-3xl font-black tracking-tight text-foreground">CoupleFinance</h1>
+                <h1 className="text-3xl font-black tracking-tight text-foreground">CoupledIn</h1>
                 <p className="text-muted-foreground italic">Seu patrimônio, sonhos e planos em harmonia.</p>
               </div>
 
@@ -489,7 +489,7 @@ function AuthPage() {
                 <p className="text-muted-foreground">
                   {step === OnboardingStep.ERROR 
                     ? "Algo não saiu como o esperado." 
-                    : "Como você quer começar no CoupleFinance?"}
+                    : "Como você quer começar no CoupledIn?"}
                 </p>
               </div>
 

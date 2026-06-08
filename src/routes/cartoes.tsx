@@ -76,7 +76,7 @@ import { ptBR } from "date-fns/locale";
 export const Route = createFileRoute("/cartoes")({
   head: () => ({
     meta: [
-      { title: "Cartões | CoupleFinance" },
+      { title: "Cartões | CoupledIn" },
       { name: "description", content: "Gerencie seus cartões de crédito e faturas." },
     ],
   }),

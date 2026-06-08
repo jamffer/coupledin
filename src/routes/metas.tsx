@@ -18,7 +18,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/metas")({
   head: () => ({
     meta: [
-      { title: "Metas | CoupleFinance" },
+      { title: "Metas | CoupledIn" },
       { name: "description", content: "Acompanhe as metas do casal." },
     ],
   }),

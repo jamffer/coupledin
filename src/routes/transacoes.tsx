@@ -79,7 +79,7 @@ import { formatCurrency } from "@/lib/utils";
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
     meta: [
-      { title: "Lançamentos | CoupleFinance" },
+      { title: "Lançamentos | CoupledIn" },
       { name: "description", content: "Gerencie as transações do casal." },
     ],
   }),

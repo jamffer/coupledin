@@ -47,7 +47,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
     meta: [
-      { title: "Configurações | CoupleFinance" },
+      { title: "Configurações | CoupledIn" },
       { name: "description", content: "Gerencie as regras financeiras e o perfil do casal." },
     ],
   }),
