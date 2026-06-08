@@ -49,7 +49,8 @@ async function patchFiles() {
 
     // Replace any import from "tslib" with inline implementations
     const updated = content
-      .replace(/import\s*\{[^}]*\}\s*from\s*["']tslib["']\s*;?/g, TSLIB_INLINE);
+      .replace(/import\s*\{[^}]*\}\s*from\s*["']tslib["']\s*;?/g, TSLIB_INLINE)
+      .replace(/import\s*["']tslib["']\s*;?/g, TSLIB_INLINE);
 
     if (updated !== content) {
       await writeFile(filePath, updated, "utf-8");
@@ -75,7 +76,8 @@ async function patchFiles() {
       const content = await readFile(filePath, "utf-8");
       if (!content.includes('"tslib"')) continue;
       const updated = content
-        .replace(/import\s*\{[^}]*\}\s*from\s*["']tslib["']\s*;?/g, TSLIB_INLINE);
+        .replace(/import\s*\{[^}]*\}\s*from\s*["']tslib["']\s*;?/g, TSLIB_INLINE)
+        .replace(/import\s*["']tslib["']\s*;?/g, TSLIB_INLINE);
       if (updated !== content) {
         await writeFile(filePath, updated, "utf-8");
         console.log(`[patch-tslib] Patched SSR: ${file}`);

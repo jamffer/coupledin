@@ -28,7 +28,18 @@ import "../_libs/supabase__phoenix.mjs";
 import "../_libs/supabase__storage-js.mjs";
 import "../_libs/iceberg-js.mjs";
 import "../_libs/supabase__auth-js.mjs";
-import "tslib";
+
+const __rest = (s, e) => {
+  const t = {};
+  for (const p in s)
+    if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
+  if (s != null && typeof Object.getOwnPropertySymbols === "function")
+    for (let i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++)
+      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+        t[p[i]] = s[p[i]];
+  return t;
+};
+
 import "../_libs/supabase__functions-js.mjs";
 import "../_libs/radix-ui__react-slot.mjs";
 import "../_libs/radix-ui__react-compose-refs.mjs";
