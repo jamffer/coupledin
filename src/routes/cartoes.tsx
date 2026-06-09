@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,8 +76,8 @@ import { ptBR } from "date-fns/locale";
 export const Route = createFileRoute("/cartoes")({
   head: () => ({
     meta: [
-      { title: "Cartões | CoupledIn" },
-      { name: "description", content: "Gerencie seus cartões de crédito e faturas." },
+      { title: "CartÃµes | CoupleDin" },
+      { name: "description", content: "Gerencie seus cartÃµes de crÃ©dito e faturas." },
     ],
   }),
   component: CartoesPage,
@@ -173,15 +173,15 @@ function CartoesPage() {
           currentBill: currentBill,
           limitUsed: currentBill,
           totalLimit: Number(card.limit_amount),
-          type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
-          owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
+          type: card.card_type === "Meu CartÃ£o" ? "individual" as const : "conjunto" as const,
+          owner: card.card_type === "Meu CartÃ£o" ? "Eu" : "Casal"
         };
       });
     },
     enabled: !!user && !!transactions,
   });
 
-  // Derivar itens da fatura das transações reais usando o billing_date
+  // Derivar itens da fatura das transaÃ§Ãµes reais usando o billing_date
   const currentBillItems = selectedCardId 
     ? transactions
         .filter(tx => tx.card_id === selectedCardId && tx.billing_date === selectedMonth)
@@ -229,7 +229,7 @@ function CartoesPage() {
   const getCardColorStyle = (colorStr?: string) => {
     if (!colorStr) return { backgroundColor: '#737373' };
     if (colorStr.startsWith('#')) return { backgroundColor: colorStr };
-    // Fallback de contenção de erros para dados legados (ex: card-gradient-blue)
+    // Fallback de contenÃ§Ã£o de erros para dados legados (ex: card-gradient-blue)
     return { backgroundColor: '#737373' };
   };
 
@@ -250,7 +250,7 @@ function CartoesPage() {
         >
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Meus Cartões</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Meus CartÃµes</h1>
             <p className="text-muted-foreground italic">Gerencie seus limites e faturas.</p>
           </div>
           {cards.length > 0 && (
@@ -260,7 +260,7 @@ function CartoesPage() {
 
         {cards.length > 0 ? (
           <>
-            {/* Visão Geral dos Cartões */}
+            {/* VisÃ£o Geral dos CartÃµes */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {cards.map((card) => (
                 <motion.div 
@@ -313,7 +313,7 @@ function CartoesPage() {
                       </div>
 
                       <div className="flex justify-between items-center pt-2">
-                        <span className="text-xs font-mono tracking-widest opacity-60">•••• {card.lastDigits}</span>
+                        <span className="text-xs font-mono tracking-widest opacity-60">â€¢â€¢â€¢â€¢ {card.lastDigits}</span>
                         {selectedCardId === card.id && (
                           <motion.div layoutId="active-indicator" className="bg-white text-black p-1 rounded-full shadow-sm">
                             <CheckCircle2 size={14} />
@@ -340,7 +340,7 @@ function CartoesPage() {
                       </div>
                       <div>
                         <CardTitle className="text-lg font-bold">Detalhamento da Fatura</CardTitle>
-                        <p className="text-xs text-muted-foreground">{selectedCard.name} • •••• {selectedCard.lastDigits}</p>
+                        <p className="text-xs text-muted-foreground">{selectedCard.name} â€¢ â€¢â€¢â€¢â€¢ {selectedCard.lastDigits}</p>
                       </div>
                     </div>
 
@@ -420,11 +420,11 @@ function CartoesPage() {
                         <TableHeader>
                           <TableRow className="bg-muted/30 hover:bg-muted/30">
                             <TableHead className="w-[100px] pl-6">Data</TableHead>
-                            <TableHead>Descrição</TableHead>
+                            <TableHead>DescriÃ§Ã£o</TableHead>
                             <TableHead>Categoria</TableHead>
                             <TableHead>Parcela</TableHead>
-                            <TableHead>Responsável</TableHead>
-                            <TableHead className="text-right pr-6 min-w-[120px]">Ações</TableHead>
+                            <TableHead>ResponsÃ¡vel</TableHead>
+                            <TableHead className="text-right pr-6 min-w-[120px]">AÃ§Ãµes</TableHead>
                             <TableHead className="text-right pr-6">Valor</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -474,14 +474,14 @@ function CartoesPage() {
         ) : (
           <EmptyState 
             icon={CreditCard}
-            title="Você ainda não cadastrou nenhum cartão"
-            description="Organize seus limites e faturas em um só lugar."
-            actionLabel="Adicionar Cartão"
+            title="VocÃª ainda nÃ£o cadastrou nenhum cartÃ£o"
+            description="Organize seus limites e faturas em um sÃ³ lugar."
+            actionLabel="Adicionar CartÃ£o"
             onAction={() => {}}
           >
             <AddCardModal>
               <Button className="mt-4 apple-interactive rounded-xl px-8 shadow-lg shadow-primary/20 font-bold">
-                Adicionar Cartão
+                Adicionar CartÃ£o
               </Button>
             </AddCardModal>
           </EmptyState>

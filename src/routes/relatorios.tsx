@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+﻿import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { DashboardLayout } from "@/components/layout-dashboard";
@@ -52,8 +52,8 @@ import { useProfile } from "@/hooks/use-profile";
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
     meta: [
-      { title: "Relatórios | CoupledIn" },
-      { name: "description", content: "Análise de gastos e fechamento do mês do casal." },
+      { title: "RelatÃ³rios | CoupleDin" },
+      { name: "description", content: "AnÃ¡lise de gastos e fechamento do mÃªs do casal." },
     ],
   }),
   component: RelatoriosPage,
@@ -82,7 +82,7 @@ function RelatoriosPage() {
 
   const [isSettled, setIsSettled] = useState(false);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<"Este Mês" | "Últimos 3 Meses" | "Este Ano">("Este Mês");
+  const [selectedPeriod, setSelectedPeriod] = useState<"Este MÃªs" | "Ãšltimos 3 Meses" | "Este Ano">("Este MÃªs");
 
   const userName = profile?.display_name || "Jorge";
   const partnerName = partnerProfile?.display_name || "Lilian";
@@ -93,7 +93,7 @@ function RelatoriosPage() {
     }
   }, [user, authLoading]);
 
-  // Cálculo de Despesas Conjuntas e Proporção
+  // CÃ¡lculo de Despesas Conjuntas e ProporÃ§Ã£o
   const jointExpenses = transactions.filter(t => t.division !== "Individual");
   const totalJoint = jointExpenses.reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
 
@@ -121,7 +121,7 @@ function RelatoriosPage() {
   const handleShareSummary = () => {
     const summary = `Resumo Financeiro\nTotal Gastos Conjuntos: ${formatCurrency(totalJoint)}\nStatus: ${isSettled ? 'Tudo quite!' : (diff < 0 ? "Jorge deve transferir" : "Lilian deve transferir") + " " + formatCurrency(Math.abs(settlementAmount))}`;
     navigator.clipboard.writeText(summary);
-    toast.success("Resumo copiado para a área de transferência!");
+    toast.success("Resumo copiado para a Ã¡rea de transferÃªncia!");
   };
 
   const weeklyEvolutionData = useMemo(() => {
@@ -145,8 +145,8 @@ function RelatoriosPage() {
     };
 
     return {
-      "Este Mês": generateData(4, 'week'),
-      "Últimos 3 Meses": generateData(3, 'month'),
+      "Este MÃªs": generateData(4, 'week'),
+      "Ãšltimos 3 Meses": generateData(3, 'month'),
       "Este Ano": generateData(6, 'month')
     };
   }, [transactions]);
@@ -186,8 +186,8 @@ function RelatoriosPage() {
       >
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <motion.div variants={itemVariants}>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-primary/60 mb-1">Análise Mensal</h2>
-            <h1 className="text-4xl font-black tracking-tighter text-foreground">Relatórios</h1>
+            <h2 className="text-sm font-bold uppercase tracking-widest text-primary/60 mb-1">AnÃ¡lise Mensal</h2>
+            <h1 className="text-4xl font-black tracking-tighter text-foreground">RelatÃ³rios</h1>
           </motion.div>
           
           <motion.div variants={itemVariants} className="flex gap-2">
@@ -208,9 +208,9 @@ function RelatoriosPage() {
                 )}>
                   <ArrowRightLeft size={20} />
                 </div>
-                <CardTitle className="text-xl">Fechamento do Mês</CardTitle>
+                <CardTitle className="text-xl">Fechamento do MÃªs</CardTitle>
               </div>
-              <CardDescription>Cálculo automático baseado nas despesas conjuntas do mês.</CardDescription>
+              <CardDescription>CÃ¡lculo automÃ¡tico baseado nas despesas conjuntas do mÃªs.</CardDescription>
             </CardHeader>
             <CardContent className="-mt-4">
               <div className="apple-glass rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
@@ -239,20 +239,20 @@ function RelatoriosPage() {
                   </div>
                   <div className="space-y-1">
                     {totalJoint === 0 ? (
-                      <h3 className="text-xl font-bold tracking-tight">Nenhum gasto conjunto este mês.</h3>
+                      <h3 className="text-xl font-bold tracking-tight">Nenhum gasto conjunto este mÃªs.</h3>
                     ) : !partnerProfile ? (
                       <div className="space-y-1">
                         <h3 className="text-xl font-bold tracking-tight text-amber-600">Aguardando parceiro(a)</h3>
-                        <p className="text-sm text-muted-foreground">Convide seu parceiro(a) nas configurações para habilitar o acerto de contas automático.</p>
+                        <p className="text-sm text-muted-foreground">Convide seu parceiro(a) nas configuraÃ§Ãµes para habilitar o acerto de contas automÃ¡tico.</p>
                       </div>
                     ) : isSettled ? (
-                      <h3 className="text-xl font-bold tracking-tight text-emerald-600">Tudo quite! Mês resolvido.</h3>
+                      <h3 className="text-xl font-bold tracking-tight text-emerald-600">Tudo quite! MÃªs resolvido.</h3>
                     ) : Math.abs(diff) < 1 ? (
-                      <h3 className="text-xl font-bold tracking-tight">Tudo quite! Vocês estão empatados.</h3>
+                      <h3 className="text-xl font-bold tracking-tight">Tudo quite! VocÃªs estÃ£o empatados.</h3>
                     ) : (
                       <>
                         <h3 className="text-xl font-bold tracking-tight">
-                          {diff < 0 ? `${userName}, você deve transferir` : `${partnerName}, deve transferir`}
+                          {diff < 0 ? `${userName}, vocÃª deve transferir` : `${partnerName}, deve transferir`}
                         </h3>
                         <p className={cn(
                           "text-3xl font-black text-primary dark:text-white",
@@ -305,16 +305,16 @@ function RelatoriosPage() {
           </Card>
         </motion.div>
 
-        {/* Section: Gráficos Interativos */}
+        {/* Section: GrÃ¡ficos Interativos */}
         <motion.div variants={itemVariants}>
           <Card className="apple-card border-none shadow-sm overflow-hidden bg-white/50 dark:bg-black/20">
             <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-0">
               <div>
                 <CardTitle className="text-xl flex items-center gap-2">
                   <TrendingUp size={20} className="text-primary" />
-                  Evolução de Gastos
+                  EvoluÃ§Ã£o de Gastos
                 </CardTitle>
-                <CardDescription>Acompanhe o ritmo dos gastos no período selecionado.</CardDescription>
+                <CardDescription>Acompanhe o ritmo dos gastos no perÃ­odo selecionado.</CardDescription>
               </div>
               <Tabs 
                 value={selectedPeriod} 
@@ -322,8 +322,8 @@ function RelatoriosPage() {
                 className="w-full md:w-auto"
               >
                 <TabsList className="grid grid-cols-3 apple-glass p-1 rounded-xl">
-                  <TabsTrigger value="Este Mês" className="rounded-lg text-xs font-bold">Mês</TabsTrigger>
-                  <TabsTrigger value="Últimos 3 Meses" className="rounded-lg text-xs font-bold">3 Meses</TabsTrigger>
+                  <TabsTrigger value="Este MÃªs" className="rounded-lg text-xs font-bold">MÃªs</TabsTrigger>
+                  <TabsTrigger value="Ãšltimos 3 Meses" className="rounded-lg text-xs font-bold">3 Meses</TabsTrigger>
                   <TabsTrigger value="Este Ano" className="rounded-lg text-xs font-bold">Ano</TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -380,7 +380,7 @@ function RelatoriosPage() {
                       <TrendingUp size={32} className="text-muted-foreground opacity-20" />
                     </div>
                     <p className="text-sm text-muted-foreground max-w-[200px]">
-                      Dados insuficientes para gerar o gráfico. Comece a registrar suas finanças para ver sua evolução.
+                      Dados insuficientes para gerar o grÃ¡fico. Comece a registrar suas finanÃ§as para ver sua evoluÃ§Ã£o.
                     </p>
                   </div>
                 )}
@@ -427,7 +427,7 @@ function RelatoriosPage() {
                   );
                 })
               ) : (
-                <p className="text-sm text-muted-foreground p-4 text-center italic">Ainda não há gastos registrados.</p>
+                <p className="text-sm text-muted-foreground p-4 text-center italic">Ainda nÃ£o hÃ¡ gastos registrados.</p>
               )}
             </div>
           </motion.div>
@@ -437,7 +437,7 @@ function RelatoriosPage() {
             <Card className="apple-card apple-card-hover h-full border-2 border-primary/5 dark:border-white/5">
               <CardHeader>
                 <CardTitle>Top Maiores Gastos</CardTitle>
-                <CardDescription>Os 5 maiores lançamentos do mês.</CardDescription>
+                <CardDescription>Os 5 maiores lanÃ§amentos do mÃªs.</CardDescription>
               </CardHeader>
               <CardContent>
                 {topExpenses.length > 0 ? (
@@ -461,7 +461,7 @@ function RelatoriosPage() {
                   </div>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-50 py-12">
-                    <p className="text-sm">Nenhuma transação registrada.</p>
+                    <p className="text-sm">Nenhuma transaÃ§Ã£o registrada.</p>
                   </div>
                 )}
               </CardContent>
@@ -475,7 +475,7 @@ function RelatoriosPage() {
           <DialogHeader>
             <DialogTitle>Confirmar Acerto de Contas</DialogTitle>
             <DialogDescription>
-              Isso marcará as contas como resolvidas. Certifique-se de que a transferência de <span className="font-bold">{formatCurrency(settlementAmount)}</span> foi feita.
+              Isso marcarÃ¡ as contas como resolvidas. Certifique-se de que a transferÃªncia de <span className="font-bold">{formatCurrency(settlementAmount)}</span> foi feita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

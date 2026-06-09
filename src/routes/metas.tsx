@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { DashboardLayout } from "@/components/layout-dashboard";
@@ -18,7 +18,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/metas")({
   head: () => ({
     meta: [
-      { title: "Metas | CoupledIn" },
+      { title: "Metas | CoupleDin" },
       { name: "description", content: "Acompanhe as metas do casal." },
     ],
   }),
@@ -115,7 +115,7 @@ function MetasPage() {
                       <div className="space-y-2">
                         <Progress value={(goal.current / goal.target) * 100} className="h-2" />
                         <p className="text-[10px] text-right font-bold uppercase tracking-wider text-muted-foreground">
-                          {Math.round((goal.current / goal.target) * 100)}% concluído
+                          {Math.round((goal.current / goal.target) * 100)}% concluÃ­do
                         </p>
                       </div>
 
@@ -151,7 +151,7 @@ function MetasPage() {
           <EmptyState 
             icon={Target}
             title="Nenhum cofre ou meta ainda"
-            description="Crie metas para suas viagens, sonhos ou reserva de emergência."
+            description="Crie metas para suas viagens, sonhos ou reserva de emergÃªncia."
             actionLabel="Criar minha primeira meta"
             onAction={() => toast.info("Funcionalidade de metas em breve!")}
           />

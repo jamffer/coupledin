@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -57,7 +57,7 @@ import {
 export const Route = createFileRoute("/investimentos")({
   head: () => ({
     meta: [
-      { title: "Investimentos | CoupledIn" },
+      { title: "Investimentos | CoupleDin" },
       { name: "description", content: "Acompanhe seus ativos em tempo real." },
     ],
   }),
@@ -98,7 +98,7 @@ function AssetTable({
           <TableRow className="border-border/40 hover:bg-transparent">
             <TableHead className="font-bold text-xs uppercase text-muted-foreground">Ativo</TableHead>
             <TableHead className="font-bold text-xs uppercase text-muted-foreground text-center">Qtd</TableHead>
-            <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">P. Médio</TableHead>
+            <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">P. MÃ©dio</TableHead>
             <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">Valor Atual</TableHead>
             <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">P&L</TableHead>
             <TableHead className="w-[50px]"></TableHead>
@@ -199,7 +199,7 @@ function InvestimentosPage() {
 
   const handleRefresh = async () => {
     await refetch();
-    toast.success("Preços atualizados via API!");
+    toast.success("PreÃ§os atualizados via API!");
   };
 
   const handleConfirmDelete = () => {
@@ -246,7 +246,7 @@ function InvestimentosPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Ativo?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover <strong className="uppercase">{assetToDelete?.ticker}</strong> da sua carteira? Esta ação não pode ser desfeita e afetará o histórico do seu patrimônio.
+              Tem certeza que deseja remover <strong className="uppercase">{assetToDelete?.ticker}</strong> da sua carteira? Esta aÃ§Ã£o nÃ£o pode ser desfeita e afetarÃ¡ o histÃ³rico do seu patrimÃ´nio.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -275,7 +275,7 @@ function InvestimentosPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Meus Investimentos</h1>
-            <p className="text-muted-foreground italic">Patrimônio atualizado em tempo real pelas APIs.</p>
+            <p className="text-muted-foreground italic">PatrimÃ´nio atualizado em tempo real pelas APIs.</p>
           </div>
           {hasInvestments && (
             <div className="flex items-center gap-2">
@@ -287,7 +287,7 @@ function InvestimentosPage() {
                 disabled={isRefetching}
               >
                 <RefreshCw size={16} className={cn(isRefetching && "animate-spin")} />
-                {isRefetching ? "Buscando cotações..." : "Atualizar Cotações"}
+                {isRefetching ? "Buscando cotaÃ§Ãµes..." : "Atualizar CotaÃ§Ãµes"}
               </Button>
               <Button size="sm" className="rounded-full gap-2 shadow-lg" onClick={() => setIsModalOpen(true)}>
                 <Plus size={16} />
@@ -299,7 +299,7 @@ function InvestimentosPage() {
 
         {isError && (
           <div className="bg-rose-500/10 text-rose-500 p-4 rounded-xl border border-rose-500/20 font-medium">
-            Houve um erro de rede ao buscar a cotação externa dos investimentos.
+            Houve um erro de rede ao buscar a cotaÃ§Ã£o externa dos investimentos.
           </div>
         )}
 
@@ -318,7 +318,7 @@ function InvestimentosPage() {
                       <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">Geral</span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white/80">Patrimônio Total Atualizado</p>
+                      <p className="text-sm font-medium text-white/80">PatrimÃ´nio Total Atualizado</p>
                       <h3 className="text-4xl font-black tracking-tight text-white mt-1">
                         {formatCurrency(totalPatrimony)}
                       </h3>
@@ -338,7 +338,7 @@ function InvestimentosPage() {
                       <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">P&L Geral</span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white/80">Lucro/Prejuízo Total ({totalProfitPercentage >= 0 ? '+' : ''}{totalProfitPercentage.toFixed(2)}%)</p>
+                      <p className="text-sm font-medium text-white/80">Lucro/PrejuÃ­zo Total ({totalProfitPercentage >= 0 ? '+' : ''}{totalProfitPercentage.toFixed(2)}%)</p>
                       <h3 className="text-4xl font-black tracking-tight text-white mt-1">
                         {totalProfit > 0 ? '+' : ''} {formatCurrency(totalProfit)}
                       </h3>
@@ -351,11 +351,11 @@ function InvestimentosPage() {
                 <Card className="apple-card h-full border-border/40 bg-card">
                   <CardContent className="p-8 space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Distribuição da Carteira</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">DistribuiÃ§Ã£o da Carteira</span>
                     </div>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Ações / FIIs</span>
+                        <span className="text-sm font-medium">AÃ§Ãµes / FIIs</span>
                         <span className="text-sm font-bold text-primary">{rvPerc.toFixed(1)}%</span>
                       </div>
                       <div className="h-1.5 w-full bg-muted dark:bg-black rounded-full overflow-hidden">
@@ -380,11 +380,11 @@ function InvestimentosPage() {
                 <TabsList className="bg-muted/50 p-1 rounded-2xl h-14 border border-border/40 gap-1 w-full md:w-fit overflow-x-auto no-scrollbar">
                   <TabsTrigger value="visaogeral" className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all">
                     <Activity size={16} />
-                    Visão Geral
+                    VisÃ£o Geral
                   </TabsTrigger>
                   <TabsTrigger value="acoes_fiis" className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all">
                     <TrendingUp size={16} />
-                    Renda Variável
+                    Renda VariÃ¡vel
                   </TabsTrigger>
                   <TabsTrigger value="cripto" className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all">
                     <Coins size={16} />
@@ -411,7 +411,7 @@ function InvestimentosPage() {
                   <TabsContent value="acoes_fiis">
                     <Card className="apple-card overflow-hidden bg-card border-border/40">
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold">Ações e FIIs</CardTitle>
+                        <CardTitle className="text-lg font-bold">AÃ§Ãµes e FIIs</CardTitle>
                       </CardHeader>
                       <CardContent className="px-0">
                         <AssetTable data={[...acoes, ...fiis]} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
@@ -433,7 +433,7 @@ function InvestimentosPage() {
                   <TabsContent value="rendafixa">
                     <Card className="apple-card overflow-hidden bg-card border-border/40">
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold">Títulos e Aplicações</CardTitle>
+                        <CardTitle className="text-lg font-bold">TÃ­tulos e AplicaÃ§Ãµes</CardTitle>
                       </CardHeader>
                       <CardContent className="px-0">
                         <AssetTable data={rendafixa} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
@@ -447,8 +447,8 @@ function InvestimentosPage() {
         ) : (
           <EmptyState 
             icon={TrendingUp}
-            title="Sua carteira está vazia"
-            description="Comece a adicionar seus ativos para que possamos monitorar as cotações em tempo real."
+            title="Sua carteira estÃ¡ vazia"
+            description="Comece a adicionar seus ativos para que possamos monitorar as cotaÃ§Ãµes em tempo real."
             actionLabel="Cadastrar Novo Aporte"
             onAction={() => setIsModalOpen(true)}
           />

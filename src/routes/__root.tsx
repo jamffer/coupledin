@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -79,18 +79,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CoupledIn" },
-      { name: "description", content: "CoupledIn is a responsive web app for couples to manage shared finances." },
-      { name: "author", content: "CoupledIn" },
-      { property: "og:title", content: "CoupledIn" },
-      { property: "og:description", content: "CoupledIn is a responsive web app for couples to manage shared finances." },
+      { title: "CoupleDin" },
+      { name: "description", content: "CoupleDin is a responsive web app for couples to manage shared finances." },
+      { name: "author", content: "CoupleDin" },
+      { property: "og:title", content: "CoupleDin" },
+      { property: "og:description", content: "CoupleDin is a responsive web app for couples to manage shared finances." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@CoupledIn" },
-      { name: "twitter:title", content: "CoupledIn" },
-      { name: "twitter:description", content: "CoupledIn is a responsive web app for couples to manage shared finances." },
-      { property: "og:image", content: "/coupledin.png" },
-      { name: "twitter:image", content: "/coupledin.png" },
+      { name: "twitter:site", content: "@CoupleDin" },
+      { name: "twitter:title", content: "CoupleDin" },
+      { name: "twitter:description", content: "CoupleDin is a responsive web app for couples to manage shared finances." },
+      { property: "og:image", content: "/CoupleDin.png" },
+      { name: "twitter:image", content: "/CoupleDin.png" },
     ],
     links: [
       {
