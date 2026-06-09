@@ -1,15 +1,4 @@
-
-const __rest = (s, e) => {
-  const t = {};
-  for (const p in s)
-    if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
-  if (s != null && typeof Object.getOwnPropertySymbols === "function")
-    for (let i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++)
-      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-        t[p[i]] = s[p[i]];
-  return t;
-};
-
+import { __rest, __assign, __spreadArray } from "tslib";
 import { r as reactExports } from "./react.mjs";
 import { z as zeroRightClassName, f as fullWidthClassName, R as RemoveScrollBar } from "./react-remove-scroll-bar.mjs";
 import { c as createSidecarMedium, e as exportSidecar } from "./use-sidecar.mjs";
