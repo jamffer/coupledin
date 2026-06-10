@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   LayoutDashboard, 
@@ -62,12 +62,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "LanÃ§amentos", url: "/transacoes", icon: ReceiptText },
-  { title: "CartÃµes", url: "/cartoes", icon: CreditCard },
+  { title: "Lançamentos", url: "/transacoes", icon: ReceiptText },
+  { title: "Cartões", url: "/cartoes", icon: CreditCard },
   { title: "Investimentos", url: "/investimentos", icon: TrendingUp },
   { title: "Metas", url: "/metas", icon: Target },
-  { title: "RelatÃ³rios", url: "/relatorios", icon: ReceiptText },
-  { title: "ConfiguraÃ§Ãµes", url: "/configuracoes", icon: Settings },
+  { title: "Relatórios", url: "/relatorios", icon: ReceiptText },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -201,7 +201,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     if (inviteCode) {
       navigator.clipboard.writeText(inviteCode);
       setCopied(true);
-      toast.success("CÃ³digo copiado!");
+      toast.success("Código copiado!");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -306,7 +306,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                       </DialogTrigger>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Adicionar nova transaÃ§Ã£o</p>
+                      <p>Adicionar nova transação</p>
                     </TooltipContent>
                   </Tooltip>
                   
@@ -314,12 +314,12 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     <DialogHeader>
                       <DialogTitle className="text-xl font-bold">Novo Registro</DialogTitle>
                       <DialogDescription>
-                        Adicione uma nova transaÃ§Ã£o rapidamente ou vÃ¡ para a pÃ¡gina detalhada.
+                        Adicione uma nova transação rapidamente ou vá para a página detalhada.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-6 py-4">
                       <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="desc" className="text-right font-medium">DescriÃ§Ã£o</Label>
+                        <Label htmlFor="desc" className="text-right font-medium">Descrição</Label>
                         <Input id="desc" placeholder="Ex: Mercado" className="col-span-3 rounded-xl apple-interactive dark:bg-black/20" />
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
@@ -334,14 +334,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                           </SelectTrigger>
                           <SelectContent className="apple-card">
                             <SelectItem value="entrada">Entrada</SelectItem>
-                            <SelectItem value="saida">SaÃ­da</SelectItem>
+                            <SelectItem value="saida">Saída</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0">
                       <Button variant="ghost" className="rounded-xl active:scale-95 transition-all" onClick={() => navigate({ to: '/transacoes' })}>
-                        Ir para LanÃ§amentos
+                        Ir para Lançamentos
                       </Button>
                       <Button className="rounded-xl apple-interactive border-none px-8 active:scale-95 transition-all" onClick={() => {
                         toast.success("Registro adicionado!");
@@ -411,7 +411,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-black tracking-tight text-center pt-4">Editar Perfil</DialogTitle>
                       <DialogDescription className="text-center">
-                        Personalize como vocÃª aparece no CoupleDin.
+                        Personalize como você aparece no CoupleDin.
                       </DialogDescription>
                     </DialogHeader>
                     
@@ -456,7 +456,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                         disabled={isSaving}
                       >
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check size={18} />}
-                        Salvar AlteraÃ§Ãµes
+                        Salvar Alterações
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -469,10 +469,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Modal obrigatÃ³rio para definir o nome */}
+        {/* Modal obrigatório para definir o nome */}
         <Dialog open={isNameModalOpen} onOpenChange={(open) => {
           if (!open && !profile?.display_name) {
-            toast.error("VocÃª precisa definir um nome para continuar.");
+            toast.error("Você precisa definir um nome para continuar.");
             return;
           }
           setIsNameModalOpen(open);
@@ -481,7 +481,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             <DialogHeader>
               <DialogTitle className="text-2xl font-black tracking-tight text-center pt-4">Bem-vindo(a)!</DialogTitle>
               <DialogDescription className="text-center">
-                Como vocÃª gostaria de ser chamado(a)? Precisamos disso para personalizar sua experiÃªncia.
+                Como você gostaria de ser chamado(a)? Precisamos disso para personalizar sua experiência.
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-6 py-6 px-4">
@@ -510,7 +510,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                   </>
                 ) : (
                   <>
-                    ComeÃ§ar a usar
+                    Começar a usar
                     <Check size={20} />
                   </>
                 )}
@@ -524,7 +524,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             <DialogHeader>
               <DialogTitle className="text-2xl font-black tracking-tight text-center pt-4">Convidar Parceiro(a)</DialogTitle>
               <DialogDescription className="text-center">
-                Compartilhe o cÃ³digo abaixo para que seu parceiro(a) possa se conectar a este espaÃ§o.
+                Compartilhe o código abaixo para que seu parceiro(a) possa se conectar a este espaço.
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center gap-6 py-8 px-4">
@@ -546,7 +546,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground text-center italic">
-                O seu parceiro(a) deve escolher "Ingressar em um espaÃ§o" e inserir este cÃ³digo no Onboarding.
+                O seu parceiro(a) deve escolher "Ingressar em um espaço" e inserir este código no Onboarding.
               </p>
             </div>
           </DialogContent>

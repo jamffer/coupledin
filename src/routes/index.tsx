@@ -246,7 +246,7 @@ function Dashboard() {
     // Para Faturas a Pagar (Crédito), não filtra por mês
     if (activeSheet === 'credit') {
       return baseTransactions
-        .filter(tx => tx.type === 'Crédito' || tx.type === 'CrÃ©dito')
+        .filter(tx => tx.type === 'Crédito')
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
 
@@ -270,7 +270,7 @@ function Dashboard() {
     const balance = transactions.reduce((acc, tx) => acc + (tx.amount || 0), 0);
     const income = currentMonthTxs.filter(tx => tx?.type === 'Entrada').reduce((acc, tx) => acc + (tx?.amount || 0), 0);
     const expenses = currentMonthTxs.filter(tx => tx?.type === 'Débito' || tx?.type === 'Saída' || tx?.type === 'Crédito' || tx?.type === 'expense').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
-    const credit = transactions.filter(tx => tx?.type === 'Crédito' || tx?.type === 'CrÃ©dito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
+    const credit = transactions.filter(tx => tx?.type === 'Crédito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
 
     return { balance, income, expenses, credit };
   }, [transactions]);
