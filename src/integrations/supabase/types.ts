@@ -110,6 +110,44 @@ export type Database = {
         }
         Relationships: []
       }
+      goals: {
+        Row: {
+          id: string
+          couple_id: string
+          title: string
+          target_amount: number
+          saved_amount: number | null
+          deadline: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          couple_id: string
+          title: string
+          target_amount: number
+          saved_amount?: number | null
+          deadline?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          couple_id?: string
+          title?: string
+          target_amount?: number
+          saved_amount?: number | null
+          deadline?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investments: {
         Row: {
           asset_type: Database["public"]["Enums"]["asset_type"]

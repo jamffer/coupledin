@@ -71,9 +71,9 @@ export function useUpdateInvestment() {
 
               return {
                 ...inv,
-                quantity: quantity as any,
-                average_price: average_price as any,
-                custom_rate: custom_rate as any,
+                quantity: quantity,
+                average_price: average_price,
+                custom_rate: custom_rate,
                 total_invested,
                 current_value,
                 profit_loss_percentage,

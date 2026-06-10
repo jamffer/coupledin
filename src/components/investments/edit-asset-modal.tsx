@@ -27,12 +27,14 @@ interface EditAssetModalProps {
 export function EditAssetModal({ isOpen, onClose, asset }: EditAssetModalProps) {
   const mutation = useUpdateInvestment();
 
+  if (!asset) return null;
+
   const form = useForm<EditAssetFormValues>({
     resolver: zodResolver(editAssetSchema),
     defaultValues: {
-      quantity: 0,
-      average_price: 0,
-      custom_rate: 0,
+      quantity: Number(asset?.quantity || 0),
+      average_price: Number(asset?.average_price || 0),
+      custom_rate: Number(asset?.custom_rate || 0),
     },
   });
 
@@ -64,7 +66,6 @@ export function EditAssetModal({ isOpen, onClose, asset }: EditAssetModalProps) 
     );
   };
 
-  if (!asset) return null;
 
   const isPrivateFixedIncome = asset.asset_type === 'FIXED_INCOME' && Number(asset.custom_rate) > 0;
 
