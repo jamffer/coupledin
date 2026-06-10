@@ -76,6 +76,7 @@ import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, type Transaction } fro
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "@/components/empty-state";
 import { formatCurrency } from "@/lib/utils";
+import { TransactionModal } from "@/components/transaction-modal";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -214,16 +215,7 @@ function TransactionsPage() {
   const [txToDelete, setTxToDelete] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<ParsedTransaction | null>(null);
 
-  const [formData, setFormData] = useState<Partial<Transaction & { card_id?: string }>>({
-    description: "",
-    amount: 0,
-    date: new Date().toISOString().split('T')[0],
-    category: "Outros",
-    responsible: "Jorge",
-    division: "Conjunta 50/50",
-    type: "Saída",
-    card_id: undefined
-  });
+  const [smartInputCardId, setSmartInputCardId] = useState<string | undefined>(undefined);
 
   const filters = {
     month: search.month,
@@ -266,7 +258,7 @@ function TransactionsPage() {
     const coupleId = profile.couple_id;
     
     let billing_date = parsedData.date ? parsedData.date.substring(0, 8) + "01" : new Date().toISOString().substring(0, 8) + "01";
-    const cardId = (formData as any).card_id;
+    const cardId = smartInputCardId;
     if (cardId) {
       const card = cards.find((c: any) => c.id === cardId);
       if (card && card.closing_day) {
@@ -303,78 +295,8 @@ function TransactionsPage() {
     toast.success("Transação adicionada!");
   };
 
-  const handleSaveManual = async () => {
-    if (!formData.description || !formData.amount || !profile?.couple_id) {
-      toast.error("Preencha a descrição, o valor e certifique-se de estar conectado.");
-      return;
-    }
-
-    const coupleId = profile.couple_id;
-
-    let billing_date = formData.date ? formData.date.substring(0, 8) + "01" : new Date().toISOString().substring(0, 8) + "01";
-    if (formData.card_id) {
-      const card = cards.find((c: any) => c.id === formData.card_id);
-      if (card && card.closing_day) {
-        billing_date = calculateBillingMonth(formData.date!, card.closing_day);
-      }
-    }
-
-    const txData = {
-      description: formData.description || "",
-      amount: (formData.type === "Entrada" ? 1 : -1) * Math.abs(formData.amount || 0),
-      date: formData.date!,
-      category: formData.category || "Outros",
-      responsible: (formData.responsible as string) || "Jorge",
-      division: (formData.division as string) || "Conjunta 50/50",
-      type: formData.type || "Saída",
-      user_id: user!.id,
-      couple_id: coupleId,
-      card_id: formData.card_id,
-      billing_date: billing_date,
-    };
-
-    if (editingTx) {
-      const { error } = await supabase
-        .from("transactions")
-        .update(txData)
-        .eq("id", editingTx.id);
-
-      if (error) {
-        toast.error("Erro ao atualizar transação", { description: error.message });
-        return;
-      }
-      toast.success("Transação atualizada!");
-    } else {
-      const { error } = await supabase
-        .from("transactions")
-        .insert(txData);
-
-      if (error) {
-        toast.error("Erro ao adicionar transação", { description: error.message });
-        return;
-      }
-      toast.success("Transação adicionada!");
-    }
-    
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
-    queryClient.invalidateQueries({ queryKey: ["cards"] });
-    
-    setIsManualModalOpen(false);
-    setEditingTx(null);
-  };
-
   const handleEditClick = (tx: Transaction) => {
     setEditingTx(tx);
-    setFormData({
-      description: tx.description,
-      amount: Math.abs(tx.amount),
-      date: new Date().toISOString().split('T')[0],
-      category: tx.category,
-      responsible: tx.responsible,
-      division: tx.division,
-      type: tx.type === "Entrada" ? "Entrada" : (tx.amount < 0 ? "Saída" : "Entrada"),
-      card_id: (tx as any).card_id
-    });
     setIsManualModalOpen(true);
   };
 
@@ -400,16 +322,6 @@ function TransactionsPage() {
 
   const handleAddManualClick = () => {
     setEditingTx(null);
-    setFormData({
-      description: "",
-      amount: 0,
-      date: new Date().toISOString().split('T')[0],
-      category: "Outros",
-      responsible: "Jorge",
-      division: "Conjunta 50/50",
-      type: "Saída",
-      card_id: undefined
-    });
     setIsManualModalOpen(true);
   };
 
@@ -770,136 +682,12 @@ function TransactionsPage() {
         </div>
       </motion.div>
 
-      {/* Manual Entry Modal */}
-      <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
-        <DialogContent className="apple-card sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">{editingTx ? "Editar Lançamento" : "Novo Lançamento"}</DialogTitle>
-            <DialogDescription>
-              {editingTx ? "Altere as informações da transação." : "Insira os detalhes do gasto ou entrada manualmente."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="description" className="font-bold text-xs uppercase tracking-widest opacity-60">Descrição</Label>
-              <Input 
-                id="description" 
-                className="rounded-xl" 
-                placeholder="Ex: Aluguel, Supermercado..." 
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="amount" className="font-bold text-xs uppercase tracking-widest opacity-60">Valor</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">R$</span>
-                  <Input 
-                    id="amount" 
-                    type="number" 
-                    className="pl-9 rounded-xl font-bold" 
-                    placeholder="0,00"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value) || 0})}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="type" className="font-bold text-xs uppercase tracking-widest opacity-60">Tipo</Label>
-                <Select value={formData.type} onValueChange={(val: any) => setFormData({...formData, type: val})}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="apple-card">
-                    <SelectItem value="Entrada">Entrada</SelectItem>
-                    <SelectItem value="Saída">Saída / Débito</SelectItem>
-                    <SelectItem value="Crédito">Crédito</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="date" className="font-bold text-xs uppercase tracking-widest opacity-60">Data</Label>
-                <Input 
-                  id="date" 
-                  type="date" 
-                  className="rounded-xl" 
-                  value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category" className="font-bold text-xs uppercase tracking-widest opacity-60">Categoria</Label>
-                <Select value={formData.category} onValueChange={(val) => setFormData({...formData, category: val})}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="apple-card">
-                    {Object.keys(CATEGORY_ICONS).map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {formData.type === "Crédito" && (
-              <div className="grid gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                <Label htmlFor="card" className="font-bold text-xs uppercase tracking-widest opacity-60">Cartão de Crédito</Label>
-                <Select value={formData.card_id} onValueChange={(val) => setFormData({...formData, card_id: val})}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="Selecione o cartão" />
-                  </SelectTrigger>
-                  <SelectContent className="apple-card">
-                    {cards.length > 0 ? (
-                      cards.map((card: any) => (
-                        <SelectItem key={card.id} value={card.id}>
-                          {card.name} (⬢⬢⬢⬢ {card.last_four})
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-cards" disabled>Nenhum cartão cadastrado</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label className="font-bold text-xs uppercase tracking-widest opacity-60">Responsável</Label>
-                <Select value={formData.responsible} onValueChange={(val) => setFormData({...formData, responsible: val})}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="apple-card">
-                    <SelectItem value="Jorge">Jorge</SelectItem>
-                    <SelectItem value="Lilian">Lilian</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label className="font-bold text-xs uppercase tracking-widest opacity-60">Divisão</Label>
-                <Select value={formData.division} onValueChange={(val) => setFormData({...formData, division: val})}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="apple-card">
-                    {Object.keys(DIVISION_ICONS).map(div => (
-                      <SelectItem key={div} value={div}>{div}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" className="rounded-full" onClick={() => setIsManualModalOpen(false)}>Cancelar</Button>
-            <Button className="rounded-full px-8 shadow-lg shadow-primary/20" onClick={handleSaveManual}>Salvar Lançamento</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Manual Entry Modal via Component Isolado com RHF + Zod */}
+      <TransactionModal 
+        isOpen={isManualModalOpen} 
+        onClose={() => setIsManualModalOpen(false)} 
+        editingTx={editingTx} 
+      />
 
       {/* Confirmation Modal for Smart Input */}
       <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
@@ -938,8 +726,8 @@ function TransactionsPage() {
                 <div className="space-y-2 mt-2">
                    <p className="text-sm font-medium text-muted-foreground">Vincular ao Cartão</p>
                    <Select 
-                     value={(formData as any).card_id} 
-                     onValueChange={(val) => setFormData({...formData, card_id: val})}
+                     value={smartInputCardId} 
+                     onValueChange={(val) => setSmartInputCardId(val)}
                    >
                     <SelectTrigger className="rounded-xl">
                       <SelectValue placeholder="Selecione o cartão" />

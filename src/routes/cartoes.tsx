@@ -68,10 +68,12 @@ import { useNavigate } from "@tanstack/react-router";
 import { cn, formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { AddCardModal } from "@/components/add-card-modal";
+import { EditCardModal } from "@/components/edit-card-modal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, subMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { calculateBillingMonth } from "@/lib/billing-engine";
 
 export const Route = createFileRoute("/cartoes")({
   head: () => ({
@@ -127,6 +129,8 @@ function CartoesPage() {
   const currentMonth = format(startOfMonth(new Date()), "yyyy-MM-01");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [cardToEdit, setCardToEdit] = useState<any>(null);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -154,9 +158,16 @@ function CartoesPage() {
       if (error) throw error;
       
       // Calcular faturas atuais filtrando pela data de billing selecionada (selectedMonth)
+      // REGRA: Usamos o closing_day do cartão para calcular a data efetiva da fatura!
       const cardBalances = transactions.reduce((acc, tx) => {
-        if (tx.card_id && tx.billing_date === selectedMonth) {
-          acc[tx.card_id] = (acc[tx.card_id] || 0) + Math.abs(tx.amount);
+        if (tx.card_id) {
+          const card = data.find(c => c.id === tx.card_id);
+          const closingDay = card?.closing_day || 31;
+          const dynamicBillingMonth = calculateBillingMonth(tx.date, closingDay);
+          
+          if (dynamicBillingMonth === selectedMonth) {
+            acc[tx.card_id] = (acc[tx.card_id] || 0) + Math.abs(tx.amount);
+          }
         }
         return acc;
       }, {} as Record<string, number>);
@@ -181,10 +192,15 @@ function CartoesPage() {
     enabled: !!user && !!transactions,
   });
 
-  // Derivar itens da fatura das transações reais usando o billing_date
+  // Derivar itens da fatura das transações reais usando o billing_date dinâmico
   const currentBillItems = selectedCardId 
     ? transactions
-        .filter(tx => tx.card_id === selectedCardId && tx.billing_date === selectedMonth)
+        .filter(tx => {
+          if (tx.card_id !== selectedCardId) return false;
+          const card = cards.find(c => c.id === selectedCardId);
+          const closingDay = card?.closing_day || 31; // caso closing_day não exista, usamos fallback
+          return calculateBillingMonth(tx.date, closingDay) === selectedMonth;
+        })
         .map(tx => ({
           id: tx.id,
           date: new Date(tx.date).toLocaleDateString('pt-BR'),
@@ -213,7 +229,7 @@ function CartoesPage() {
   const selectedCard = cards.find(c => c.id === selectedCardId);
   // const currentBillItems = selectedCardId ? (bills[selectedCardId] || []) : [];
 
-  const usagePercentage = selectedCard ? (selectedCard.limitUsed / selectedCard.totalLimit) * 100 : 0;
+  const usagePercentage = selectedCard ? (selectedCard.limitUsed / (selectedCard.totalLimit || 1)) * 100 : 0;
   
   // Calcular quebra de responsabilidade
   const jorgePays = selectedCard ? (selectedCard.type === "conjunto" ? selectedCard.currentBill / 2 : selectedCard.owner === "Jorge" ? selectedCard.currentBill : 0) : 0;
@@ -359,18 +375,14 @@ function CartoesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="apple-card w-[180px]">
                           {availableMonths.map((m) => (
-                            <DropdownMenuItem key={m} onClick={() => setSelectedMonth(m)} className="cursor-pointer capitalize">
+                            <DropdownMenuItem key={m} onClick={() => setSelectedMonth(m)} className="capitalize">
                               {format(parseISO(m), "MMMM (yyyy)", { locale: ptBR })}
                             </DropdownMenuItem>
                           ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
-
-                      <Badge variant={selectedMonth === currentMonth ? "outline" : "secondary"} className={cn(
-                        "px-3 py-1 rounded-full border-none h-9 flex items-center",
-                        selectedMonth === currentMonth ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" : "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
-                      )}>
-                        {selectedMonth === currentMonth ? "Fatura Aberta" : "Fatura Paga"}
+                      <Badge variant={selectedMonth === format(new Date(), "yyyy-MM-01") ? "outline" : "secondary"}>
+                        {selectedMonth === format(new Date(), "yyyy-MM-01") ? "Fatura Aberta" : "Fatura Paga"}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -381,7 +393,7 @@ function CartoesPage() {
                           <p className="text-sm font-medium text-muted-foreground mb-1">Total da Fatura</p>
                           <h3 className="text-2xl font-bold tracking-tight">{formatCurrency(selectedCard.currentBill)}</h3>
                         </div>
-                        {selectedMonth === "june" && (
+                        {selectedMonth === currentMonth && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button className="mt-4 w-full rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all font-bold">
@@ -454,8 +466,14 @@ function CartoesPage() {
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                                Nenhuma compra registrada nesta fatura.
+                              <TableCell colSpan={7} className="py-12">
+                                <EmptyState 
+                                  icon={ShoppingBag}
+                                  title="Nenhum lançamento nesta fatura"
+                                  description="Você ainda não usou este cartão no mês selecionado."
+                                  actionLabel="Ir para Transações"
+                                  onAction={() => navigate({ to: "/transacoes" })}
+                                />
                               </TableCell>
                             </TableRow>
                           )}
@@ -488,6 +506,12 @@ function CartoesPage() {
         )}
         </motion.div>
       </TooltipProvider>
+
+      <EditCardModal 
+        card={cardToEdit} 
+        open={isEditModalOpen} 
+        onOpenChange={setIsEditModalOpen} 
+      />
     </DashboardLayout>
   );
 }
