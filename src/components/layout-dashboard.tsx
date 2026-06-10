@@ -77,13 +77,10 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar z-[100] shadow-xl transition-all duration-300 pointer-events-auto">
-      <SidebarHeader className="h-16 flex items-center px-6 border-b border-white/10">
-        <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-primary">
-          <div className="w-8 h-8 flex items-center justify-center">
-            <img src="/CoupleDin.png" alt="CoupleDin" className="w-full h-full object-contain" />
-          </div>
-          <span className="group-data-[collapsible=icon]:hidden">CoupleDin</span>
-        </div>
+      <SidebarHeader className="h-16 flex items-center justify-center px-4 border-b border-white/10">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <img src="/coupledin.png" alt="Logo CoupleDin" className="h-8 w-auto object-contain" />
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
