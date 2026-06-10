@@ -15,12 +15,12 @@ export default defineConfig({
   nitro: {
     preset: 'vercel',
     externals: {
-      inline: ['tslib']
+      inline: ['tslib', /tslib/]
     },
     // Force Nitro to bundle tslib instead of leaving it as external
     rollupConfig: {
       external: (id: string) => {
-        if (id === 'tslib') return false;
+        if (id.includes('tslib')) return false;
         return undefined;
       }
     }
