@@ -1,4 +1,4 @@
-�import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";

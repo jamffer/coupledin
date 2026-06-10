@@ -1,4 +1,4 @@
-�import * as React from "react";
+import * as React from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

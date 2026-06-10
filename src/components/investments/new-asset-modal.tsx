@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/use-profile";
 import { Loader2 } from "lucide-react";
+import { TickerCombobox } from "@/components/investments/ticker-combobox";
 
 const assetSchema = z.object({
   asset_type: z.enum(['STOCK', 'FII', 'CRYPTO', 'FIXED_INCOME']),
@@ -50,6 +51,11 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
 
   const assetType = form.watch("asset_type");
   const fixedIncomeType = form.watch("fixed_income_type");
+
+  // Clear ticker when the user switches asset categories
+  useEffect(() => {
+    form.setValue("ticker", "");
+  }, [assetType, fixedIncomeType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mutation = useMutation({
     mutationFn: async (values: AssetFormValues) => {
@@ -199,7 +205,12 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
                        'Ticker / Símbolo'}
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder={assetType === 'CRYPTO' ? 'bitcoin' : assetType === 'FIXED_INCOME' ? (fixedIncomeType === 'PUBLIC' ? 'SELIC2029' : 'CDB Banco X') : 'PETR4'} className="apple-interactive rounded-xl" {...field} />
+                      <TickerCombobox
+                        assetType={assetType}
+                        fixedIncomeType={fixedIncomeType}
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
