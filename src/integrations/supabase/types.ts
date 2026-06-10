@@ -258,6 +258,10 @@ export type Database = {
     }
     Functions: {
       create_couple: { Args: { _name: string }; Returns: string }
+      get_active_transaction_months: {
+        Args: { _couple_id: string }
+        Returns: { year: number; month: number }[]
+      }
       get_my_couple_id: { Args: never; Returns: string }
       get_my_invite_code: { Args: never; Returns: string }
       join_couple_with_invite: {

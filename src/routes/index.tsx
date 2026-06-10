@@ -42,7 +42,8 @@ import {
   HelpCircle,
   AlertCircle,
   RefreshCcw,
-  Receipt
+  Receipt,
+  Loader2
 } from "lucide-react";
 
 import { 
@@ -66,6 +67,7 @@ import { ptBR } from "date-fns/locale";
 import { useSpaceOnboardingStore, OnboardingStep } from "@/store/useSpaceOnboardingStore";
 import { LoadingOverlay } from "@/components/onboarding/loading-overlay";
 import { EmptyState } from "@/components/empty-state";
+import { useActiveMonths } from "@/hooks/use-active-months";
 
 export const Route = createFileRoute("/")({
  head: () => ({
@@ -232,10 +234,11 @@ function Dashboard() {
     }
   }, [profile]);
 
-  // Gerar lista de meses para o dropdown (últimos 12 meses)
+  // Meses ativos vindos do banco (apenas meses com transações reais)
+  const { data: activeMonthsData, isLoading: isActiveMonthsLoading } = useActiveMonths();
   const availableMonths = useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => subMonths(startOfMonth(new Date()), i));
-  }, []);
+    return activeMonthsData?.map((m) => m.date) ?? [];
+  }, [activeMonthsData]);
 
   // Filtragem de transações
   const filteredTransactions = useMemo(() => {
@@ -676,23 +679,38 @@ function Dashboard() {
             {activeSheet !== 'credit' && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="rounded-full gap-2 text-xs font-bold border-muted-foreground/20 hover:bg-muted/50 active:scale-95 transition-all">
-                    Mês <ChevronDown size={14} />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="rounded-full gap-2 text-xs font-bold border-muted-foreground/20 hover:bg-muted/50 active:scale-95 transition-all"
+                    disabled={isActiveMonthsLoading}
+                  >
+                    {isActiveMonthsLoading ? (
+                      <><Loader2 size={14} className="animate-spin" /> Carregando...</>
+                    ) : (
+                      <>Mês <ChevronDown size={14} /></>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="apple-card w-48">
-                  {availableMonths.map((month) => (
-                    <DropdownMenuItem 
-                      key={month.toISOString()} 
-                      onClick={() => setSelectedMonth(month)}
-                      className={cn(
-                        "rounded-lg cursor-pointer",
-                        isSameMonth(month, selectedMonth) && "bg-primary/10 text-primary font-bold"
-                      )}
-                    >
-                      {format(month, "MMMM yyyy", { locale: ptBR })}
+                  {availableMonths.length === 0 ? (
+                    <DropdownMenuItem disabled className="rounded-lg text-muted-foreground italic text-xs justify-center">
+                      Nenhum período com registros
                     </DropdownMenuItem>
-                  ))}
+                  ) : (
+                    availableMonths.map((month) => (
+                      <DropdownMenuItem 
+                        key={month.toISOString()} 
+                        onClick={() => setSelectedMonth(month)}
+                        className={cn(
+                          "rounded-lg cursor-pointer",
+                          isSameMonth(month, selectedMonth) && "bg-primary/10 text-primary font-bold"
+                        )}
+                      >
+                        {format(month, "MMMM yyyy", { locale: ptBR })}
+                      </DropdownMenuItem>
+                    ))
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
