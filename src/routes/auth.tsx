@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
+�import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -30,15 +30,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
 
 const inviteCodeSchema = z.string()
-  .min(6, "O cÃ³digo deve ter pelo menos 6 caracteres")
-  .max(12, "O cÃ³digo Ã© muito longo")
-  .regex(/^[A-Z0-9]+$/, "O cÃ³digo deve conter apenas letras e nÃºmeros");
+  .min(6, "O código deve ter pelo menos 6 caracteres")
+  .max(12, "O código é muito longo")
+  .regex(/^[A-Z0-9]+$/, "O código deve conter apenas letras e números");
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Entrar | CoupleDin" },
-      { name: "description", content: "FaÃ§a login para gerenciar suas finanÃ§as a dois." },
+      { name: "description", content: "Faça login para gerenciar suas finanças a dois." },
     ],
   }),
   component: AuthPage,
@@ -155,9 +155,9 @@ function AuthPage() {
       });
       if (error) throw error;
       
-      // O perfil agora Ã© criado automaticamente pelo trigger do banco de dados (handle_new_user)
+      // O perfil agora é criado automaticamente pelo trigger do banco de dados (handle_new_user)
 
-      toast.success("Conta criada!", { description: "Continuando para a criaÃ§Ã£o do espaÃ§o." });
+      toast.success("Conta criada!", { description: "Continuando para a criação do espaço." });
       setStep(OnboardingStep.IDLE);
       setAuthStep("onboarding");
     } catch (error: any) {
@@ -172,7 +172,7 @@ function AuthPage() {
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     setStep(OnboardingStep.CREATING_SPACE);
-    const toastId = toast.loading("Criando seu espaÃ§o...", { description: "Preparando o ambiente..." });
+    const toastId = toast.loading("Criando seu espaço...", { description: "Preparando o ambiente..." });
     
     try {
       const createPromise = supabase
@@ -182,8 +182,8 @@ function AuthPage() {
 
       if (createError) throw createError;
 
-      setStep(OnboardingStep.VALIDATING, "Gerando cÃ³digo de convite...");
-      toast.loading("Gerando cÃ³digo de convite...", { id: toastId });
+      setStep(OnboardingStep.VALIDATING, "Gerando código de convite...");
+      toast.loading("Gerando código de convite...", { id: toastId });
       
       const { data: inviteCode, error: codeError } = await supabase
         .rpc("get_my_invite_code");
@@ -191,8 +191,8 @@ function AuthPage() {
       if (codeError) throw codeError;
 
       setGeneratedInviteCode(inviteCode || "");
-      setStep(OnboardingStep.SUCCESS, "EspaÃ§o criado!");
-      toast.success("EspaÃ§o criado!", { id: toastId, description: "Preparando o seu Dashboard..." });
+      setStep(OnboardingStep.SUCCESS, "Espaço criado!");
+      toast.success("Espaço criado!", { id: toastId, description: "Preparando o seu Dashboard..." });
       
       setTimeout(() => {
         navigate({ to: "/" });
@@ -201,11 +201,11 @@ function AuthPage() {
       console.error("Error creating space:", error);
       const isTimeout = error.name === 'AbortError';
       const errorMessage = isTimeout 
-        ? "A conexÃ£o expirou. Tente novamente em um local com sinal melhor."
-        : "NÃ£o conseguimos criar seu espaÃ§o. Verifique sua conexÃ£o e tente novamente.";
+        ? "A conexão expirou. Tente novamente em um local com sinal melhor."
+        : "Não conseguimos criar seu espaço. Verifique sua conexão e tente novamente.";
       
       setOnboardingError(errorMessage);
-      toast.error("Erro ao criar espaÃ§o", { id: toastId, description: error.message });
+      toast.error("Erro ao criar espaço", { id: toastId, description: error.message });
     } finally {
       clearTimeout(timeoutId);
     }
@@ -217,7 +217,7 @@ function AuthPage() {
     // Client-side validation with Zod
     const validation = inviteCodeSchema.safeParse(inviteCodeInput.toUpperCase());
     if (!validation.success) {
-      toast.error("CÃ³digo invÃ¡lido", { description: validation.error.issues[0].message });
+      toast.error("Código inválido", { description: validation.error.issues[0].message });
       return;
     }
 
@@ -225,7 +225,7 @@ function AuthPage() {
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     setStep(OnboardingStep.VALIDATING);
-    const toastId = toast.loading("Verificando convite...", { description: "Buscando o espaÃ§o do seu parceiro..." });
+    const toastId = toast.loading("Verificando convite...", { description: "Buscando o espaço do seu parceiro..." });
     
     try {
       const joinPromise = supabase
@@ -235,11 +235,11 @@ function AuthPage() {
 
       if (joinError) {
         // Map backend errors to friendly messages
-        let friendlyMessage = "Ocorreu um erro ao entrar no espaÃ§o.";
+        let friendlyMessage = "Ocorreu um erro ao entrar no espaço.";
         if (joinError.message.includes('INVITE_CODE_NOT_FOUND')) {
-          friendlyMessage = "CÃ³digo de convite nÃ£o encontrado ou jÃ¡ utilizado.";
+          friendlyMessage = "Código de convite não encontrado ou já utilizado.";
         } else if (joinError.message.includes('COUPLE_SPACE_FULL')) {
-          friendlyMessage = "Este espaÃ§o jÃ¡ estÃ¡ completo (limite de 2 pessoas).";
+          friendlyMessage = "Este espaço já está completo (limite de 2 pessoas).";
         }
         throw new Error(friendlyMessage);
       }
@@ -257,8 +257,8 @@ function AuthPage() {
       console.error("Error joining space:", error);
       const isTimeout = error.name === 'AbortError';
       const errorMessage = isTimeout 
-        ? "A conexÃ£o expirou (timeout de 10s). Verifique sua internet."
-        : (error.message || "NÃ£o conseguimos conectar a este espaÃ§o. Verifique o cÃ³digo e tente novamente.");
+        ? "A conexão expirou (timeout de 10s). Verifique sua internet."
+        : (error.message || "Não conseguimos conectar a este espaço. Verifique o código e tente novamente.");
       
       setOnboardingError(errorMessage);
       toast.error("Erro ao entrar", { id: toastId, description: error.message });
@@ -270,7 +270,7 @@ function AuthPage() {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedInviteCode);
     setCopied(true);
-    toast.success("CÃ³digo copiado!");
+    toast.success("Código copiado!");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -340,7 +340,7 @@ function AuthPage() {
                   <img src="/CoupleDin.png" alt="CoupleDin" className="w-full h-full object-contain drop-shadow-xl" />
                 </div>
                 <h1 className="text-3xl font-black tracking-tight text-foreground">CoupleDin</h1>
-                <p className="text-muted-foreground italic">Seu patrimÃ´nio, sonhos e planos em harmonia.</p>
+                <p className="text-muted-foreground italic">Seu patrimônio, sonhos e planos em harmonia.</p>
               </div>
 
               <Tabs defaultValue="login" className="w-full">
@@ -484,12 +484,12 @@ function AuthPage() {
             >
               <div className="text-center space-y-2">
                 <h1 className="text-2xl font-black tracking-tight text-foreground">
-                  {step === OnboardingStep.ERROR ? "Oops!" : `Quase lÃ¡, ${name}!`}
+                  {step === OnboardingStep.ERROR ? "Oops!" : `Quase lá, ${name}!`}
                 </h1>
                 <p className="text-muted-foreground">
                   {step === OnboardingStep.ERROR 
-                    ? "Algo nÃ£o saiu como o esperado." 
-                    : "Como vocÃª quer comeÃ§ar no CoupleDin?"}
+                    ? "Algo não saiu como o esperado." 
+                    : "Como você quer começar no CoupleDin?"}
                 </p>
               </div>
 
@@ -499,9 +499,9 @@ function AuthPage() {
                     <AlertCircle size={32} />
                   </div>
                   <div className="space-y-2">
-                    <CardTitle className="text-xl font-bold text-foreground">Falha na conexÃ£o</CardTitle>
+                    <CardTitle className="text-xl font-bold text-foreground">Falha na conexão</CardTitle>
                     <p className="text-muted-foreground text-sm leading-relaxed">
-                      {onboardingError || 'NÃ£o conseguimos conectar a este espaÃ§o. Verifique o cÃ³digo e tente novamente.'}
+                      {onboardingError || 'Não conseguimos conectar a este espaço. Verifique o código e tente novamente.'}
                     </p>
                   </div>
                   <Button 
@@ -519,7 +519,7 @@ function AuthPage() {
                       <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <Users size={24} />
                       </div>
-                      <CardTitle className="text-lg">Criar um novo espaÃ§o</CardTitle>
+                      <CardTitle className="text-lg">Criar um novo espaço</CardTitle>
                       <CardDescription>Crie um ambiente novo e convide seu parceiro(a).</CardDescription>
                     </CardHeader>
                   </Card>
@@ -529,8 +529,8 @@ function AuthPage() {
                       <div className="w-12 h-12 rounded-2xl bg-secondary text-secondary-foreground flex items-center justify-center mb-4">
                         <UserPlus size={24} />
                       </div>
-                      <CardTitle className="text-lg">Entrar em um espaÃ§o</CardTitle>
-                      <CardDescription>Insira o cÃ³digo enviado pelo seu parceiro(a).</CardDescription>
+                      <CardTitle className="text-lg">Entrar em um espaço</CardTitle>
+                      <CardDescription>Insira o código enviado pelo seu parceiro(a).</CardDescription>
                     </CardHeader>
                     <CardContent className="px-6 pb-6 pt-0 space-y-4">
                       <div className="flex gap-2">
@@ -553,8 +553,8 @@ function AuthPage() {
                     <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto mb-4 shadow-lg">
                       <Check size={32} />
                     </div>
-                    <CardTitle className="text-2xl font-bold">EspaÃ§o Criado!</CardTitle>
-                    <CardDescription>Compartilhe o cÃ³digo abaixo com seu parceiro.</CardDescription>
+                    <CardTitle className="text-2xl font-bold">Espaço Criado!</CardTitle>
+                    <CardDescription>Compartilhe o código abaixo com seu parceiro.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6 pb-8 px-8">
                     <div className="bg-white/10 dark:bg-black/20 p-6 rounded-3xl border border-white/20 text-center relative overflow-hidden group">
@@ -577,7 +577,7 @@ function AuthPage() {
                         <ArrowRight size={18} className="ml-2" />
                       </Button>
                       <p className="text-[10px] text-center text-muted-foreground italic">
-                        Seu parceiro aparecerÃ¡ automaticamente assim que entrar com este cÃ³digo.
+                        Seu parceiro aparecerá automaticamente assim que entrar com este código.
                       </p>
                     </div>
                   </CardContent>

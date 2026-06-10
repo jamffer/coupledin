@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+�import React, { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -79,8 +79,8 @@ import { formatCurrency } from "@/lib/utils";
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
     meta: [
-      { title: "LanÃ§amentos | CoupleDin" },
-      { name: "description", content: "Gerencie as transaÃ§Ãµes do casal." },
+      { title: "Lançamentos | CoupleDin" },
+      { name: "description", content: "Gerencie as transações do casal." },
     ],
   }),
   validateSearch: (search: Record<string, unknown>) => {
@@ -220,7 +220,7 @@ function TransactionsPage() {
     category: "Outros",
     responsible: "Jorge",
     division: "Conjunta 50/50",
-    type: "SaÃ­da",
+    type: "Saída",
     card_id: undefined
   });
 
@@ -247,7 +247,7 @@ function TransactionsPage() {
       }, 1500);
     },
     onError: (err: Error) => {
-      toast.error("NÃ£o foi possÃ­vel processar", { description: err.message });
+      toast.error("Não foi possível processar", { description: err.message });
     },
   });
 
@@ -290,7 +290,7 @@ function TransactionsPage() {
     const { error } = await supabase.from("transactions").insert(txData);
     
     if (error) {
-      toast.error("Erro ao salvar transaÃ§Ã£o", { description: error.message });
+      toast.error("Erro ao salvar transação", { description: error.message });
       return;
     }
 
@@ -299,12 +299,12 @@ function TransactionsPage() {
     setParsedData(null);
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
     queryClient.invalidateQueries({ queryKey: ["cards"] });
-    toast.success("TransaÃ§Ã£o adicionada!");
+    toast.success("Transação adicionada!");
   };
 
   const handleSaveManual = async () => {
     if (!formData.description || !formData.amount || !profile?.couple_id) {
-      toast.error("Preencha a descriÃ§Ã£o, o valor e certifique-se de estar conectado.");
+      toast.error("Preencha a descrição, o valor e certifique-se de estar conectado.");
       return;
     }
 
@@ -325,7 +325,7 @@ function TransactionsPage() {
       category: formData.category || "Outros",
       responsible: (formData.responsible as string) || "Jorge",
       division: (formData.division as string) || "Conjunta 50/50",
-      type: formData.type || "SaÃ­da",
+      type: formData.type || "Saída",
       user_id: user!.id,
       couple_id: coupleId,
       card_id: formData.card_id,
@@ -339,20 +339,20 @@ function TransactionsPage() {
         .eq("id", editingTx.id);
 
       if (error) {
-        toast.error("Erro ao atualizar transaÃ§Ã£o", { description: error.message });
+        toast.error("Erro ao atualizar transação", { description: error.message });
         return;
       }
-      toast.success("TransaÃ§Ã£o atualizada!");
+      toast.success("Transação atualizada!");
     } else {
       const { error } = await supabase
         .from("transactions")
         .insert(txData);
 
       if (error) {
-        toast.error("Erro ao adicionar transaÃ§Ã£o", { description: error.message });
+        toast.error("Erro ao adicionar transação", { description: error.message });
         return;
       }
-      toast.success("TransaÃ§Ã£o adicionada!");
+      toast.success("Transação adicionada!");
     }
     
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
@@ -371,7 +371,7 @@ function TransactionsPage() {
       category: tx.category,
       responsible: tx.responsible,
       division: tx.division,
-      type: tx.type === "Entrada" ? "Entrada" : (tx.amount < 0 ? "SaÃ­da" : "Entrada"),
+      type: tx.type === "Entrada" ? "Entrada" : (tx.amount < 0 ? "Saída" : "Entrada"),
       card_id: (tx as any).card_id
     });
     setIsManualModalOpen(true);
@@ -385,11 +385,11 @@ function TransactionsPage() {
         .eq("id", txToDelete);
 
       if (error) {
-        toast.error("Erro ao excluir transaÃ§Ã£o", { description: error.message });
+        toast.error("Erro ao excluir transação", { description: error.message });
         return;
       }
       
-      toast.error("TransaÃ§Ã£o excluÃ­da");
+      toast.error("Transação excluída");
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["cards"] });
       setIsDeleteModalOpen(false);
@@ -406,7 +406,7 @@ function TransactionsPage() {
       category: "Outros",
       responsible: "Jorge",
       division: "Conjunta 50/50",
-      type: "SaÃ­da",
+      type: "Saída",
       card_id: undefined
     });
     setIsManualModalOpen(true);
@@ -427,12 +427,12 @@ function TransactionsPage() {
               <div className="flex flex-col space-y-4">
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles size={20} className="animate-pulse" />
-                  <h3 className="text-lg font-bold">LanÃ§amento Inteligente</h3>
+                  <h3 className="text-lg font-bold">Lançamento Inteligente</h3>
                 </div>
                 
                 <div className="relative group">
                   <Textarea 
-                    placeholder="Descreva o gasto... Ex: Paguei 120 reais de gasolina hoje no cartÃ£o de crÃ©dito."
+                    placeholder="Descreva o gasto... Ex: Paguei 120 reais de gasolina hoje no cartão de crédito."
                     className="min-h-[120px] resize-none text-base p-4 border-muted focus:border-primary/50 transition-all rounded-2xl apple-interactive"
                     value={smartInput}
                     onChange={(e) => setSmartInput(e.target.value)}
@@ -483,7 +483,7 @@ function TransactionsPage() {
         {/* Section 2: Filters and Table */}
         <div className="space-y-4">
           <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold tracking-tight">HistÃ³rico</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Histórico</h2>
             
             <div className="flex flex-wrap items-center gap-2">
               <Select 
@@ -491,7 +491,7 @@ function TransactionsPage() {
                 onValueChange={(val) => setFilters({ ...filters, month: val })}
               >
                 <SelectTrigger className="w-[130px] rounded-full apple-interactive">
-                  <SelectValue placeholder="MÃªs" />
+                  <SelectValue placeholder="Mês" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="june">Junho</SelectItem>
@@ -525,8 +525,8 @@ function TransactionsPage() {
                 <SelectContent>
                   <SelectItem value="all-types">Todos Tipos</SelectItem>
                   <SelectItem value="Entrada">Entrada</SelectItem>
-                  <SelectItem value="DÃ©bito">DÃ©bito</SelectItem>
-                  <SelectItem value="CrÃ©dito">CrÃ©dito</SelectItem>
+                  <SelectItem value="Débito">Débito</SelectItem>
+                  <SelectItem value="Crédito">Crédito</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -535,7 +535,7 @@ function TransactionsPage() {
                 onValueChange={(val) => setFilters({ ...filters, responsible: val })}
               >
                 <SelectTrigger className="w-[130px] rounded-full apple-interactive">
-                  <SelectValue placeholder="ResponsÃ¡vel" />
+                  <SelectValue placeholder="Responsável" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="both">O Casal</SelectItem>
@@ -558,11 +558,11 @@ function TransactionsPage() {
                   <TableHeader className="bg-muted/30">
                     <TableRow className="border-none hover:bg-transparent">
                       <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 pl-8">Data</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5">DescriÃ§Ã£o</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5">Descrição</TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Categoria</TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-right">Valor</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">ResponsÃ¡vel</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">DivisÃ£o</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Responsável</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-5 text-center">Divisão</TableHead>
                       <TableHead className="w-[50px] pr-8"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -661,7 +661,7 @@ function TransactionsPage() {
                             </div>
                             <div>
                               <p className="text-sm font-bold">{tx.description}</p>
-                              <p className="text-[10px] text-muted-foreground">{tx.date} â€¢ {tx.type}</p>
+                              <p className="text-[10px] text-muted-foreground">{tx.date} ⬢ {tx.type}</p>
                             </div>
                           </div>
                           <div className="flex flex-col items-end">
@@ -719,9 +719,9 @@ function TransactionsPage() {
           ) : (
             <EmptyState 
               icon={Receipt}
-              title="Nenhuma transaÃ§Ã£o ainda"
+              title="Nenhuma transação ainda"
               description="Comece a registrar seus gastos para ter controle total."
-              actionLabel="Adicionar meu primeiro lanÃ§amento"
+              actionLabel="Adicionar meu primeiro lançamento"
               onAction={handleAddManualClick}
             />
           )}
@@ -732,14 +732,14 @@ function TransactionsPage() {
       <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
         <DialogContent className="apple-card sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">{editingTx ? "Editar LanÃ§amento" : "Novo LanÃ§amento"}</DialogTitle>
+            <DialogTitle className="text-xl font-bold">{editingTx ? "Editar Lançamento" : "Novo Lançamento"}</DialogTitle>
             <DialogDescription>
-              {editingTx ? "Altere as informaÃ§Ãµes da transaÃ§Ã£o." : "Insira os detalhes do gasto ou entrada manualmente."}
+              {editingTx ? "Altere as informações da transação." : "Insira os detalhes do gasto ou entrada manualmente."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="description" className="font-bold text-xs uppercase tracking-widest opacity-60">DescriÃ§Ã£o</Label>
+              <Label htmlFor="description" className="font-bold text-xs uppercase tracking-widest opacity-60">Descrição</Label>
               <Input 
                 id="description" 
                 className="rounded-xl" 
@@ -771,8 +771,8 @@ function TransactionsPage() {
                   </SelectTrigger>
                   <SelectContent className="apple-card">
                     <SelectItem value="Entrada">Entrada</SelectItem>
-                    <SelectItem value="SaÃ­da">SaÃ­da / DÃ©bito</SelectItem>
-                    <SelectItem value="CrÃ©dito">CrÃ©dito</SelectItem>
+                    <SelectItem value="Saída">Saída / Débito</SelectItem>
+                    <SelectItem value="Crédito">Crédito</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -803,22 +803,22 @@ function TransactionsPage() {
               </div>
             </div>
 
-            {formData.type === "CrÃ©dito" && (
+            {formData.type === "Crédito" && (
               <div className="grid gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                <Label htmlFor="card" className="font-bold text-xs uppercase tracking-widest opacity-60">CartÃ£o de CrÃ©dito</Label>
+                <Label htmlFor="card" className="font-bold text-xs uppercase tracking-widest opacity-60">Cartão de Crédito</Label>
                 <Select value={formData.card_id} onValueChange={(val) => setFormData({...formData, card_id: val})}>
                   <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="Selecione o cartÃ£o" />
+                    <SelectValue placeholder="Selecione o cartão" />
                   </SelectTrigger>
                   <SelectContent className="apple-card">
                     {cards.length > 0 ? (
                       cards.map((card: any) => (
                         <SelectItem key={card.id} value={card.id}>
-                          {card.name} (â€¢â€¢â€¢â€¢ {card.last_four})
+                          {card.name} (⬢⬢⬢⬢ {card.last_four})
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-cards" disabled>Nenhum cartÃ£o cadastrado</SelectItem>
+                      <SelectItem value="no-cards" disabled>Nenhum cartão cadastrado</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
@@ -826,7 +826,7 @@ function TransactionsPage() {
             )}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label className="font-bold text-xs uppercase tracking-widest opacity-60">ResponsÃ¡vel</Label>
+                <Label className="font-bold text-xs uppercase tracking-widest opacity-60">Responsável</Label>
                 <Select value={formData.responsible} onValueChange={(val) => setFormData({...formData, responsible: val})}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue />
@@ -838,7 +838,7 @@ function TransactionsPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label className="font-bold text-xs uppercase tracking-widest opacity-60">DivisÃ£o</Label>
+                <Label className="font-bold text-xs uppercase tracking-widest opacity-60">Divisão</Label>
                 <Select value={formData.division} onValueChange={(val) => setFormData({...formData, division: val})}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue />
@@ -854,7 +854,7 @@ function TransactionsPage() {
           </div>
           <DialogFooter>
             <Button variant="ghost" className="rounded-full" onClick={() => setIsManualModalOpen(false)}>Cancelar</Button>
-            <Button className="rounded-full px-8 shadow-lg shadow-primary/20" onClick={handleSaveManual}>Salvar LanÃ§amento</Button>
+            <Button className="rounded-full px-8 shadow-lg shadow-primary/20" onClick={handleSaveManual}>Salvar Lançamento</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -866,16 +866,16 @@ function TransactionsPage() {
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
               <Sparkles size={24} />
             </div>
-            <DialogTitle className="text-xl font-bold">LanÃ§amento Detectado!</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Lançamento Detectado!</DialogTitle>
             <DialogDescription>
-              Confirme os detalhes extraÃ­dos pela nossa inteligÃªncia artificial.
+              Confirme os detalhes extraídos pela nossa inteligência artificial.
             </DialogDescription>
           </DialogHeader>
           
           {parsedData && (
             <div className="space-y-4 py-4 bg-muted/30 p-6 rounded-3xl border border-muted-foreground/10">
               <div className="flex justify-between items-center">
-                <p className="text-sm font-medium text-muted-foreground">O que Ã©?</p>
+                <p className="text-sm font-medium text-muted-foreground">O que é?</p>
                 <p className="font-bold">{parsedData.description}</p>
               </div>
               <div className="flex justify-between items-center">
@@ -892,20 +892,20 @@ function TransactionsPage() {
                 <p className="text-sm font-medium text-muted-foreground">Categoria</p>
                 <Badge variant="outline" className="font-bold">{parsedData.category}</Badge>
               </div>
-              {parsedData.type === "CrÃ©dito" && (
+              {parsedData.type === "Crédito" && (
                 <div className="space-y-2 mt-2">
-                   <p className="text-sm font-medium text-muted-foreground">Vincular ao CartÃ£o</p>
+                   <p className="text-sm font-medium text-muted-foreground">Vincular ao Cartão</p>
                    <Select 
                      value={(formData as any).card_id} 
                      onValueChange={(val) => setFormData({...formData, card_id: val})}
                    >
                     <SelectTrigger className="rounded-xl">
-                      <SelectValue placeholder="Selecione o cartÃ£o" />
+                      <SelectValue placeholder="Selecione o cartão" />
                     </SelectTrigger>
                     <SelectContent className="apple-card">
                       {cards.map((card: any) => (
                         <SelectItem key={card.id} value={card.id}>
-                          {card.name} (â€¢â€¢â€¢â€¢ {card.last_four})
+                          {card.name} (⬢⬢⬢⬢ {card.last_four})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -926,9 +926,9 @@ function TransactionsPage() {
       <AlertDialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <AlertDialogContent className="apple-card rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir TransaÃ§Ã£o?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir Transação?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta aÃ§Ã£o nÃ£o pode ser desfeita. O valor serÃ¡ removido permanentemente dos registros do casal.
+              Esta ação não pode ser desfeita. O valor será removido permanentemente dos registros do casal.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

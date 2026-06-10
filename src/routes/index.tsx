@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+�import * as React from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +71,7 @@ export const Route = createFileRoute("/")({
  head: () => ({
    meta: [
      { title: "Dashboard | CoupleDin" },
-     { name: "description", content: "FinanÃ§as do casal em um sÃ³ lugar." },
+     { name: "description", content: "Finanças do casal em um só lugar." },
    ],
  }),
  validateSearch: (search: Record<string, unknown>) => {
@@ -125,7 +125,7 @@ function Dashboard() {
     [OnboardingStep.ERROR]: 0,
   }[step];
   
-  // Estados para os painÃ©is laterais baseados na URL
+  // Estados para os painéis laterais baseados na URL
   const activeSheet = (search.sheet as 'balance' | 'income' | 'expenses' | 'credit' | null) || null;
   const setActiveSheet = (sheet: string | null) => {
     navigate({
@@ -232,21 +232,21 @@ function Dashboard() {
     }
   }, [profile]);
 
-  // Gerar lista de meses para o dropdown (Ãºltimos 12 meses)
+  // Gerar lista de meses para o dropdown (últimos 12 meses)
   const availableMonths = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => subMonths(startOfMonth(new Date()), i));
   }, []);
 
-  // Filtragem de transaÃ§Ãµes
+  // Filtragem de transações
   const filteredTransactions = useMemo(() => {
     if (!activeSheet) return [];
     
     let baseTransactions = [...transactions];
     
-    // Para Faturas a Pagar (CrÃ©dito), nÃ£o filtra por mÃªs
+    // Para Faturas a Pagar (Crédito), não filtra por mês
     if (activeSheet === 'credit') {
       return baseTransactions
-        .filter(tx => tx.type === 'CrÃ©dito')
+        .filter(tx => tx.type === 'Crédito' || tx.type === 'CrÃ©dito')
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
 
@@ -254,10 +254,10 @@ function Dashboard() {
     if (activeSheet === 'income') {
       baseTransactions = baseTransactions.filter(tx => tx.type === 'Entrada');
     } else if (activeSheet === 'expenses') {
-      baseTransactions = baseTransactions.filter(tx => tx.type === 'DÃ©bito');
+      baseTransactions = baseTransactions.filter(tx => tx.type === 'Débito' || tx.type === 'Saída' || tx.type === 'expense');
     }
 
-    // Filtrar pelo mÃªs selecionado
+    // Filtrar pelo mês selecionado
     return baseTransactions
       .filter(tx => tx && tx.date && isSameMonth(new Date(tx.date), selectedMonth))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -269,8 +269,8 @@ function Dashboard() {
     
     const balance = transactions.reduce((acc, tx) => acc + (tx.amount || 0), 0);
     const income = currentMonthTxs.filter(tx => tx?.type === 'Entrada').reduce((acc, tx) => acc + (tx?.amount || 0), 0);
-    const expenses = currentMonthTxs.filter(tx => tx?.type === 'DÃ©bito' || tx?.type === 'CrÃ©dito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
-    const credit = transactions.filter(tx => tx?.type === 'CrÃ©dito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
+    const expenses = currentMonthTxs.filter(tx => tx?.type === 'Débito' || tx?.type === 'Saída' || tx?.type === 'Crédito' || tx?.type === 'expense').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
+    const credit = transactions.filter(tx => tx?.type === 'Crédito' || tx?.type === 'CrÃ©dito').reduce((acc, tx) => acc + Math.abs(tx?.amount || 0), 0);
 
     return { balance, income, expenses, credit };
   }, [transactions]);
@@ -281,7 +281,7 @@ function Dashboard() {
     return last6Months.map(month => {
       const monthTxs = transactions.filter(tx => tx && tx.date && isSameMonth(new Date(tx.date), month));
       const entradas = monthTxs.filter(tx => tx.type === 'Entrada').reduce((acc, tx) => acc + (tx.amount || 0), 0);
-      const saidas = monthTxs.filter(tx => tx.type === 'DÃ©bito' || tx.type === 'CrÃ©dito').reduce((acc, tx) => acc + Math.abs(tx.amount || 0), 0);
+      const saidas = monthTxs.filter(tx => tx.type === 'Débito' || tx.type === 'Saída' || tx.type === 'Crédito' || tx.type === 'expense').reduce((acc, tx) => acc + Math.abs(tx.amount || 0), 0);
       
       return {
         name: format(month, "MMM", { locale: ptBR }),
@@ -352,8 +352,8 @@ function Dashboard() {
                 <AlertCircle size={32} />
               </div>
               <div className="space-y-2">
-                <CardTitle className="text-xl font-bold">NÃ£o foi possÃ­vel carregar os dados</CardTitle>
-                <p className="text-muted-foreground">Tivemos um problema de conexÃ£o ou o espaÃ§o nÃ£o foi encontrado.</p>
+                <CardTitle className="text-xl font-bold">Não foi possível carregar os dados</CardTitle>
+                <p className="text-muted-foreground">Tivemos um problema de conexão ou o espaço não foi encontrado.</p>
               </div>
               <Button 
                 onClick={() => profile?.couple_id && fetchTransactions(profile.couple_id)} 
@@ -459,7 +459,7 @@ function Dashboard() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-white/80 bg-white/10 px-2 py-0.5 rounded-full">Mensal</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white/80">Entradas do MÃªs</p>
+                  <p className="text-sm font-medium text-white/80">Entradas do Mês</p>
                   <h3 className="text-2xl font-bold tracking-tight text-white">{formatCurrency(totals.income)}</h3>
                 </div>
               </CardContent>
@@ -476,10 +476,10 @@ function Dashboard() {
                   <div className="p-2 bg-white/20 rounded-lg text-white">
                     <ArrowDownRight size={20} />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/80 bg-white/10 px-2 py-0.5 rounded-full">DÃ©bito</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/80 bg-white/10 px-2 py-0.5 rounded-full">Débito</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white/80">SaÃ­das (DÃ©bito)</p>
+                  <p className="text-sm font-medium text-white/80">Saídas (Débito)</p>
                   <h3 className="text-2xl font-bold tracking-tight text-white">{formatCurrency(totals.expenses)}</h3>
                 </div>
               </CardContent>
@@ -503,8 +503,8 @@ function Dashboard() {
                     <h3 className="text-2xl font-bold tracking-tight text-foreground">{formatCurrency(totals.credit)}</h3>
                   </div>
                   <div className="pt-2 border-t border-border flex justify-between items-center">
-                    <span className="text-[10px] font-medium text-muted-foreground uppercase">Tudo de crÃ©dito</span>
-                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">HistÃ³rico Total</span>
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase">Tudo de crédito</span>
+                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">Histórico Total</span>
                   </div>
                 </div>
               </CardContent>
@@ -512,15 +512,15 @@ function Dashboard() {
           </motion.div>
         </div>
 
-        {/* SeÃ§Ãµes de GrÃ¡fico e TransaÃ§Ãµes */}
+        {/* Seções de Gráfico e Transações */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* GrÃ¡fico */}
+          {/* Gráfico */}
           <motion.div variants={itemVariants} className="lg:col-span-2">
             <Card className="apple-card overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div>
                   <CardTitle className="text-lg font-bold">Fluxo de Caixa</CardTitle>
-                  <p className="text-xs text-muted-foreground">VisÃ£o geral dos Ãºltimos 6 meses</p>
+                  <p className="text-xs text-muted-foreground">Visão geral dos últimos 6 meses</p>
                 </div>
               </CardHeader>
               <CardContent className="h-[350px] w-full pt-4 relative">
@@ -564,7 +564,7 @@ function Dashboard() {
                         fill="url(#colorEntradas)" 
                       />
                       <Area 
-                        name="SaÃ­das"
+                        name="Saídas"
                         type="monotone" 
                         dataKey="saidas" 
                         stroke="#f43f5e" 
@@ -580,7 +580,7 @@ function Dashboard() {
                       <TrendingUp size={32} className="text-muted-foreground opacity-20" />
                     </div>
                     <p className="text-sm text-muted-foreground max-w-[200px]">
-                      Dados insuficientes para gerar o grÃ¡fico. Comece a registrar suas finanÃ§as para ver sua evoluÃ§Ã£o.
+                      Dados insuficientes para gerar o gráfico. Comece a registrar suas finanças para ver sua evolução.
                     </p>
                   </div>
                 )}
@@ -589,13 +589,13 @@ function Dashboard() {
           </motion.div>
 
 
-          {/* TransaÃ§Ãµes Recentes */}
+          {/* Transações Recentes */}
           <motion.div variants={itemVariants} id="recent-transactions">
             <Card className="apple-card apple-card-hover">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-bold">TransaÃ§Ãµes</CardTitle>
-                  <p className="text-xs text-muted-foreground">Ãšltimos registros do casal</p>
+                  <CardTitle className="text-lg font-bold">Transações</CardTitle>
+                  <p className="text-xs text-muted-foreground">�altimos registros do casal</p>
                 </div>
               </CardHeader>
               <CardContent className="pt-2">
@@ -638,9 +638,9 @@ function Dashboard() {
                   ) : (
                     <EmptyState 
                       icon={Receipt}
-                      title="Nenhuma transaÃ§Ã£o ainda"
+                      title="Nenhuma transação ainda"
                       description="Comece a registrar seus gastos para ter controle total."
-                      actionLabel="Adicionar meu primeiro lanÃ§amento"
+                      actionLabel="Adicionar meu primeiro lançamento"
                       onAction={() => navigate({ to: "/transacoes" })}
                       className="py-8 bg-transparent border-none"
                     />
@@ -663,13 +663,13 @@ function Dashboard() {
               <SheetTitle className="text-xl font-black flex items-center gap-2">
                 {activeSheet === 'balance' && <><Wallet className="text-blue-500" /> Saldo Total</>}
                 {activeSheet === 'income' && <><ArrowUpRight className="text-emerald-500" /> Entradas</>}
-                {activeSheet === 'expenses' && <><ArrowDownRight className="text-rose-500" /> SaÃ­das (DÃ©bito)</>}
+                {activeSheet === 'expenses' && <><ArrowDownRight className="text-rose-500" /> Saídas (Débito)</>}
                 {activeSheet === 'credit' && <><CreditCard className="text-amber-500" /> Faturas a Pagar</>}
               </SheetTitle>
               <SheetDescription>
                 {activeSheet === 'credit' 
-                  ? 'Todas as faturas de crÃ©dito em aberto' 
-                  : `TransaÃ§Ãµes de ${format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })}`}
+                  ? 'Todas as faturas de crédito em aberto' 
+                  : `Transações de ${format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })}`}
               </SheetDescription>
             </SheetHeader>
             
@@ -677,7 +677,7 @@ function Dashboard() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="rounded-full gap-2 text-xs font-bold border-muted-foreground/20 hover:bg-muted/50 active:scale-95 transition-all">
-                    MÃªs <ChevronDown size={14} />
+                    Mês <ChevronDown size={14} />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="apple-card w-48">
@@ -708,14 +708,14 @@ function Dashboard() {
                 <div className="p-6 bg-muted rounded-full">
                   <Clock size={40} />
                 </div>
-                <p className="text-sm font-medium">Nenhuma transaÃ§Ã£o encontrada</p>
+                <p className="text-sm font-medium">Nenhuma transação encontrada</p>
               </div>
             )}
           </div>
 
           <div className="p-6 border-t bg-muted/20">
             <div className="flex justify-between items-center mb-4">
-              <p className="text-sm font-bold text-muted-foreground uppercase">Resumo do PerÃ­odo</p>
+              <p className="text-sm font-bold text-muted-foreground uppercase">Resumo do Período</p>
               <p className="text-lg font-black">
                 {formatCurrency(filteredTransactions.reduce((acc, tx) => acc + (tx.amount || 0), 0))}
               </p>
@@ -731,8 +731,8 @@ function Dashboard() {
       <Dialog open={!!selectedTx} onOpenChange={(open: boolean) => !open && setSelectedTx(null)}>
         <DialogContent className="apple-card dark:bg-[#1A1A1A] border-border/40">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Detalhes da TransaÃ§Ã£o</DialogTitle>
-            <DialogDescription className="sr-only">VisualizaÃ§Ã£o detalhada do gasto selecionado</DialogDescription>
+            <DialogTitle className="text-xl font-bold">Detalhes da Transação</DialogTitle>
+            <DialogDescription className="sr-only">Visualização detalhada do gasto selecionado</DialogDescription>
           </DialogHeader>
           {selectedTx && (
             <div className="space-y-6 py-4">
@@ -756,7 +756,7 @@ function Dashboard() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="apple-interactive p-4 dark:bg-black/20">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">ResponsÃ¡vel</p>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Responsável</p>
                   <div className="flex items-center gap-2">
                     <img src={selectedTx.profiles?.avatar_url || userAvatars[selectedTx.responsible as keyof typeof userAvatars]} alt={selectedTx.profiles?.display_name || selectedTx.responsible} className="w-6 h-6 rounded-full" />
                     <p className="font-bold">{selectedTx.profiles?.display_name || selectedTx.responsible}</p>

@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+�import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
     meta: [
-      { title: "ConfiguraÃ§Ãµes | CoupleDin" },
+      { title: "Configurações | CoupleDin" },
       { name: "description", content: "Gerencie as regras financeiras e o perfil do casal." },
     ],
   }),
@@ -82,7 +82,7 @@ function ConfiguracoesPage() {
     if (inviteCode) {
       navigator.clipboard.writeText(inviteCode);
       setCopied(true);
-      toast.success("CÃ³digo copiado para a Ã¡rea de transferÃªncia!");
+      toast.success("Código copiado para a área de transferência!");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -126,7 +126,7 @@ function ConfiguracoesPage() {
         className="space-y-8 pb-10"
       >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">ConfiguraÃ§Ãµes</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
           <p className="text-muted-foreground italic">Controle total sobre as regras financeiras do casal.</p>
         </div>
 
@@ -161,13 +161,13 @@ function ConfiguracoesPage() {
 
                 <div className="flex-1 text-center md:text-left space-y-2">
                   <h2 className="text-2xl font-bold">
-                    {profile?.display_name || "VocÃª"}
+                    {profile?.display_name || "Você"}
                     {partnerProfile?.display_name ? ` & ${partnerProfile.display_name}` : ""}
                   </h2>
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5 bg-muted dark:bg-muted/10 px-3 py-1 rounded-full">
                       <Calendar size={14} />
-                      InÃ­cio: {profile?.created_at ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(profile.created_at)) : '...'}
+                      Início: {profile?.created_at ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(profile.created_at)) : '...'}
                     </div>
                     {partnerProfile ? (
                       <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full font-medium">
@@ -190,7 +190,7 @@ function ConfiguracoesPage() {
                   </Button>
                   {inviteCode && (
                     <div className="text-center md:text-left">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">CÃ³digo: <span className="text-primary font-mono">{inviteCode}</span></p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Código: <span className="text-primary font-mono">{inviteCode}</span></p>
                     </div>
                   )}
                 </div>
@@ -207,16 +207,16 @@ function ConfiguracoesPage() {
                 <div className="space-y-1 text-center md:text-left">
                   <h3 className="text-lg font-bold flex items-center gap-2 justify-center md:justify-start">
                     <UserPlus size={20} className="text-primary" />
-                    CÃ³digo de Convite do Casal
+                    Código de Convite do Casal
                   </h3>
                   <p className="text-sm text-muted-foreground italic">
-                    Compartilhe este cÃ³digo para conectar seu parceiro(a) ao seu espaÃ§o.
+                    Compartilhe este código para conectar seu parceiro(a) ao seu espaço.
                   </p>
                 </div>
                 
                 <div className="flex items-center gap-3 bg-white dark:bg-black/40 p-2 pl-6 rounded-2xl border border-primary/20 shadow-inner group">
                   <span className="text-2xl font-black font-mono tracking-widest text-primary uppercase">
-                    {inviteCode || "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"}
+                    {inviteCode || "⬢⬢⬢⬢⬢⬢⬢⬢"}
                   </span>
                   <Button 
                     variant="ghost" 
@@ -236,7 +236,7 @@ function ConfiguracoesPage() {
           </Card>
         </motion.div>
 
-        {/* Section 2: Regras de DivisÃ£o */}
+        {/* Section 2: Regras de Divisão */}
         <motion.div variants={itemVariants}>
           <Card className="apple-card overflow-hidden">
             <CardHeader className="border-b border-border/40 pb-6">
@@ -244,9 +244,9 @@ function ConfiguracoesPage() {
                 <div className="p-2 bg-primary/10 rounded-lg text-primary">
                   <Scale size={20} />
                 </div>
-                <CardTitle>Regras de DivisÃ£o de Despesas</CardTitle>
+                <CardTitle>Regras de Divisão de Despesas</CardTitle>
               </div>
-              <CardDescription>Defina como as despesas marcadas como "Conjuntas" serÃ£o divididas.</CardDescription>
+              <CardDescription>Defina como as despesas marcadas como "Conjuntas" serão divididas.</CardDescription>
             </CardHeader>
             <CardContent className="p-8 space-y-8">
               <RadioGroup 
@@ -267,7 +267,7 @@ function ConfiguracoesPage() {
                       <Scale size={24} className={cn(divisionModel === "fixed" ? "text-primary" : "text-muted-foreground")} />
                     </div>
                     <div className="text-center space-y-1">
-                      <p className="font-bold">DivisÃ£o 50/50</p>
+                      <p className="font-bold">Divisão 50/50</p>
                       <p className="text-xs text-muted-foreground leading-relaxed">Cada um paga metade exata das contas, independente da renda.</p>
                     </div>
                   </Label>
@@ -286,8 +286,8 @@ function ConfiguracoesPage() {
                       <PiggyBank size={24} className={cn(divisionModel === "proportional" ? "text-primary" : "text-muted-foreground")} />
                     </div>
                     <div className="text-center space-y-1">
-                      <p className="font-bold">DivisÃ£o Proporcional</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">A divisÃ£o Ã© calculada com base na renda mensal de cada um.</p>
+                      <p className="font-bold">Divisão Proporcional</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">A divisão é calculada com base na renda mensal de cada um.</p>
                     </div>
                   </Label>
                 </div>
@@ -301,7 +301,7 @@ function ConfiguracoesPage() {
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="incomeA" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal de {profile?.display_name?.split(' ')[0] || "VocÃª"}</Label>
+                      <Label htmlFor="incomeA" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Renda Mensal de {profile?.display_name?.split(' ')[0] || "Você"}</Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
                         <Input 
@@ -331,13 +331,13 @@ function ConfiguracoesPage() {
                   <div className="bg-muted/30 rounded-2xl p-6 md:p-8 space-y-6">
                     <div className="flex justify-between items-end mb-2">
                       <div className="space-y-1">
-                        <p className="text-sm font-bold">Resultado do CÃ¡lculo</p>
-                        <p className="text-xs text-muted-foreground italic">{profile?.display_name?.split(' ')[0] || "VocÃª"} paga {percentageA}% / {partnerProfile?.display_name?.split(' ')[0] || "Parceiro(a)"} paga {percentageB}%</p>
+                        <p className="text-sm font-bold">Resultado do Cálculo</p>
+                        <p className="text-xs text-muted-foreground italic">{profile?.display_name?.split(' ')[0] || "Você"} paga {percentageA}% / {partnerProfile?.display_name?.split(' ')[0] || "Parceiro(a)"} paga {percentageB}%</p>
                       </div>
                       <div className="flex gap-4">
                         <div className="flex items-center gap-1.5">
                           <div className="w-3 h-3 rounded-full bg-primary" />
-                          <span className="text-[10px] font-bold uppercase text-muted-foreground">{profile?.display_name?.split(' ')[0] || "VocÃª"}</span>
+                          <span className="text-[10px] font-bold uppercase text-muted-foreground">{profile?.display_name?.split(' ')[0] || "Você"}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-3 h-3 rounded-full bg-rose-400" />
@@ -362,7 +362,7 @@ function ConfiguracoesPage() {
                     <div className="flex items-start gap-3 bg-muted dark:bg-card p-4 rounded-xl border-border">
                       <Info size={16} className="text-primary mt-0.5 shrink-0" />
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Este percentual serÃ¡ aplicado automaticamente em todas as transaÃ§Ãµes marcadas como <span className="font-bold text-foreground">"DivisÃ£o Proporcional"</span> na tela de lanÃ§amentos.
+                        Este percentual será aplicado automaticamente em todas as transações marcadas como <span className="font-bold text-foreground">"Divisão Proporcional"</span> na tela de lançamentos.
                       </p>
                     </div>
                   </div>
@@ -372,7 +372,7 @@ function ConfiguracoesPage() {
           </Card>
         </motion.div>
 
-        {/* Section 3: ConexÃµes e ExportaÃ§Ã£o */}
+        {/* Section 3: Conexões e Exportação */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <motion.div variants={itemVariants}>
             <Card className="apple-card h-full">
@@ -381,27 +381,27 @@ function ConfiguracoesPage() {
                   <div className="p-2 bg-primary/10 rounded-lg text-primary">
                     <Bell size={20} />
                   </div>
-                  <CardTitle>PreferÃªncias e Alertas</CardTitle>
+                  <CardTitle>Preferências e Alertas</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">NotificaÃ§Ãµes de Fatura</p>
+                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Notificações de Fatura</p>
                     <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Lembrar dias antes do vencimento.</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
                 <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Alertas de OrÃ§amento</p>
+                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Alertas de Orçamento</p>
                     <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Avisar quando passar de 80% do limite.</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
                 <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">RelatÃ³rio Semanal</p>
+                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Relatório Semanal</p>
                     <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Resumo por e-mail toda segunda-feira.</p>
                   </div>
                   <Switch />
@@ -417,7 +417,7 @@ function ConfiguracoesPage() {
                   <div className="p-2 bg-primary/10 rounded-lg text-primary">
                     <Download size={20} />
                   </div>
-                  <CardTitle>Dados e SeguranÃ§a</CardTitle>
+                  <CardTitle>Dados e Segurança</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -426,7 +426,7 @@ function ConfiguracoesPage() {
                     <Download size={18} className="text-muted-foreground group-hover:text-primary" />
                     <div className="text-left">
                       <p className="text-sm font-bold">Exportar Dados (CSV)</p>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">HistÃ³rico completo</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Histórico completo</p>
                     </div>
                   </div>
                   <ChevronRight size={16} className="text-muted-foreground" />
@@ -437,7 +437,7 @@ function ConfiguracoesPage() {
                     <Settings2 size={18} className="text-muted-foreground group-hover:text-primary" />
                     <div className="text-left">
                       <p className="text-sm font-bold">Privacidade da Conta</p>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">GestÃ£o de acessos</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Gestão de acessos</p>
                     </div>
                   </div>
                   <ChevronRight size={16} className="text-muted-foreground" />
@@ -458,7 +458,7 @@ function ConfiguracoesPage() {
             <DialogHeader>
               <DialogTitle>Convidar Parceiro(a)</DialogTitle>
               <DialogDescription>
-                Compartilhe o cÃ³digo abaixo com seu parceiro para que ele(a) possa se conectar ao seu espaÃ§o.
+                Compartilhe o código abaixo com seu parceiro para que ele(a) possa se conectar ao seu espaço.
               </DialogDescription>
             </DialogHeader>
             <div className="py-8 text-center">
@@ -472,7 +472,7 @@ function ConfiguracoesPage() {
                 onClick={handleCopyCode}
               >
                 {copied ? <Check size={20} /> : <ClipboardCopy size={20} />}
-                {copied ? "Copiado!" : "Copiar CÃ³digo"}
+                {copied ? "Copiado!" : "Copiar Código"}
               </Button>
             </div>
           </DialogContent>
