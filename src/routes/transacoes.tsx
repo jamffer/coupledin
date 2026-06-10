@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,7 +21,8 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Receipt
+  Receipt,
+  SearchX
 } from "lucide-react";
 import { 
   Select, 
@@ -68,7 +69,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { parseTransactionFromText, type ParsedTransaction } from "@/lib/transactions.functions";
 import { useFinanceStore, CATEGORY_ICONS, DIVISION_ICONS, type Transaction } from "@/hooks/use-finance-store";
@@ -412,6 +413,16 @@ function TransactionsPage() {
     setIsManualModalOpen(true);
   };
 
+  const filteredTransactions = useMemo(() => {
+    if (!transactions) return [];
+    return transactions.filter(t => {
+      const matchCategory = !filters.category || filters.category === "all-cats" || t.category === filters.category;
+      const matchType = !filters.type || filters.type === "all-types" || t.type === filters.type;
+      const matchResponsible = !filters.responsible || filters.responsible === "both" || t.responsible === filters.responsible;
+      return matchCategory && matchType && matchResponsible;
+    });
+  }, [transactions, filters]);
+
   return (
     <DashboardLayout>
       <motion.div 
@@ -550,7 +561,25 @@ function TransactionsPage() {
             </div>
           </motion.div>
 
-          {transactions.length > 0 ? (
+          {transactions.length === 0 ? (
+            <EmptyState 
+              icon={Receipt}
+              title="Nenhuma transação ainda"
+              description="Comece a registrar seus gastos para ter controle total."
+              actionLabel="Adicionar meu primeiro lançamento"
+              onAction={handleAddManualClick}
+            />
+          ) : filteredTransactions.length === 0 ? (
+            <motion.div variants={itemVariants}>
+              <EmptyState 
+                icon={SearchX}
+                title="Nenhuma transação encontrada"
+                description={`Não encontramos lançamentos com os filtros selecionados.`}
+                actionLabel="Limpar Filtros"
+                onAction={() => setFilters({ month: "june", category: "all-cats", type: "all-types", responsible: "both" })}
+              />
+            </motion.div>
+          ) : (
             <motion.div variants={itemVariants}>
               {/* Desktop Table */}
               <div className="hidden md:block apple-card overflow-hidden">
@@ -567,14 +596,23 @@ function TransactionsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {transactions.map((tx) => {
+                    <AnimatePresence initial={false}>
+                    {filteredTransactions.map((tx) => {
                       const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                       const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
                       const avatarUrl = tx.profiles?.avatar_url || userAvatars[tx.responsible as keyof typeof userAvatars];
                       const responsibleName = tx.profiles?.display_name || tx.responsible;
 
                       return (
-                        <TableRow key={tx.id} className="group border-b border-muted/20 hover:bg-accent/30 transition-colors">
+                        <motion.tr 
+                          key={tx.id}
+                          layout
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="group border-b border-muted/20 hover:bg-accent/30 transition-colors"
+                        >
                           <TableCell className="py-5 pl-8 text-sm font-medium text-muted-foreground">{tx.date}</TableCell>
                           <TableCell className="py-5">
                             <p className="font-bold text-foreground">{tx.description}</p>
@@ -636,24 +674,34 @@ function TransactionsPage() {
                               </DropdownMenu>
                             )}
                           </TableCell>
-                        </TableRow>
+                        </motion.tr>
                       );
                     })}
+                    </AnimatePresence>
                   </TableBody>
                 </Table>
               </div>
 
               {/* Mobile View */}
               <div className="md:hidden space-y-4">
-                {transactions.map((tx) => {
+                <AnimatePresence initial={false}>
+                {filteredTransactions.map((tx) => {
                   const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                   const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
                   const avatarUrl = tx.profiles?.avatar_url || userAvatars[tx.responsible as keyof typeof userAvatars];
                   const responsibleName = tx.profiles?.display_name || tx.responsible;
                   
                   return (
-                    <Card key={tx.id} className="apple-card apple-card-hover overflow-hidden group">
-                      <CardContent className="p-4">
+                    <motion.div
+                      key={tx.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Card className="apple-card apple-card-hover overflow-hidden group">
+                        <CardContent className="p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
                             <div className="p-2 bg-muted rounded-xl text-muted-foreground">
@@ -711,19 +759,13 @@ function TransactionsPage() {
                           </div>
                         </div>
                       </CardContent>
-                    </Card>
+                      </Card>
+                    </motion.div>
                   );
                 })}
+                </AnimatePresence>
               </div>
             </motion.div>
-          ) : (
-            <EmptyState 
-              icon={Receipt}
-              title="Nenhuma transação ainda"
-              description="Comece a registrar seus gastos para ter controle total."
-              actionLabel="Adicionar meu primeiro lançamento"
-              onAction={handleAddManualClick}
-            />
           )}
         </div>
       </motion.div>
