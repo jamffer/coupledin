@@ -11,14 +11,14 @@ export function Logo({ className, ...props }: LogoProps) {
         alt="CoupleDin Logo"
         fetchPriority="high"
         loading="eager"
-        className="w-full h-full object-contain dark:hidden"
+        className="h-full w-auto object-contain dark:hidden"
       />
       <img
         src="/logo-coupledin-white.png"
         alt="CoupleDin Logo"
         fetchPriority="high"
         loading="eager"
-        className="w-full h-full object-contain hidden dark:block"
+        className="h-full w-auto object-contain hidden dark:block"
       />
     </div>
   );
