@@ -89,8 +89,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@CoupleDin" },
       { name: "twitter:title", content: "CoupleDin" },
       { name: "twitter:description", content: "CoupleDin is a responsive web app for couples to manage shared finances." },
-      { property: "og:image", content: "/CoupleDin.png" },
-      { name: "twitter:image", content: "/CoupleDin.png" },
+      { property: "og:image", content: "/logo-coupledin.png" },
+      { name: "twitter:image", content: "/logo-coupledin.png" },
     ],
     links: [
       {

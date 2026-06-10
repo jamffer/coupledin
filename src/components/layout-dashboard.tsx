@@ -79,7 +79,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar z-[100] shadow-xl transition-all duration-300 pointer-events-auto">
       <SidebarHeader className="h-16 flex items-center justify-center px-4 border-b border-white/10">
         <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-          <img src="/coupledin.png" alt="Logo CoupleDin" className="h-8 w-auto object-contain" />
+          <img src="/logo-coupledin.png" alt="Logo CoupleDin" className="h-10 w-auto object-contain" />
         </Link>
       </SidebarHeader>
       <SidebarContent>

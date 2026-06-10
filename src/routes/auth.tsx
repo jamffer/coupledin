@@ -335,12 +335,22 @@ function AuthPage() {
               exit={{ opacity: 0, x: 20 }}
               className="space-y-8"
             >
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-20 h-20 mb-4">
-                  <img src="/CoupleDin.png" alt="CoupleDin" className="w-full h-full object-contain drop-shadow-xl" />
-                </div>
-                <h1 className="text-3xl font-black tracking-tight text-foreground">CoupleDin</h1>
-                <p className="text-muted-foreground italic">Seu patrimônio, sonhos e planos em harmonia.</p>
+              <div className="text-center space-y-3">
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="flex items-center justify-center"
+                >
+                  <div className="h-14 w-auto min-w-[140px]">
+                    <img
+                      src="/logo-coupledin.png"
+                      alt="Logo CoupleDin"
+                      className="h-full w-auto object-contain mx-auto"
+                    />
+                  </div>
+                </motion.div>
+                <p className="text-muted-foreground italic text-sm">Seu patrimônio, sonhos e planos em harmonia.</p>
               </div>
 
               <Tabs defaultValue="login" className="w-full">
