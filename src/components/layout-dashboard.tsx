@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Logo } from "@/components/ui/logo";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   LayoutDashboard, 
@@ -79,7 +80,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar z-[100] shadow-xl transition-all duration-300 pointer-events-auto">
       <SidebarHeader className="h-16 flex items-center justify-start px-6 border-b border-white/10">
         <Link to="/" className="flex items-center gap-2 hover:opacity-70 transition-opacity duration-200">
-          <img src="/logo-coupledin.png" alt="Logo CoupleDin" className="h-8 w-auto object-contain" />
+          <Logo className="h-8 w-auto" />
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -269,7 +270,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden" />
                 <Link to="/" className="md:hidden flex items-center hover:opacity-70 transition-opacity duration-200 shrink-0">
-                  <img src="/logo-coupledin.png" alt="Logo CoupleDin" className="h-7 w-auto object-contain" />
+                  <Logo className="h-7 w-auto" />
                 </Link>
                 <div className="hidden sm:block">
                   <h1 className="text-lg font-bold text-foreground truncate">

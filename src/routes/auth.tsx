@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Logo } from "@/components/ui/logo";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -342,13 +343,7 @@ function AuthPage() {
                   transition={{ duration: 0.6, ease: "easeOut" }}
                   className="flex items-center justify-center"
                 >
-                  <div className="h-14 w-auto min-w-[140px]">
-                    <img
-                      src="/logo-coupledin.png"
-                      alt="Logo CoupleDin"
-                      className="h-full w-auto object-contain mx-auto"
-                    />
-                  </div>
+                  <Logo className="h-12 w-auto mb-8 min-w-[140px]" />
                 </motion.div>
                 <p className="text-muted-foreground italic text-sm">Seu patrimônio, sonhos e planos em harmonia.</p>
               </div>

@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCcw } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Logo } from '@/components/ui/logo';
 
 interface LoadingOverlayProps {
   isVisible: boolean;
@@ -59,9 +59,9 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible, messa
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ repeat: Infinity, duration: 2 }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 text-primary mb-4"
+              className="inline-flex items-center justify-center w-full mb-4"
             >
-              <RefreshCcw size={40} className="animate-spin" />
+              <Logo className="h-10 w-auto animate-pulse" />
             </motion.div>
             <div className="space-y-2">
               <h2 className="text-xl font-bold tracking-tight">{message}</h2>
