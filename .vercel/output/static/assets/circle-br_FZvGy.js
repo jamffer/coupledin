@@ -1,1 +1,0 @@
-import{c}from"./proxy-Cy2mg46K.js";const o=[["path",{d:"m9 18 6-6-6-6",key:"mthhwq"}]],t=c("chevron-right",o);const e=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}]],i=c("circle",e);export{t as C,i as a};
