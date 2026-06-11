@@ -5,7 +5,6 @@ import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Plus, 
   Target,
@@ -13,11 +12,13 @@ import {
 import { motion } from "framer-motion";
 import { cn, formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
-import { toast } from "sonner";
 import { useGoals, Goal } from "@/hooks/use-goals";
 import { NewGoalModal } from "@/components/investments/new-goal-modal";
 import { ContributeToGoalModal } from "@/components/investments/contribute-to-goal-modal";
 import { Skeleton } from "@/components/ui/skeleton";
+import confetti from "canvas-confetti";
+import { formatDistanceToNow, differenceInDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/metas")({
   head: () => ({
@@ -38,6 +39,114 @@ const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: { y: 0, opacity: 1 },
 };
+
+function GoalCard({ goal, onContribute }: { goal: Goal, onContribute: () => void }) {
+  const [hasCelebrated, setHasCelebrated] = useState(false);
+  const percentage = Math.min(100, Math.round(((goal?.saved_amount || 0) / (goal?.target_amount || 1)) * 100));
+  const isCompleted = percentage >= 100;
+
+  useEffect(() => {
+    if (isCompleted && !hasCelebrated) {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#10b981', '#fbbf24', '#3b82f6']
+      });
+      setHasCelebrated(true);
+    }
+  }, [isCompleted, hasCelebrated]);
+
+  let temporalMessage = null;
+  if (goal?.deadline) {
+    const deadlineDate = new Date(goal.deadline);
+    const daysLeft = differenceInDays(deadlineDate, new Date());
+    if (daysLeft < 0) {
+      temporalMessage = <span className="text-rose-300 font-semibold drop-shadow-md">Atrasada há {Math.abs(daysLeft)} dias</span>;
+    } else if (daysLeft === 0) {
+      temporalMessage = <span className="text-amber-300 font-semibold drop-shadow-md">Termina hoje!</span>;
+    } else {
+      temporalMessage = <span className="text-white/90 font-medium">Faltam {formatDistanceToNow(deadlineDate, { locale: ptBR })}</span>;
+    }
+  }
+
+  return (
+    <Card className="relative apple-card apple-card-hover group overflow-hidden border-none shadow-lg flex flex-col hover:scale-[1.02] transition-all duration-300 min-h-[220px]">
+      {/* Background Image or Gradient */}
+      <div 
+        className={cn(
+          "absolute inset-0 z-0",
+          !goal?.image_url && "bg-gradient-to-br from-blue-600 to-indigo-800 dark:from-slate-800 dark:to-slate-900"
+        )}
+        style={goal?.image_url ? {
+          backgroundImage: `url(${goal.image_url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        } : undefined}
+      />
+      
+      {/* Overlay - Glassmorphism */}
+      <div className={cn(
+        "absolute inset-0 z-10 transition-all duration-300",
+        goal?.image_url ? "bg-black/50 backdrop-blur-md group-hover:bg-black/40" : "bg-black/20"
+      )} />
+
+      <CardHeader className="relative z-20 pb-4">
+        <div className="flex justify-between items-start">
+          <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md shadow-sm text-white">
+            <Target size={24} />
+          </div>
+          {isCompleted && (
+            <div className="bg-emerald-500/80 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2 py-1 rounded-full shadow-sm">
+              Concluída
+            </div>
+          )}
+        </div>
+        <CardTitle className="mt-4 text-xl font-bold text-white drop-shadow-md">
+          {goal?.title}
+        </CardTitle>
+        <CardDescription className="flex flex-col gap-1 mt-1">
+          <div className="flex justify-between items-end">
+            <span className="font-bold text-2xl text-white drop-shadow-md">
+              {formatCurrency(goal?.saved_amount || 0)}
+            </span>
+            <span className="text-xs text-white/80 font-medium">
+              alvo: {formatCurrency(goal?.target_amount || 0)}
+            </span>
+          </div>
+          {temporalMessage && (
+            <div className="text-[10px] mt-1 bg-black/30 self-start px-2.5 py-1 rounded-full backdrop-blur-sm border border-white/10">
+              {temporalMessage}
+            </div>
+          )}
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent className="relative z-20 space-y-4 flex-1 flex flex-col justify-end pb-5">
+        <div className="space-y-2">
+          <Progress 
+            value={percentage} 
+            className={cn("h-2.5 bg-black/40 overflow-hidden", isCompleted ? "[&>div]:bg-emerald-400" : "[&>div]:bg-white")} 
+          />
+          <p className="text-[10px] text-right font-bold uppercase tracking-wider text-white/80 drop-shadow-sm">
+            {percentage}% concluído
+          </p>
+        </div>
+
+        <div className="flex items-center justify-end pt-2">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-9 rounded-full text-xs font-bold px-5 border-white/30 text-white bg-white/10 hover:bg-white/20 hover:text-white backdrop-blur-md transition-all shadow-sm"
+            onClick={onContribute}
+          >
+            Aportar
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function MetasPage() {
   const { user, loading: authLoading } = useAuth();
@@ -107,57 +216,8 @@ function MetasPage() {
           <section className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {goals.map((goal) => (
-                <motion.div key={goal.id} variants={itemVariants}>
-                  <Card className="apple-card apple-card-hover group overflow-hidden border-2 border-primary/5 dark:border-white/5 flex flex-col">
-                    {goal.image_url && (
-                      <div className="w-full h-32 relative overflow-hidden">
-                        <img 
-                          src={goal.image_url} 
-                          alt={goal.title} 
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      </div>
-                    )}
-                    <CardHeader className={`pb-4 ${goal.image_url ? '-mt-12 relative z-10' : ''}`}>
-                      <div className="flex justify-between items-start">
-                        <div className={`p-3 rounded-2xl ${goal.image_url ? 'bg-background/80 backdrop-blur-md shadow-sm' : 'bg-blue-500/10 text-blue-500'}`}>
-                          <Target size={24} className={goal.image_url ? 'text-blue-500' : ''} />
-                        </div>
-                        <Button variant="ghost" size="icon" className={`rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${goal.image_url ? 'bg-background/80 backdrop-blur-md hover:bg-background' : ''}`}>
-                          <Plus size={18} />
-                        </Button>
-                      </div>
-                      <CardTitle className={`mt-4 text-lg font-bold ${goal.image_url ? 'text-white drop-shadow-md' : ''}`}>{goal.title}</CardTitle>
-                      <CardDescription className="flex justify-between items-end mt-1">
-                        <span className={`font-bold text-lg ${goal.image_url ? 'text-white drop-shadow-md' : 'text-foreground dark:text-white'}`}>
-                          {formatCurrency(goal.saved_amount || 0)}
-                        </span>
-                        <span className={`text-xs ${goal.image_url ? 'text-white/80' : 'dark:text-white/60'}`}>
-                          alvo: {formatCurrency(goal.target_amount)}
-                        </span>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6 flex-1 flex flex-col justify-end">
-                      <div className="space-y-2">
-                        <Progress value={((goal.saved_amount || 0) / goal.target_amount) * 100} className="h-2" />
-                        <p className="text-[10px] text-right font-bold uppercase tracking-wider text-muted-foreground">
-                          {Math.round(((goal.saved_amount || 0) / goal.target_amount) * 100)}% concluído
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-end pt-2 border-t border-border/40">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="h-8 rounded-full text-xs font-bold px-4 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all"
-                          onClick={() => setContributeGoal(goal)}
-                        >
-                          Aportar
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                <motion.div key={goal?.id} variants={itemVariants}>
+                  <GoalCard goal={goal} onContribute={() => setContributeGoal(goal)} />
                 </motion.div>
               ))}
             </div>
