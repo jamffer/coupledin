@@ -3788,8 +3788,8 @@ const ptBR = {
 export {
   startOfMonth as a,
   parseISO as b,
-  addMonths as c,
-  setDate as d,
+  setDate as c,
+  addMonths as d,
   parse as e,
   format as f,
   isSameMonth as i,

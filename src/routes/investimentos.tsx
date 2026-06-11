@@ -297,13 +297,27 @@ function InvestimentosPage() {
           )}
         </div>
 
-        {isError && (
-          <div className="bg-rose-500/10 text-rose-500 p-4 rounded-xl border border-rose-500/20 font-medium">
-            Houve um erro de rede ao buscar a cotação externa dos investimentos.
+        {isError && hasInvestments && (
+          <div className="bg-rose-500/10 text-rose-500 p-4 rounded-xl border border-rose-500/20 font-medium flex items-center gap-3">
+            <Activity size={20} />
+            Houve um erro de rede ao atualizar as cotações. Mostrando dados em cache.
           </div>
         )}
 
-        {hasInvestments ? (
+        {isError && !hasInvestments ? (
+          <div className="bg-rose-500/10 text-rose-500 p-12 rounded-3xl border border-rose-500/20 flex flex-col items-center justify-center text-center gap-4 shadow-sm">
+            <div className="p-4 bg-rose-500/20 rounded-full">
+              <Activity size={32} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-2">Falha ao Carregar</h3>
+              <p className="text-sm opacity-80 max-w-md mx-auto">Não foi possível carregar seus investimentos no momento. Verifique sua conexão ou tente novamente.</p>
+            </div>
+            <Button onClick={() => refetch()} variant="outline" className="mt-4 border-rose-500/30 text-rose-500 hover:bg-rose-500/20">
+               <RefreshCw size={16} className="mr-2" /> Tentar Novamente
+            </Button>
+          </div>
+        ) : hasInvestments ? (
           <>
             {/* Resumo Patrimonial - Somente esses cards possuem glassmorphism nas cores vibrantes */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

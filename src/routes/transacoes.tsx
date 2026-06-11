@@ -512,8 +512,8 @@ function TransactionsPage() {
                     {filteredTransactions.map((tx) => {
                       const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                       const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                      const avatarUrl = tx.profiles?.avatar_url || userAvatars[tx.responsible as keyof typeof userAvatars];
-                      const responsibleName = tx.profiles?.display_name || tx.responsible;
+                      const avatarUrl = tx.profiles?.avatar_url || (tx.responsible ? userAvatars[tx.responsible as keyof typeof userAvatars] : undefined);
+                      const responsibleName = tx.profiles?.display_name || tx.responsible || "Desconhecido";
 
                       return (
                         <motion.tr 
@@ -544,7 +544,7 @@ function TransactionsPage() {
                             <div className="flex items-center justify-center gap-2">
                               <Avatar className="w-6 h-6 border shadow-sm">
                                 <AvatarImage src={avatarUrl} />
-                                <AvatarFallback>{responsibleName[0]}</AvatarFallback>
+                                <AvatarFallback>{responsibleName.charAt(0)}</AvatarFallback>
                               </Avatar>
                               <span className="text-xs font-medium">{responsibleName}</span>
                             </div>
@@ -600,8 +600,8 @@ function TransactionsPage() {
                 {filteredTransactions.map((tx) => {
                   const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                   const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                  const avatarUrl = tx.profiles?.avatar_url || userAvatars[tx.responsible as keyof typeof userAvatars];
-                  const responsibleName = tx.profiles?.display_name || tx.responsible;
+                  const avatarUrl = tx.profiles?.avatar_url || (tx.responsible ? userAvatars[tx.responsible as keyof typeof userAvatars] : undefined);
+                  const responsibleName = tx.profiles?.display_name || tx.responsible || "Desconhecido";
                   
                   return (
                     <motion.div
@@ -660,7 +660,7 @@ function TransactionsPage() {
                           <div className="flex items-center gap-2">
                             <Avatar className="w-6 h-6 border shadow-sm">
                               <AvatarImage src={avatarUrl} />
-                              <AvatarFallback>{responsibleName[0]}</AvatarFallback>
+                              <AvatarFallback>{responsibleName.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <span className="text-xs font-medium text-muted-foreground">{responsibleName}</span>
                           </div>

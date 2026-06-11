@@ -30,6 +30,8 @@ export function useProfile() {
       return data as Profile;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache validity
+    gcTime: 1000 * 60 * 30,    // 30 minutes garbage collection
   });
 
   const { data: partnerProfile, isLoading: isPartnerLoading } = useQuery({
@@ -47,6 +49,8 @@ export function useProfile() {
       return data as Profile;
     },
     enabled: !!profile?.couple_id && !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache validity
+    gcTime: 1000 * 60 * 30,    // 30 minutes garbage collection
   });
 
   useEffect(() => {
@@ -104,5 +108,7 @@ export function useProfile() {
     profile,
     partnerProfile,
     isLoading: isProfileLoading || isPartnerLoading,
+    isProfileLoading,
+    isPartnerLoading,
   };
 }

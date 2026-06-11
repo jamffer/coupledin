@@ -12,39 +12,16 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       cards: {
         Row: {
           card_type: string
+          closing_day: number
           color: string | null
           couple_id: string | null
           created_at: string
+          due_day: number
           id: string
           last_four: string | null
           limit_amount: number
@@ -54,9 +31,11 @@ export type Database = {
         }
         Insert: {
           card_type: string
+          closing_day: number
           color?: string | null
           couple_id?: string | null
           created_at?: string
+          due_day: number
           id?: string
           last_four?: string | null
           limit_amount?: number
@@ -66,9 +45,11 @@ export type Database = {
         }
         Update: {
           card_type?: string
+          closing_day?: number
           color?: string | null
           couple_id?: string | null
           created_at?: string
+          due_day?: number
           id?: string
           last_four?: string | null
           limit_amount?: number
@@ -112,31 +93,34 @@ export type Database = {
       }
       goals: {
         Row: {
-          id: string
           couple_id: string
-          title: string
-          target_amount: number
-          saved_amount: number | null
-          deadline: string | null
           created_at: string
+          deadline: string | null
+          id: string
+          image_url: string | null
+          saved_amount: number | null
+          target_amount: number
+          title: string
         }
         Insert: {
-          id?: string
           couple_id: string
-          title: string
-          target_amount: number
-          saved_amount?: number | null
-          deadline?: string | null
           created_at?: string
+          deadline?: string | null
+          id?: string
+          image_url?: string | null
+          saved_amount?: number | null
+          target_amount: number
+          title: string
         }
         Update: {
-          id?: string
           couple_id?: string
-          title?: string
-          target_amount?: number
-          saved_amount?: number | null
-          deadline?: string | null
           created_at?: string
+          deadline?: string | null
+          id?: string
+          image_url?: string | null
+          saved_amount?: number | null
+          target_amount?: number
+          title?: string
         }
         Relationships: [
           {
@@ -233,6 +217,7 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          billing_date: string | null
           card_id: string | null
           category: string
           couple_id: string
@@ -240,6 +225,7 @@ export type Database = {
           date: string
           description: string
           division: string
+          goal_id: string | null
           id: string
           responsible: string
           type: string
@@ -247,6 +233,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          billing_date?: string | null
           card_id?: string | null
           category: string
           couple_id: string
@@ -254,6 +241,7 @@ export type Database = {
           date?: string
           description: string
           division: string
+          goal_id?: string | null
           id?: string
           responsible: string
           type: string
@@ -261,6 +249,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          billing_date?: string | null
           card_id?: string | null
           category?: string
           couple_id?: string
@@ -268,6 +257,7 @@ export type Database = {
           date?: string
           description?: string
           division?: string
+          goal_id?: string | null
           id?: string
           responsible?: string
           type?: string
@@ -288,6 +278,20 @@ export type Database = {
             referencedRelation: "couples"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -298,7 +302,10 @@ export type Database = {
       create_couple: { Args: { _name: string }; Returns: string }
       get_active_transaction_months: {
         Args: { _couple_id: string }
-        Returns: { year: number; month: number }[]
+        Returns: {
+          month: number
+          year: number
+        }[]
       }
       get_my_couple_id: { Args: never; Returns: string }
       get_my_invite_code: { Args: never; Returns: string }
@@ -434,9 +441,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       asset_type: ["STOCK", "FII", "CRYPTO", "FIXED_INCOME"],

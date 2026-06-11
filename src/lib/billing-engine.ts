@@ -12,7 +12,8 @@ import { parseISO, format, addMonths, setDate, isAfter, isSameDay } from "date-f
  * @param closingDay O melhor dia de compra / dia de fechamento do cartão (1 a 31)
  * @returns Data da fatura no formato YYYY-MM-01
  */
-export function calculateBillingMonth(purchaseDate: string, closingDay: number): string {
+export function calculateBillingMonth(purchaseDate: string | null | undefined, closingDay: number): string {
+  if (!purchaseDate) return format(setDate(new Date(), 1), "yyyy-MM-01");
   const date = typeof purchaseDate === "string" ? parseISO(purchaseDate) : purchaseDate;
   
   // Normalizar a data de fechamento para o mesmo mês/ano da data da compra

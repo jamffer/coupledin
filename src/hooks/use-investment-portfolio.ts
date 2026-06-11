@@ -31,34 +31,34 @@ export function useInvestmentPortfolio() {
 
       // Mapeia ativos e busca preços simultaneamente (Promise.allSettled evita falha geral)
       const enrichedPromises = investments.map(async (inv): Promise<EnrichedInvestment> => {
-        let current_price = Number(inv.average_price);
+        let current_price = Number(inv.average_price || 0);
 
         if (inv.asset_type === "STOCK" || inv.asset_type === "FII") {
-          const quote = await fetchBrapiQuote(inv.ticker);
+          const quote = await fetchBrapiQuote(inv.ticker || "");
           if (quote !== null) current_price = quote;
         } else if (inv.asset_type === "CRYPTO") {
-          const quote = await fetchCryptoQuote(inv.ticker);
+          const quote = await fetchCryptoQuote(inv.ticker || "");
           if (quote !== null) current_price = quote;
         } else if (inv.asset_type === "FIXED_INCOME") {
           const customRate = Number(inv.custom_rate || 0);
           if (customRate > 0) {
             // Título Privado (CDB/LCI com taxa mensal manual)
             const totalVal = calculateFixedIncomeCurrentValue(
-              Number(inv.average_price),
-              Number(inv.quantity),
-              inv.purchase_date,
+              Number(inv.average_price || 0),
+              Number(inv.quantity || 0),
+              inv.purchase_date || new Date().toISOString(),
               customRate
             );
-            current_price = Number(inv.quantity) > 0 ? totalVal / Number(inv.quantity) : 0;
+            current_price = Number(inv.quantity || 0) > 0 ? totalVal / Number(inv.quantity || 1) : 0;
           } else {
             // Tesouro Direto (Busca na Brapi)
-            const quote = await fetchTreasuryQuote(inv.ticker);
+            const quote = await fetchTreasuryQuote(inv.ticker || "");
             if (quote !== null) current_price = quote;
           }
         }
 
-        const quantity = Number(inv.quantity);
-        const average_price = Number(inv.average_price);
+        const quantity = Number(inv.quantity || 0);
+        const average_price = Number(inv.average_price || 0);
         const total_invested = quantity * average_price;
         const current_value = quantity * current_price;
         
@@ -101,6 +101,7 @@ export function useInvestmentPortfolio() {
     },
     staleTime: 1000 * 60 * 5, // 5 minutos de cache no React Query
     refetchInterval: 1000 * 60 * 5, // Atualização a cada 5 minutos
+    throwOnError: false,
   });
 
   const enrichedInvestments = query.data || [];
