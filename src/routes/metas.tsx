@@ -15,9 +15,10 @@ import { EmptyState } from "@/components/empty-state";
 import { useGoals, Goal } from "@/hooks/use-goals";
 import { NewGoalModal } from "@/components/investments/new-goal-modal";
 import { ContributeToGoalModal } from "@/components/investments/contribute-to-goal-modal";
+import { EditGoalModal } from "@/components/investments/edit-goal-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import confetti from "canvas-confetti";
-import { formatDistanceToNow, differenceInDays } from "date-fns";
+import { formatDistanceToNow, differenceInDays, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/metas")({
@@ -40,7 +41,7 @@ const itemVariants = {
   visible: { y: 0, opacity: 1 },
 };
 
-function GoalCard({ goal, onContribute }: { goal: Goal, onContribute: () => void }) {
+function GoalCard({ goal, onContribute, onEdit }: { goal: Goal, onContribute: () => void, onEdit: () => void }) {
   const [hasCelebrated, setHasCelebrated] = useState(false);
   const percentage = Math.min(100, Math.round(((goal?.saved_amount || 0) / (goal?.target_amount || 1)) * 100));
   const isCompleted = percentage >= 100;
@@ -59,14 +60,22 @@ function GoalCard({ goal, onContribute }: { goal: Goal, onContribute: () => void
 
   let temporalMessage = null;
   if (goal?.deadline) {
-    const deadlineDate = new Date(goal.deadline);
-    const daysLeft = differenceInDays(deadlineDate, new Date());
-    if (daysLeft < 0) {
-      temporalMessage = <span className="text-rose-300 font-semibold drop-shadow-md">Atrasada há {Math.abs(daysLeft)} dias</span>;
-    } else if (daysLeft === 0) {
-      temporalMessage = <span className="text-amber-300 font-semibold drop-shadow-md">Termina hoje!</span>;
-    } else {
-      temporalMessage = <span className="text-white/90 font-medium">Faltam {formatDistanceToNow(deadlineDate, { locale: ptBR })}</span>;
+    try {
+      const deadlineDate = new Date(goal.deadline);
+      if (isValid(deadlineDate)) {
+        const daysLeft = differenceInDays(deadlineDate, new Date());
+        if (daysLeft < 0) {
+          temporalMessage = <span className="text-rose-300 font-semibold drop-shadow-md">Atrasada há {Math.abs(daysLeft)} dias</span>;
+        } else if (daysLeft === 0) {
+          temporalMessage = <span className="text-amber-300 font-semibold drop-shadow-md">Termina hoje!</span>;
+        } else {
+          temporalMessage = <span className="text-white/90 font-medium">Faltam {formatDistanceToNow(deadlineDate, { locale: ptBR })}</span>;
+        }
+      } else {
+        temporalMessage = <span className="text-white/90 font-medium">Data inválida</span>;
+      }
+    } catch (e) {
+      temporalMessage = <span className="text-white/90 font-medium">Data não definida</span>;
     }
   }
 
@@ -96,11 +105,24 @@ function GoalCard({ goal, onContribute }: { goal: Goal, onContribute: () => void
           <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md shadow-sm text-white">
             <Target size={24} />
           </div>
-          {isCompleted && (
-            <div className="bg-emerald-500/80 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2 py-1 rounded-full shadow-sm">
-              Concluída
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {isCompleted && (
+              <div className="bg-emerald-500/80 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2 py-1 rounded-full shadow-sm">
+                Concluída
+              </div>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn(
+                "rounded-full opacity-0 group-hover:opacity-100 transition-opacity",
+                goal?.image_url ? "bg-white/20 hover:bg-white/30 text-white backdrop-blur-md" : "text-white/80 hover:text-white hover:bg-white/20"
+              )}
+              onClick={onEdit}
+            >
+              <Plus size={18} className="rotate-45" /> {/* Use plus rotated to act like pencil/close or just a standard edit icon if available */}
+            </Button>
+          </div>
         </div>
         <CardTitle className="mt-4 text-xl font-bold text-white drop-shadow-md">
           {goal?.title}
@@ -154,6 +176,7 @@ function MetasPage() {
   const { data: goals, isLoading } = useGoals();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
+  const [editGoal, setEditGoal] = useState<Goal | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -217,7 +240,11 @@ function MetasPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {goals.map((goal) => (
                 <motion.div key={goal?.id} variants={itemVariants}>
-                  <GoalCard goal={goal} onContribute={() => setContributeGoal(goal)} />
+                  <GoalCard 
+                    goal={goal} 
+                    onContribute={() => setContributeGoal(goal)} 
+                    onEdit={() => setEditGoal(goal)}
+                  />
                 </motion.div>
               ))}
             </div>
@@ -241,6 +268,12 @@ function MetasPage() {
           goal={contributeGoal}
           isOpen={!!contributeGoal}
           onClose={() => setContributeGoal(null)}
+        />
+
+        <EditGoalModal
+          goal={editGoal}
+          isOpen={!!editGoal}
+          onClose={() => setEditGoal(null)}
         />
       </motion.div>
     </DashboardLayout>

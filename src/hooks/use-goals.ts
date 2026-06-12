@@ -143,6 +143,74 @@ export function useCreateGoal() {
   });
 }
 
+export function useUpdateGoal() {
+  const { profile } = useProfile();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...values }: GoalFormValues & { id: string }) => {
+      if (!profile?.couple_id) throw new Error("Couple ID não encontrado");
+
+      const { data, error } = await supabase
+        .from("goals")
+        .update({
+          title: values.title,
+          target_amount: values.target_amount,
+          saved_amount: values.saved_amount || 0,
+          deadline: values.deadline ? values.deadline.toISOString().split('T')[0] : null,
+          image_url: values.image_url || null,
+        })
+        .eq("id", id)
+        .eq("couple_id", profile.couple_id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Goal;
+    },
+    onMutate: async (updatedGoal) => {
+      const queryKey = ["goals", profile?.couple_id];
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousGoals = queryClient.getQueryData<Goal[]>(queryKey);
+
+      if (previousGoals) {
+        queryClient.setQueryData<Goal[]>(queryKey, (old) => {
+          if (!old) return old;
+          return old.map(goal => {
+            if (goal.id === updatedGoal.id) {
+              return {
+                ...goal,
+                title: updatedGoal.title,
+                target_amount: updatedGoal.target_amount,
+                saved_amount: updatedGoal.saved_amount || 0,
+                deadline: updatedGoal.deadline ? updatedGoal.deadline.toISOString() : null,
+                image_url: updatedGoal.image_url || null,
+              };
+            }
+            return goal;
+          });
+        });
+      }
+
+      return { previousGoals };
+    },
+    onError: (err, updatedGoal, context) => {
+      console.error("Erro detalhado do Supabase ao atualizar meta:", err);
+      if (context?.previousGoals) {
+        queryClient.setQueryData(["goals", profile?.couple_id], context.previousGoals);
+      }
+      toast.error("Erro ao atualizar meta", { description: err.message });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["goals", profile?.couple_id] });
+    },
+    onSuccess: () => {
+      toast.success("Meta atualizada com sucesso!");
+    },
+  });
+}
+
 export function useDeleteGoal() {
   const { profile } = useProfile();
   const queryClient = useQueryClient();
