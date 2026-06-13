@@ -54,7 +54,7 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
         target_amount: goal.target_amount,
         saved_amount: goal.saved_amount || 0,
         image_url: goal.image_url,
-        deadline: goal.deadline ? new Date(goal.deadline) : null,
+        deadline: (goal.deadline && !isNaN(new Date(goal.deadline).getTime())) ? new Date(goal.deadline) : null,
       });
       setPreviewUrl(goal.image_url);
     }
@@ -117,7 +117,8 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
     });
   };
 
-  const handleDelete = () => {
+  const handleDelete = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (!goal) return;
     deleteMutation.mutate(goal.id, {
       onSuccess: () => {
@@ -270,7 +271,7 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
                     <AlertDialogFooter>
                       <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
                       <AlertDialogAction 
-                        onClick={handleDelete}
+                        onClick={(e) => handleDelete(e as unknown as React.MouseEvent)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
                       >
                         Sim, eliminar meta
