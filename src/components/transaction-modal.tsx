@@ -26,6 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { addMonths, format, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -44,6 +46,8 @@ const transactionSchema = z.object({
   responsible: z.string().min(1, "O responsável é obrigatório"),
   division: z.string().min(1, "A divisão é obrigatória"),
   card_id: z.string().optional(),
+  isInstallment: z.boolean().default(false).optional(),
+  installmentsCount: z.coerce.number().int().min(1).max(24).optional(),
 }).refine(data => {
   if (data.type === "Crédito" && !data.card_id) {
     return false;
@@ -89,6 +93,8 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
       division: "Conjunta 50/50",
       type: "Saída",
       card_id: undefined,
+      isInstallment: false,
+      installmentsCount: 1,
     },
   });
 
@@ -115,6 +121,8 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
           division: "Conjunta 50/50",
           type: "Saída",
           card_id: undefined,
+          isInstallment: false,
+          installmentsCount: 1,
         });
       }
     }
@@ -136,33 +144,68 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
         }
       }
 
-      const txData = {
-        description: values.description,
-        amount: (values.type === "Entrada" ? 1 : -1) * Math.abs(values.amount),
-        date: values.date,
-        category: values.category,
-        responsible: values.responsible,
-        division: values.division,
-        type: values.type,
-        user_id: user.id,
-        couple_id: profile.couple_id,
-        card_id: values.type === "Crédito" ? values.card_id : null,
-        billing_date: billing_date,
-      };
+      const sign = values.type === "Entrada" ? 1 : -1;
 
-      if (editingTx) {
-        const { error } = await supabase
-          .from("transactions")
-          .update(txData)
-          .eq("id", editingTx.id);
+      if (!editingTx && values.type === "Crédito" && values.isInstallment && values.installmentsCount && values.installmentsCount > 1) {
+        const count = values.installmentsCount;
+        const totalAmount = Math.abs(values.amount);
+        const installmentAmount = Math.floor((totalAmount / count) * 100) / 100;
+        const remainder = Math.round((totalAmount - (installmentAmount * count)) * 100) / 100;
+
+        const txsToInsert = [];
+        
+        for (let i = 0; i < count; i++) {
+          const currentAmount = installmentAmount + (i === 0 ? remainder : 0);
+          const dateObj = parseISO(billing_date);
+          const nextBillingDate = format(addMonths(dateObj, i), "yyyy-MM-dd");
+
+          txsToInsert.push({
+            description: `${values.description} (${i + 1}/${count})`,
+            amount: sign * currentAmount,
+            date: values.date,
+            category: values.category,
+            responsible: values.responsible,
+            division: values.division,
+            type: values.type,
+            user_id: user.id,
+            couple_id: profile.couple_id,
+            card_id: values.card_id,
+            billing_date: nextBillingDate,
+          });
+        }
+
+        const { error } = await supabase.from("transactions").insert(txsToInsert);
         if (error) throw error;
-        toast.success("Transação atualizada!");
+        toast.success(`${count} parcelas adicionadas!`);
       } else {
-        const { error } = await supabase
-          .from("transactions")
-          .insert(txData);
-        if (error) throw error;
-        toast.success("Transação adicionada!");
+        const txData = {
+          description: values.description,
+          amount: sign * Math.abs(values.amount),
+          date: values.date,
+          category: values.category,
+          responsible: values.responsible,
+          division: values.division,
+          type: values.type,
+          user_id: user.id,
+          couple_id: profile.couple_id,
+          card_id: values.type === "Crédito" ? values.card_id : null,
+          billing_date: billing_date,
+        };
+
+        if (editingTx) {
+          const { error } = await supabase
+            .from("transactions")
+            .update(txData)
+            .eq("id", editingTx.id);
+          if (error) throw error;
+          toast.success("Transação atualizada!");
+        } else {
+          const { error } = await supabase
+            .from("transactions")
+            .insert(txData);
+          if (error) throw error;
+          toast.success("Transação adicionada!");
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
@@ -293,7 +336,7 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
             </div>
 
             {watchType === "Crédito" && (
-              <div className="animate-in fade-in slide-in-from-top-1 duration-300">
+              <div className="animate-in fade-in slide-in-from-top-1 duration-300 space-y-4">
                 <FormField
                   control={form.control}
                   name="card_id"
@@ -318,6 +361,55 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                     </FormItem>
                   )}
                 />
+
+                {!editingTx && (
+                  <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="isInstallment"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between space-y-0">
+                          <div>
+                            <FormLabel className="font-bold text-sm">Compra Parcelada</FormLabel>
+                            <DialogDescription className="text-xs">
+                              Dividir o valor em várias faturas.
+                            </DialogDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {form.watch("isInstallment") && (
+                      <FormField
+                        control={form.control}
+                        name="installmentsCount"
+                        render={({ field }) => (
+                          <FormItem className="animate-in fade-in zoom-in-95 duration-200">
+                            <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Número de Parcelas</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="2" 
+                                max="24" 
+                                className="rounded-xl" 
+                                {...field} 
+                                disabled={isSubmitting} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

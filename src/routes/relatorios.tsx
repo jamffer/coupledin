@@ -348,25 +348,38 @@ function RelatoriosPage() {
               <div className="h-[300px] w-full">
                 {hasGraphData ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={weeklyEvolutionData[selectedPeriod]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                    <BarChart data={weeklyEvolutionData[selectedPeriod]} margin={{ top: 20, right: 20, left: 10, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
                       <XAxis 
                         dataKey="name" 
                         axisLine={false} 
                         tickLine={false} 
+                        stroke="hsl(var(--border))"
                         tick={{ fontSize: 10, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
+                        dy={10}
                       />
                       <YAxis 
                         axisLine={false} 
                         tickLine={false} 
+                        stroke="hsl(var(--border))"
                         tick={{ fontSize: 10, fontWeight: 700, fill: "hsl(var(--muted-foreground))" }}
+                        dx={-10}
                       />
                       <RechartsTooltip 
-                        cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                        cursor={{ fill: 'hsl(var(--muted)/0.4)' }}
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))', borderRadius: '8px' }}
                         content={({ active, payload, label }) => {
                           if (active && payload && payload.length) {
                             return (
-                              <div className="apple-card p-3 shadow-xl border-none text-xs">
+                              <div 
+                                className="p-3 shadow-xl border text-xs"
+                                style={{ 
+                                  backgroundColor: 'hsl(var(--background))', 
+                                  borderColor: 'hsl(var(--border))', 
+                                  color: 'hsl(var(--foreground))', 
+                                  borderRadius: '8px' 
+                                }}
+                              >
                                 <p className="font-black mb-1 text-primary">{label}</p>
                                 <p className="font-bold">Total: {formatCurrency(Number(payload[0].value) || 0)}</p>
                               </div>

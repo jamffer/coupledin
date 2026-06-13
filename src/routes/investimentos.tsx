@@ -1,5 +1,6 @@
+import { createFileRoute } from '@tanstack/react-router'
 import React, { useState, useEffect } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,31 +13,23 @@ import {
   RefreshCw,
   Coins,
   Building2,
-  Gem,
-  ArrowRight,
   Activity,
   MoreVertical,
   Pencil,
-  Trash2
+  Trash2,
+  ChevronDown
 } from "lucide-react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
-import { useInvestmentPortfolio, EnrichedInvestment } from "@/hooks/use-investment-portfolio";
+import { useInvestmentPortfolio, ConsolidatedAsset } from "@/hooks/use-investment-portfolio";
 import { NewAssetModal } from "@/components/investments/new-asset-modal";
 import { EditAssetModal } from "@/components/investments/edit-asset-modal";
 import { useDeleteInvestment } from "@/hooks/use-investment-mutations";
+import { Database } from "@/integrations/supabase/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,12 +46,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/investimentos")({
   head: () => ({
     meta: [
       { title: "Investimentos | CoupleDin" },
-      { name: "description", content: "Acompanhe seus ativos em tempo real." },
+      { name: "description", content: "Acompanhe seus ativos consolidados em tempo real." },
     ],
   }),
   component: InvestimentosPage,
@@ -74,14 +74,16 @@ const itemVariants = {
   visible: { y: 0, opacity: 1 }
 };
 
-function AssetTable({ 
+type RawInvestment = Database["public"]["Tables"]["investments"]["Row"];
+
+function ConsolidatedAssetCards({ 
   data, 
   onEdit, 
   onDelete 
 }: { 
-  data: EnrichedInvestment[],
-  onEdit: (asset: EnrichedInvestment) => void,
-  onDelete: (asset: EnrichedInvestment) => void 
+  data: ConsolidatedAsset[],
+  onEdit: (asset: RawInvestment) => void,
+  onDelete: (asset: RawInvestment, ticker: string) => void 
 }) {
   if (data.length === 0) {
     return (
@@ -92,91 +94,126 @@ function AssetTable({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow className="border-border/40 hover:bg-transparent">
-            <TableHead className="font-bold text-xs uppercase text-muted-foreground">Ativo</TableHead>
-            <TableHead className="font-bold text-xs uppercase text-muted-foreground text-center">Qtd</TableHead>
-            <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">P. Médio</TableHead>
-            <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">Valor Atual</TableHead>
-            <TableHead className="font-bold text-xs uppercase text-muted-foreground text-right">P&L</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((asset) => {
-            const isPositive = asset.profit_loss_percentage > 0;
-            const isNegative = asset.profit_loss_percentage < 0;
-            const profitValue = asset.current_value - asset.total_invested;
+    <Accordion type="multiple" className="space-y-4 w-full">
+      {data.map((asset) => {
+        const isPositive = asset.profit_loss_percentage > 0;
+        const isNegative = asset.profit_loss_percentage < 0;
 
-            return (
-              <TableRow key={asset.id} className="border-border/40 group hover:bg-muted/10 transition-colors">
-                <TableCell className="py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-                       {asset.asset_type === 'CRYPTO' ? <Coins size={16} className="text-secondary-foreground" /> :
-                        asset.asset_type === 'FIXED_INCOME' ? <Building2 size={16} className="text-amber-500" /> :
-                        <Activity size={16} className="text-primary" />}
+        return (
+          <AccordionItem value={asset.id} key={asset.id} className="border-none">
+            <Card className="apple-card group border-border/40 hover:border-primary/20 transition-all overflow-hidden">
+              <AccordionTrigger className="hover:no-underline py-0 [&[data-state=open]>div>div:last-child>svg]:rotate-180 cursor-pointer">
+                <CardContent className="p-4 sm:p-6 w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  
+                  {/* Left Side: Icon & Ticker */}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-muted/50 border border-border/40 flex items-center justify-center shrink-0">
+                       {asset.asset_type === 'CRYPTO' ? <Coins size={20} className="text-secondary-foreground" /> :
+                        asset.asset_type === 'FIXED_INCOME' ? <Building2 size={20} className="text-amber-500" /> :
+                        <Activity size={20} className="text-primary" />}
                     </div>
-                    <div>
-                      <p className="text-sm font-bold uppercase">{asset.ticker}</p>
+                    <div className="text-left">
+                      <h3 className="text-lg font-black uppercase tracking-tight">{asset.ticker}</h3>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {asset.total_quantity} cotas | P.M {formatCurrency(asset.average_price)}
+                      </p>
                     </div>
                   </div>
-                </TableCell>
-                <TableCell className="text-center font-medium">{Number(asset.quantity)}</TableCell>
-                <TableCell className="text-right font-medium">{formatCurrency(Number(asset.average_price))}</TableCell>
-                <TableCell className="text-right font-bold">{formatCurrency(asset.current_value)}</TableCell>
-                <TableCell className="text-right">
-                  <div className={cn(
-                    "flex flex-col items-end",
-                    isPositive ? "text-emerald-600" : isNegative ? "text-rose-500" : "text-muted-foreground"
-                  )}>
-                    <div className="flex items-center gap-1 text-sm font-black">
-                      {isPositive && <ArrowUp size={14} />}
-                      {isNegative && <ArrowDown size={14} />}
-                      {!isPositive && !isNegative && <span className="mr-1">-</span>}
-                      {Math.abs(asset.profit_loss_percentage).toFixed(2)}%
+
+                  {/* Right Side: Balances & Accordion Icon */}
+                  <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-8 w-full sm:w-auto mt-2 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-0 border-border/20">
+                    <div className="text-left sm:text-right">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Saldo Atual</p>
+                      <p className="text-base sm:text-lg font-black">
+                        {formatCurrency(asset.current_value)}
+                      </p>
                     </div>
-                    <span className="text-[10px] font-bold">
-                      {isPositive ? '+' : ''} {formatCurrency(profitValue)}
-                    </span>
+
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">P&L</p>
+                      <div className={cn(
+                        "flex items-center gap-1 font-bold text-sm",
+                        isPositive ? "text-emerald-500" : isNegative ? "text-rose-500" : "text-muted-foreground"
+                      )}>
+                        {isPositive && <ArrowUp size={14} />}
+                        {isNegative && <ArrowDown size={14} />}
+                        {!isPositive && !isNegative && <span className="mr-1">-</span>}
+                        {Math.abs(asset.profit_loss_percentage).toFixed(2)}%
+                      </div>
+                      <p className={cn(
+                        "text-[10px] font-bold",
+                        isPositive ? "text-emerald-500/80" : isNegative ? "text-rose-500/80" : "text-muted-foreground"
+                      )}>
+                        {isPositive ? '+' : ''}{formatCurrency(asset.profit_loss_value)}
+                      </p>
+                    </div>
+
+                    {/* Accordion Chevron Wrapper */}
+                    <div className="hidden sm:flex text-muted-foreground/50 transition-transform duration-200">
+                      <ChevronDown className="h-5 w-5" />
+                    </div>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                        <MoreVertical size={16} className="text-muted-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="apple-card rounded-xl w-40">
-                      <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onEdit(asset)}>
-                        <Pencil size={14} />
-                        Editar Aporte
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer gap-2 text-rose-500 focus:text-rose-600 focus:bg-rose-500/10" onClick={() => onDelete(asset)}>
-                        <Trash2 size={14} />
-                        Excluir Ativo
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+                </CardContent>
+              </AccordionTrigger>
+
+              <AccordionContent className="bg-muted/10 border-t border-border/20 px-4 sm:px-6 py-4">
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-80">
+                    Histórico de Aportes
+                  </h4>
+                  
+                  <div className="space-y-2">
+                    {asset.history.map((inv) => (
+                      <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/40 hover:border-border/80 transition-colors">
+                        <div>
+                          <p className="text-sm font-bold">{new Date(inv.purchase_date || inv.created_at).toLocaleDateString('pt-BR')}</p>
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {Number(inv.quantity)} cotas a {formatCurrency(Number(inv.average_price))}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm font-bold hidden sm:inline-block">
+                            {formatCurrency(Number(inv.quantity) * Number(inv.average_price))}
+                          </span>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                <MoreVertical size={14} className="text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="apple-card rounded-xl w-40">
+                              <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onEdit(inv)}>
+                                <Pencil size={14} />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="cursor-pointer gap-2 text-rose-500 focus:text-rose-600 focus:bg-rose-500/10" onClick={() => onDelete(inv, asset.ticker)}>
+                                <Trash2 size={14} />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </AccordionContent>
+            </Card>
+          </AccordionItem>
+        );
+      })}
+    </Accordion>
   );
 }
 
-function InvestimentosPage() {
+export function InvestimentosPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [assetToEdit, setAssetToEdit] = useState<EnrichedInvestment | null>(null);
-  const [assetToDelete, setAssetToDelete] = useState<EnrichedInvestment | null>(null);
+  const [assetToEdit, setAssetToEdit] = useState<RawInvestment | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<{ raw: RawInvestment; ticker: string } | null>(null);
 
   const deleteMutation = useDeleteInvestment();
 
@@ -184,13 +221,14 @@ function InvestimentosPage() {
     if (!authLoading && !user) {
       navigate({ to: "/auth" });
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, navigate]);
 
   const {
     investments,
     totalPatrimony,
     totalInvested,
     totalProfitPercentage,
+    topAsset,
     isLoading,
     isRefetching,
     refetch,
@@ -204,7 +242,7 @@ function InvestimentosPage() {
 
   const handleConfirmDelete = () => {
     if (assetToDelete) {
-      deleteMutation.mutate(assetToDelete.id, {
+      deleteMutation.mutate({ id: assetToDelete.raw.id, ticker: assetToDelete.ticker }, {
         onSuccess: () => {
           setAssetToDelete(null);
         }
@@ -213,28 +251,15 @@ function InvestimentosPage() {
   };
 
   const totalProfit = totalPatrimony - totalInvested;
+  const isGlobalPositive = totalProfitPercentage > 0;
+  const isGlobalNegative = totalProfitPercentage < 0;
+
   const hasInvestments = investments && investments.length > 0;
 
   const acoes = investments?.filter(i => i.asset_type === "STOCK") || [];
   const fiis = investments?.filter(i => i.asset_type === "FII") || [];
   const cripto = investments?.filter(i => i.asset_type === "CRYPTO") || [];
   const rendafixa = investments?.filter(i => i.asset_type === "FIXED_INCOME") || [];
-
-  const rvTotal = [...acoes, ...fiis].reduce((acc, curr) => acc + curr.current_value, 0);
-  const cryptoTotal = cripto.reduce((acc, curr) => acc + curr.current_value, 0);
-  
-  const rvPerc = totalPatrimony > 0 ? (rvTotal / totalPatrimony) * 100 : 0;
-  const cryptoPerc = totalPatrimony > 0 ? (cryptoTotal / totalPatrimony) * 100 : 0;
-
-  if (isLoading && !hasInvestments) {
-    return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center py-40">
-          <RefreshCw className="animate-spin text-primary w-8 h-8" />
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   return (
     <DashboardLayout>
@@ -244,9 +269,9 @@ function InvestimentosPage() {
       <AlertDialog open={!!assetToDelete} onOpenChange={(open) => !open && setAssetToDelete(null)}>
         <AlertDialogContent className="apple-card rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Ativo?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir Aporte?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover <strong className="uppercase">{assetToDelete?.ticker}</strong> da sua carteira? Esta ação não pode ser desfeita e afetará o histórico do seu patrimônio.
+              Tem certeza que deseja remover este aporte em <strong className="uppercase">{assetToDelete?.ticker}</strong>? A rentabilidade e o preço médio do ativo serão recalculados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -274,8 +299,8 @@ function InvestimentosPage() {
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Meus Investimentos</h1>
-            <p className="text-muted-foreground italic">Patrimônio atualizado em tempo real pelas APIs.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Carteira Consolidada</h1>
+            <p className="text-muted-foreground italic">Seus ativos agrupados e atualizados em tempo real.</p>
           </div>
           {hasInvestments && (
             <div className="flex items-center gap-2">
@@ -284,10 +309,10 @@ function InvestimentosPage() {
                 size="sm" 
                 onClick={handleRefresh}
                 className="rounded-full apple-interactive border-border/40 gap-2"
-                disabled={isRefetching}
+                disabled={isRefetching || isLoading}
               >
-                <RefreshCw size={16} className={cn(isRefetching && "animate-spin")} />
-                {isRefetching ? "Buscando cotações..." : "Atualizar Cotações"}
+                <RefreshCw size={16} className={cn((isRefetching || isLoading) && "animate-spin")} />
+                {isRefetching || isLoading ? "Buscando..." : "Atualizar"}
               </Button>
               <Button size="sm" className="rounded-full gap-2 shadow-lg" onClick={() => setIsModalOpen(true)}>
                 <Plus size={16} />
@@ -300,7 +325,7 @@ function InvestimentosPage() {
         {isError && hasInvestments && (
           <div className="bg-rose-500/10 text-rose-500 p-4 rounded-xl border border-rose-500/20 font-medium flex items-center gap-3">
             <Activity size={20} />
-            Houve um erro de rede ao atualizar as cotações. Mostrando dados em cache.
+            Houve um erro de rede em algumas integrações. Exibindo últimos preços cacheados ou o preço médio.
           </div>
         )}
 
@@ -317,23 +342,34 @@ function InvestimentosPage() {
                <RefreshCw size={16} className="mr-2" /> Tentar Novamente
             </Button>
           </div>
+        ) : isLoading ? (
+          // Skeletons Premium para carregamento
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl w-full apple-card" />)}
+            </div>
+            <Skeleton className="h-14 w-full max-w-md rounded-2xl apple-card" />
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 w-full rounded-2xl apple-card" />)}
+            </div>
+          </div>
         ) : hasInvestments ? (
           <>
-            {/* Resumo Patrimonial - Somente esses cards possuem glassmorphism nas cores vibrantes */}
+            {/* Top Cards: Métricas Globais */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <motion.div variants={itemVariants}>
                 <Card className="apple-card group card-gradient-blue border-none h-full shadow-xl relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-transparent backdrop-blur-sm pointer-events-none" />
-                  <CardContent className="p-8 flex flex-col justify-between h-full relative z-10">
+                  <CardContent className="p-6 md:p-8 flex flex-col justify-between h-full relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <div className="p-2 bg-white/20 rounded-lg text-white">
                         <Wallet size={24} />
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">Geral</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">Consolidado</span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white/80">Patrimônio Total Atualizado</p>
-                      <h3 className="text-4xl font-black tracking-tight text-white mt-1">
+                      <p className="text-sm font-medium text-white/80">Patrimônio Total</p>
+                      <h3 className="text-3xl md:text-4xl font-black tracking-tight text-white mt-1">
                         {formatCurrency(totalPatrimony)}
                       </h3>
                     </div>
@@ -344,7 +380,7 @@ function InvestimentosPage() {
               <motion.div variants={itemVariants}>
                 <Card className="apple-card group card-gradient-magenta border-none h-full shadow-xl relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-transparent backdrop-blur-sm pointer-events-none" />
-                  <CardContent className="p-8 flex flex-col justify-between h-full relative z-10">
+                  <CardContent className="p-6 md:p-8 flex flex-col justify-between h-full relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <div className="p-2 bg-white/20 rounded-lg text-white">
                         <TrendingUp size={24} />
@@ -352,9 +388,19 @@ function InvestimentosPage() {
                       <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">P&L Geral</span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white/80">Lucro/Prejuízo Total ({totalProfitPercentage >= 0 ? '+' : ''}{totalProfitPercentage.toFixed(2)}%)</p>
-                      <h3 className="text-4xl font-black tracking-tight text-white mt-1">
-                        {totalProfit > 0 ? '+' : ''} {formatCurrency(totalProfit)}
+                      <p className="text-sm font-medium text-white/80 flex items-center gap-1">
+                        Rentabilidade da Carteira
+                        <span className={cn(
+                          "ml-1 font-bold",
+                          isGlobalPositive ? "text-emerald-300" : isGlobalNegative ? "text-rose-300" : "text-white"
+                        )}>
+                          ({isGlobalPositive ? '+' : ''}{totalProfitPercentage.toFixed(2)}%)
+                        </span>
+                      </p>
+                      <h3 className="text-3xl md:text-4xl font-black tracking-tight text-white mt-1 flex items-center gap-2">
+                        {isGlobalPositive && <ArrowUp size={24} className="text-emerald-300" />}
+                        {isGlobalNegative && <ArrowDown size={24} className="text-rose-300" />}
+                        {formatCurrency(totalProfit)}
                       </h3>
                     </div>
                   </CardContent>
@@ -362,36 +408,43 @@ function InvestimentosPage() {
               </motion.div>
 
               <motion.div variants={itemVariants}>
-                <Card className="apple-card h-full border-border/40 bg-card">
-                  <CardContent className="p-8 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Distribuição da Carteira</span>
+                <Card className="apple-card h-full border-border/40 bg-card overflow-hidden relative group">
+                  <CardContent className="p-6 md:p-8 flex flex-col justify-between h-full relative z-10">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                        <Building2 size={24} />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                        Maior Posição
+                      </span>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Ações / FIIs</span>
-                        <span className="text-sm font-bold text-primary">{rvPerc.toFixed(1)}%</span>
+                    
+                    {topAsset ? (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          {topAsset.ticker}
+                        </p>
+                        <div className="flex items-end justify-between mt-1">
+                          <h3 className="text-3xl md:text-4xl font-black tracking-tight text-primary">
+                            {((topAsset.current_value / totalPatrimony) * 100).toFixed(1)}%
+                          </h3>
+                          <span className="text-sm font-bold text-muted-foreground pb-1">
+                            {formatCurrency(topAsset.current_value)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="h-1.5 w-full bg-muted dark:bg-black rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: `${rvPerc}%` }} />
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Cripto</span>
-                        <span className="text-sm font-bold text-secondary-foreground">{cryptoPerc.toFixed(1)}%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-muted dark:bg-black rounded-full overflow-hidden">
-                        <div className="h-full bg-secondary-foreground rounded-full" style={{ width: `${cryptoPerc}%` }} />
-                      </div>
-                    </div>
+                    ) : (
+                      <p className="text-muted-foreground">Nenhum ativo</p>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
             </div>
 
-            {/* Ativos Categorizados - Tabelas Limpas */}
+            {/* Ativos Categorizados - Cartões Expansíveis */}
             <motion.div variants={itemVariants}>
               <Tabs defaultValue="visaogeral" className="w-full">
-                <TabsList className="bg-muted/50 p-1 rounded-2xl h-14 border border-border/40 gap-1 w-full md:w-fit overflow-x-auto no-scrollbar">
+                <TabsList className="bg-muted/50 p-1 rounded-2xl h-auto border border-border/40 gap-1 w-full md:w-fit flex-wrap md:flex-nowrap justify-start">
                   <TabsTrigger value="visaogeral" className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all">
                     <Activity size={16} />
                     Visão Geral
@@ -411,48 +464,36 @@ function InvestimentosPage() {
                 </TabsList>
 
                 <div className="mt-8">
-                  <TabsContent value="visaogeral">
-                    <Card className="apple-card overflow-hidden bg-card border-border/40">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold">Todos os Ativos</CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-0">
-                        <AssetTable data={investments} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
-                      </CardContent>
-                    </Card>
+                  <TabsContent value="visaogeral" className="mt-0">
+                    <ConsolidatedAssetCards 
+                      data={investments} 
+                      onEdit={setAssetToEdit} 
+                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })} 
+                    />
                   </TabsContent>
 
-                  <TabsContent value="acoes_fiis">
-                    <Card className="apple-card overflow-hidden bg-card border-border/40">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold">Ações e FIIs</CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-0">
-                        <AssetTable data={[...acoes, ...fiis]} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
-                      </CardContent>
-                    </Card>
+                  <TabsContent value="acoes_fiis" className="mt-0">
+                    <ConsolidatedAssetCards 
+                      data={[...acoes, ...fiis]} 
+                      onEdit={setAssetToEdit} 
+                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })} 
+                    />
                   </TabsContent>
 
-                  <TabsContent value="cripto">
-                    <Card className="apple-card overflow-hidden bg-card border-border/40">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold">Criptoativos</CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-0">
-                        <AssetTable data={cripto} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
-                      </CardContent>
-                    </Card>
+                  <TabsContent value="cripto" className="mt-0">
+                    <ConsolidatedAssetCards 
+                      data={cripto} 
+                      onEdit={setAssetToEdit} 
+                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })} 
+                    />
                   </TabsContent>
 
-                  <TabsContent value="rendafixa">
-                    <Card className="apple-card overflow-hidden bg-card border-border/40">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold">Títulos e Aplicações</CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-0">
-                        <AssetTable data={rendafixa} onEdit={setAssetToEdit} onDelete={setAssetToDelete} />
-                      </CardContent>
-                    </Card>
+                  <TabsContent value="rendafixa" className="mt-0">
+                    <ConsolidatedAssetCards 
+                      data={rendafixa} 
+                      onEdit={setAssetToEdit} 
+                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })} 
+                    />
                   </TabsContent>
                 </div>
               </Tabs>
@@ -462,7 +503,7 @@ function InvestimentosPage() {
           <EmptyState 
             icon={TrendingUp}
             title="Sua carteira está vazia"
-            description="Comece a adicionar seus ativos para que possamos monitorar as cotações em tempo real."
+            description="Comece a adicionar seus ativos para criar sua carteira consolidada e acompanhar a rentabilidade."
             actionLabel="Cadastrar Novo Aporte"
             onAction={() => setIsModalOpen(true)}
           />

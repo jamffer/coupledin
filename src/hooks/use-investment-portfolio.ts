@@ -6,11 +6,18 @@ import { Database } from "@/integrations/supabase/types";
 
 type Investment = Database["public"]["Tables"]["investments"]["Row"];
 
-export type EnrichedInvestment = Investment & {
-  current_price: number;
+export type ConsolidatedAsset = {
+  id: string; // Used for react keys (e.g. ticker name)
+  ticker: string;
+  asset_type: "STOCK" | "FII" | "CRYPTO" | "FIXED_INCOME" | "OTHER";
+  total_quantity: number;
+  average_price: number;
   total_invested: number;
+  current_price: number;
   current_value: number;
+  profit_loss_value: number;
   profit_loss_percentage: number;
+  history: Investment[];
 };
 
 export function useInvestmentPortfolio() {
@@ -20,104 +27,158 @@ export function useInvestmentPortfolio() {
     queryKey: ["investments", profile?.couple_id],
     enabled: !!profile?.couple_id,
     queryFn: async () => {
-      const { data: investments, error } = await supabase
+      const { data: rawInvestments, error } = await supabase
         .from("investments")
         .select("*")
         .eq("couple_id", profile!.couple_id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      if (!investments) return [];
+      if (!rawInvestments) return [];
 
-      // Mapeia ativos e busca preços simultaneamente (Promise.allSettled evita falha geral)
-      const enrichedPromises = investments.map(async (inv): Promise<EnrichedInvestment> => {
-        let current_price = Number(inv.average_price || 0);
+      // 1. Group by ticker
+      const grouped = rawInvestments.reduce((acc, inv) => {
+        const key = inv.ticker || "UNKNOWN";
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(inv);
+        return acc;
+      }, {} as Record<string, Investment[]>);
 
-        if (inv.asset_type === "STOCK" || inv.asset_type === "FII") {
-          const quote = await fetchBrapiQuote(inv.ticker || "");
-          if (quote !== null) current_price = quote;
-        } else if (inv.asset_type === "CRYPTO") {
-          const quote = await fetchCryptoQuote(inv.ticker || "");
-          if (quote !== null) current_price = quote;
-        } else if (inv.asset_type === "FIXED_INCOME") {
-          const customRate = Number(inv.custom_rate || 0);
-          if (customRate > 0) {
-            // Título Privado (CDB/LCI com taxa mensal manual)
-            const totalVal = calculateFixedIncomeCurrentValue(
-              Number(inv.average_price || 0),
-              Number(inv.quantity || 0),
-              inv.purchase_date || new Date().toISOString(),
-              customRate
-            );
-            current_price = Number(inv.quantity || 0) > 0 ? totalVal / Number(inv.quantity || 1) : 0;
-          } else {
-            // Tesouro Direto (Busca na Brapi)
-            const quote = await fetchTreasuryQuote(inv.ticker || "");
+      // 2. Map and fetch current prices uniquely
+      const consolidatedPromises = Object.entries(grouped).map(async ([ticker, history]): Promise<ConsolidatedAsset> => {
+        const asset_type = history[0].asset_type as ConsolidatedAsset["asset_type"];
+        
+        let total_quantity = 0;
+        let total_invested = 0;
+        let fallback_price = 0;
+
+        // FIXED_INCOME generally doesn't group the same way if custom rates vary, but we'll group by ticker/name
+        history.forEach(inv => {
+          const qty = Number(inv.quantity || 0);
+          const price = Number(inv.average_price || 0);
+          total_quantity += qty;
+          total_invested += (qty * price);
+          fallback_price = price; // simplistic fallback
+        });
+
+        const average_price = total_quantity > 0 ? total_invested / total_quantity : 0;
+        
+        let current_price = average_price;
+
+        try {
+          if (asset_type === "STOCK" || asset_type === "FII") {
+            const quote = await fetchBrapiQuote(ticker);
             if (quote !== null) current_price = quote;
+          } else if (asset_type === "CRYPTO") {
+            const quote = await fetchCryptoQuote(ticker);
+            if (quote !== null) current_price = quote;
+          } else if (asset_type === "FIXED_INCOME") {
+            // Se houver histórico com taxa customizada, vamos simplificar avaliando o ativo mais recente
+            const latest = history[0];
+            const customRate = Number(latest.custom_rate || 0);
+            if (customRate > 0) {
+              const totalVal = calculateFixedIncomeCurrentValue(
+                average_price,
+                total_quantity,
+                latest.purchase_date || new Date().toISOString(),
+                customRate
+              );
+              current_price = total_quantity > 0 ? totalVal / total_quantity : 0;
+            } else {
+              const quote = await fetchTreasuryQuote(ticker);
+              if (quote !== null) current_price = quote;
+            }
           }
+        } catch (err) {
+          console.error("Erro ao buscar cotação para", ticker, err);
+          // Engole o erro graciosamente e mantem o preço médio como fallback
         }
 
-        const quantity = Number(inv.quantity || 0);
-        const average_price = Number(inv.average_price || 0);
-        const total_invested = quantity * average_price;
-        const current_value = quantity * current_price;
-        
+        const current_value = total_quantity * current_price;
+        const profit_loss_value = current_value - total_invested;
         const profit_loss_percentage = total_invested > 0 
-          ? ((current_value / total_invested) - 1) * 100 
+          ? (profit_loss_value / total_invested) * 100 
           : 0;
 
         return {
-          ...inv,
-          current_price,
+          id: ticker,
+          ticker,
+          asset_type,
+          total_quantity,
+          average_price,
           total_invested,
+          current_price,
           current_value,
+          profit_loss_value,
           profit_loss_percentage,
+          history,
         };
       });
 
-      const results = await Promise.allSettled(enrichedPromises);
+      const results = await Promise.allSettled(consolidatedPromises);
       
-      const enriched: EnrichedInvestment[] = results.map((res, index) => {
+      const consolidated: ConsolidatedAsset[] = [];
+      results.forEach((res, index) => {
         if (res.status === "fulfilled") {
-          return res.value;
+          consolidated.push(res.value);
         } else {
-          console.error("Falha ao enriquecer ativo", investments[index].ticker, res.reason);
-          // Fallback para não quebrar a carteira caso haja um throw inesperado
-          const inv = investments[index];
-          const quantity = Number(inv.quantity);
-          const average_price = Number(inv.average_price);
-          const total_invested = quantity * average_price;
-          return {
-            ...inv,
-            current_price: average_price,
+          // Em teoria o try/catch interno evita cair aqui, mas por segurança:
+          const ticker = Object.keys(grouped)[index];
+          const history = grouped[ticker];
+          
+          let total_quantity = 0;
+          let total_invested = 0;
+          history.forEach(inv => {
+            const qty = Number(inv.quantity || 0);
+            total_quantity += qty;
+            total_invested += (qty * Number(inv.average_price || 0));
+          });
+          
+          const average_price = total_quantity > 0 ? total_invested / total_quantity : 0;
+          
+          consolidated.push({
+            id: ticker,
+            ticker,
+            asset_type: history[0].asset_type as ConsolidatedAsset["asset_type"],
+            total_quantity,
+            average_price,
             total_invested,
+            current_price: average_price,
             current_value: total_invested,
+            profit_loss_value: 0,
             profit_loss_percentage: 0,
-          };
+            history,
+          });
         }
       });
 
-      return enriched;
+      // Ordenar por valor atual (maior para menor)
+      return consolidated.sort((a, b) => b.current_value - a.current_value);
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos de cache no React Query
-    refetchInterval: 1000 * 60 * 5, // Atualização a cada 5 minutos
+    staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000 * 60 * 5,
     throwOnError: false,
   });
 
-  const enrichedInvestments = query.data || [];
+  const consolidatedInvestments = query.data || [];
   
-  const totalPatrimony = enrichedInvestments.reduce((sum, inv) => sum + inv.current_value, 0);
-  const totalInvested = enrichedInvestments.reduce((sum, inv) => sum + inv.total_invested, 0);
+  const totalPatrimony = consolidatedInvestments.reduce((sum, asset) => sum + asset.current_value, 0);
+  const totalInvested = consolidatedInvestments.reduce((sum, asset) => sum + asset.total_invested, 0);
   
   const totalProfitPercentage = totalInvested > 0 
     ? ((totalPatrimony / totalInvested) - 1) * 100 
     : 0;
+    
+  const topAsset = consolidatedInvestments.length > 0 ? consolidatedInvestments[0] : null;
 
   return {
     ...query,
-    investments: enrichedInvestments,
+    investments: consolidatedInvestments,
     totalPatrimony,
     totalInvested,
     totalProfitPercentage,
+    topAsset,
   };
 }
