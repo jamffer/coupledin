@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { goalSchema, GoalFormValues, useUpdateGoal, Goal } from "@/hooks/use-goals";
+import { goalSchema, GoalFormValues, useUpdateGoal, useDeleteGoal, Goal } from "@/hooks/use-goals";
 import { useProfile } from "@/hooks/use-profile";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -8,6 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, ImagePlus, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -19,6 +30,7 @@ interface EditGoalModalProps {
 
 export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
   const mutation = useUpdateGoal();
+  const deleteMutation = useDeleteGoal();
   const { profile, isLoading: isProfileLoading } = useProfile();
   
   const [isUploading, setIsUploading] = useState(false);
@@ -105,7 +117,16 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
     });
   };
 
-  const isSubmitDisabled = mutation.isPending || isProfileLoading || !profile?.couple_id || isUploading;
+  const handleDelete = () => {
+    if (!goal) return;
+    deleteMutation.mutate(goal.id, {
+      onSuccess: () => {
+        onClose();
+      }
+    });
+  };
+
+  const isSubmitDisabled = mutation.isPending || deleteMutation.isPending || isProfileLoading || !profile?.couple_id || isUploading;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
@@ -225,14 +246,49 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
               </div>
             )}
 
-            <Button 
-              type="submit" 
-              className="w-full h-12 rounded-xl text-base font-bold shadow-lg mt-6"
-              disabled={isSubmitDisabled}
-            >
-              {mutation.isPending ? <Loader2 className="animate-spin mr-2" /> : null}
-              {mutation.isPending ? "Salvando..." : "Salvar Alterações"}
-            </Button>
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-border/40 mt-6">
+              {goal && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      type="button" 
+                      variant="destructive"
+                      className="w-full sm:w-auto rounded-xl font-bold gap-2"
+                      disabled={deleteMutation.isPending}
+                    >
+                      {deleteMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : null}
+                      Eliminar Meta
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="apple-card">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. A meta e todo o histórico associado serão removidos permanentemente.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+                      >
+                        Sim, eliminar meta
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+
+              <Button 
+                type="submit" 
+                className="w-full sm:w-auto rounded-xl font-bold shadow-lg"
+                disabled={isSubmitDisabled}
+              >
+                {mutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+                {mutation.isPending ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>

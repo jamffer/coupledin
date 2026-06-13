@@ -250,6 +250,8 @@ export function useDeleteGoal() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["goals", profile?.couple_id] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-metrics"] });
     },
     onSuccess: () => {
       toast.success("Meta excluída com sucesso!");

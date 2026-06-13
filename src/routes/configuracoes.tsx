@@ -36,13 +36,14 @@ import {
   PlusCircle
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useFinanceStore } from "@/hooks/use-finance-store";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { useCoupleSettings } from "@/hooks/use-couple-settings";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -100,9 +101,21 @@ function ConfiguracoesPage() {
       });
     }
   }, [user]);
+
+  const { settings, isLoading: isSettingsLoading, useUpdateCoupleSettings } = useCoupleSettings();
+
   const [divisionModel, setDivisionModel] = useState("proportional");
   const [percentageA, setPercentageA] = useState(60);
   const [percentageB, setPercentageB] = useState(40);
+
+  useEffect(() => {
+    if (settings) {
+      setDivisionModel(settings.divisionModel || "proportional");
+      if (settings.incomeA !== undefined && settings.incomeB !== undefined) {
+        setIncomes(settings.incomeA, settings.incomeB);
+      }
+    }
+  }, [settings, setIncomes]);
 
   useEffect(() => {
     if (divisionModel === "proportional") {
@@ -116,6 +129,14 @@ function ConfiguracoesPage() {
       setPercentageB(50);
     }
   }, [divisionModel, incomeJorge, incomeLilian]);
+
+  const handleSaveSettings = () => {
+    useUpdateCoupleSettings.mutate({
+      divisionModel,
+      incomeA: incomeJorge,
+      incomeB: incomeLilian
+    });
+  };
 
   return (
     <DashboardLayout>
@@ -200,7 +221,14 @@ function ConfiguracoesPage() {
         </motion.div>
 
         {/* Invite Code Section */}
-        <motion.div variants={itemVariants}>
+        <AnimatePresence>
+          {!partnerProfile && (
+            <motion.div 
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+            >
           <Card className="apple-card overflow-hidden border-primary/20 bg-primary/5">
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -235,6 +263,8 @@ function ConfiguracoesPage() {
             </CardContent>
           </Card>
         </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Section 2: Regras de Divisão */}
         <motion.div variants={itemVariants}>
@@ -368,6 +398,16 @@ function ConfiguracoesPage() {
                   </div>
                 </motion.div>
               )}
+
+              <div className="pt-4 flex justify-end">
+                <Button 
+                  onClick={handleSaveSettings} 
+                  disabled={useUpdateCoupleSettings.isPending}
+                  className="rounded-full px-8 font-bold"
+                >
+                  {useUpdateCoupleSettings.isPending ? "Salvando..." : "Salvar Configurações"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

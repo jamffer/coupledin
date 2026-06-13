@@ -157,6 +157,7 @@ function RelatoriosPage() {
 
   const topExpenses = useMemo(() => {
     return [...transactions]
+      .filter(t => t.type === 'EXPENSE')
       .sort((a, b) => Math.abs(b.amount || 0) - Math.abs(a.amount || 0))
       .slice(0, 5);
   }, [transactions]);
@@ -173,8 +174,23 @@ function RelatoriosPage() {
   }, [transactions]);
 
   const totalExpensesAmount = useMemo(() => {
-    return transactions.filter(t => (t.amount || 0) < 0).reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
+    return transactions.filter(t => (t.amount || 0) < 0 || t.type === 'EXPENSE').reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
   }, [transactions]);
+
+  const savingsRate = useMemo(() => {
+    const actualIncome = transactions.filter(t => t.type === 'INCOME' || (t.amount || 0) > 0).reduce((acc, t) => acc + (t.amount || 0), 0);
+    const baseIncome = (incomeJorge || 0) + (incomeLilian || 0);
+    const incomeToUse = actualIncome > 0 ? actualIncome : baseIncome;
+    
+    if (incomeToUse <= 0) return 0;
+    const saved = incomeToUse - totalExpensesAmount;
+    return Math.max(0, (saved / incomeToUse) * 100);
+  }, [totalExpensesAmount, transactions, incomeJorge, incomeLilian]);
+
+  const mostExpensiveCategory = useMemo(() => {
+    if (categoryTotals.length === 0) return { name: "N/A", amount: 0 };
+    return { name: categoryTotals[0][0], amount: categoryTotals[0][1] };
+  }, [categoryTotals]);
 
   return (
     <DashboardLayout>
@@ -363,11 +379,12 @@ function RelatoriosPage() {
                         dataKey="total" 
                         radius={[6, 6, 0, 0]} 
                         animationDuration={1500}
+                        className="fill-primary"
                       >
                         {weeklyEvolutionData[selectedPeriod].map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
-                            fill="hsl(var(--primary))" 
+                            className="fill-primary"
                             fillOpacity={0.8 + (index * 0.05)} 
                           />
                         ))}
@@ -384,6 +401,39 @@ function RelatoriosPage() {
                     </p>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Section: Métricas Inteligentes */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Card className="apple-card border-none shadow-sm bg-gradient-to-br from-emerald-500/10 to-transparent">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-4 bg-emerald-500/20 text-emerald-600 rounded-2xl">
+                <TrendingUp size={24} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-muted-foreground">Taxa de Poupança</p>
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-3xl font-black text-emerald-600">{savingsRate.toFixed(1)}%</h3>
+                  <p className="text-xs text-muted-foreground">do rendimento</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="apple-card border-none shadow-sm bg-gradient-to-br from-rose-500/10 to-transparent">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-4 bg-rose-500/20 text-rose-600 rounded-2xl">
+                {React.createElement(CATEGORY_ICONS[mostExpensiveCategory.name] || HelpCircle, { size: 24 })}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-muted-foreground">Mais Dispendiosa</p>
+                <div className="flex justify-between items-baseline gap-2">
+                  <h3 className="text-2xl font-black text-rose-600 truncate">{mostExpensiveCategory.name}</h3>
+                </div>
+                <p className="text-sm font-bold text-rose-600/80">{formatCurrency(mostExpensiveCategory.amount)}</p>
               </div>
             </CardContent>
           </Card>
