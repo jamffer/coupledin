@@ -5,6 +5,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, ImagePlus, X } from "lucide-react";
 import { useState, useRef } from "react";
@@ -113,7 +114,7 @@ export function NewGoalModal({ isOpen, onClose }: NewGoalModalProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* Upload de Capa */}
             <div className="flex flex-col gap-2">
-              <FormLabel>Capa da Meta (Opcional)</FormLabel>
+              <Label>Capa da Meta (Opcional)</Label>
               <div className="flex items-center gap-4">
                 <input
                   type="file"
