@@ -87,7 +87,7 @@ function ChartXAxisTick({
       x={x}
       y={y + 16}
       textAnchor="middle"
-      fill="hsl(var(--foreground))"
+      fill="#ffffff"
       className="text-[12px] font-black"
       style={{ filter: "drop-shadow(0 1px 2px hsl(var(--background)))" }}
     >
@@ -112,7 +112,7 @@ function ChartYAxisTick({
       x={x - 8}
       y={y + 4}
       textAnchor="end"
-      fill="hsl(var(--foreground))"
+      fill="#ffffff"
       className="text-[12px] font-black"
       style={{ filter: "drop-shadow(0 1px 2px hsl(var(--background)))" }}
     >
