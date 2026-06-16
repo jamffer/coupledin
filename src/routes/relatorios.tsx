@@ -87,8 +87,7 @@ function ChartXAxisTick({
       x={x}
       y={y + 16}
       textAnchor="middle"
-      fill="#ffffff"
-      className="text-[12px] font-black"
+      className="fill-slate-950 text-[12px] font-black dark:fill-white"
       style={{ filter: "drop-shadow(0 1px 2px hsl(var(--background)))" }}
     >
       {payload.value}
@@ -112,8 +111,7 @@ function ChartYAxisTick({
       x={x - 8}
       y={y + 4}
       textAnchor="end"
-      fill="#ffffff"
-      className="text-[12px] font-black"
+      className="fill-slate-950 text-[12px] font-black dark:fill-white"
       style={{ filter: "drop-shadow(0 1px 2px hsl(var(--background)))" }}
     >
       {`R$${Number(payload.value) / 1000}k`}
