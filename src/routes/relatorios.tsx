@@ -15,6 +15,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ArrowRightLeft,
@@ -34,6 +41,9 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -70,6 +80,64 @@ const itemVariants = {
 };
 
 type ReportPeriod = "Este Mês" | "Últimos 3 Meses" | "Este Ano";
+type CategoryChartMode = "Gastos" | "Ganhos";
+type CategoryChartPeriod = "Dia" | "Mês" | "Ano";
+
+const CATEGORY_CHART_COLORS = [
+  "#4f46e5",
+  "#06b6d4",
+  "#22c55e",
+  "#f97316",
+  "#eab308",
+  "#ec4899",
+  "#8b5cf6",
+  "#f43f5e",
+  "#14b8a6",
+  "#64748b",
+];
+
+function isIncomeTransaction(transaction: Transaction) {
+  return (
+    transaction.type === "Entrada" || transaction.type === "INCOME" || (transaction.amount || 0) > 0
+  );
+}
+
+function isExpenseTransaction(transaction: Transaction) {
+  return (
+    transaction.type === "Saída" ||
+    transaction.type === "Débito" ||
+    transaction.type === "Crédito" ||
+    transaction.type === "EXPENSE" ||
+    transaction.type === "expense" ||
+    (transaction.amount || 0) < 0
+  );
+}
+
+function isInCategoryPeriod(dateValue: string, period: CategoryChartPeriod) {
+  const date = new Date(dateValue);
+  const now = new Date();
+
+  if (Number.isNaN(date.getTime())) return false;
+  if (period === "Dia") return date.toDateString() === now.toDateString();
+  if (period === "Mês") return isSameMonth(date, now);
+  return date.getFullYear() === now.getFullYear();
+}
+
+function getComparisonCopy(
+  current: number,
+  previous: number,
+  positiveLabel: string,
+  negativeLabel: string,
+) {
+  const diff = current - previous;
+
+  if (previous === 0 && current === 0) return "Sem dados para comparar ainda.";
+  if (previous === 0) return "Sem mês anterior para comparar.";
+  if (Math.abs(diff) < 1) return "Praticamente igual ao mês anterior.";
+
+  const percentage = Math.abs((diff / previous) * 100).toFixed(1);
+  return `${diff > 0 ? positiveLabel : negativeLabel} ${percentage}% vs mês anterior.`;
+}
 
 function ChartXAxisTick({
   x,
@@ -128,6 +196,9 @@ function RelatoriosPage() {
   const [isSettled, setIsSettled] = useState(false);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<ReportPeriod>("Este Mês");
+  const [categoryChartMode, setCategoryChartMode] = useState<CategoryChartMode>("Gastos");
+  const [categoryChartPeriod, setCategoryChartPeriod] = useState<CategoryChartPeriod>("Mês");
+  const [selectedCategory, setSelectedCategory] = useState("Todas");
 
   const userName = profile?.display_name || "Jorge";
   const partnerName = partnerProfile?.display_name || "Lilian";
@@ -174,19 +245,6 @@ function RelatoriosPage() {
     const now = new Date();
     const monthlyBaseIncome = (incomeJorge || 0) + (incomeLilian || 0);
 
-    const isIncome = (transaction: Transaction) =>
-      transaction.type === "Entrada" ||
-      transaction.type === "INCOME" ||
-      (transaction.amount || 0) > 0;
-
-    const isExpense = (transaction: Transaction) =>
-      transaction.type === "Saída" ||
-      transaction.type === "Débito" ||
-      transaction.type === "Crédito" ||
-      transaction.type === "EXPENSE" ||
-      transaction.type === "expense" ||
-      (transaction.amount || 0) < 0;
-
     const generateMonthlyData = (count: number) => {
       const data = [];
       for (let i = count - 1; i >= 0; i--) {
@@ -199,10 +257,10 @@ function RelatoriosPage() {
         });
 
         const ganhosRegistrados = periodTxs
-          .filter(isIncome)
+          .filter(isIncomeTransaction)
           .reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
         const gastos = periodTxs
-          .filter(isExpense)
+          .filter(isExpenseTransaction)
           .reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
         const ganhos = ganhosRegistrados > 0 ? ganhosRegistrados : monthlyBaseIncome;
 
@@ -222,12 +280,92 @@ function RelatoriosPage() {
     return monthlyEvolutionData[selectedPeriod].some((d) => d.gastos > 0 || d.ganhos > 0);
   }, [monthlyEvolutionData, selectedPeriod]);
 
+  const monthlyComparison = useMemo(() => {
+    const now = new Date();
+    const previousMonth = subMonths(now, 1);
+    const monthlyBaseIncome = (incomeJorge || 0) + (incomeLilian || 0);
+
+    const summarizeMonth = (date: Date) => {
+      const periodTxs = transactions.filter((t) => isSameMonth(new Date(t.date), date));
+      const registeredIncome = periodTxs
+        .filter(isIncomeTransaction)
+        .reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
+      const expenses = periodTxs
+        .filter(isExpenseTransaction)
+        .reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
+      const investments = periodTxs
+        .filter((t) => t.category === "Investimentos")
+        .reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
+      const income = registeredIncome > 0 ? registeredIncome : monthlyBaseIncome;
+
+      return {
+        income,
+        expenses,
+        savings: income - expenses,
+        investments,
+      };
+    };
+
+    return {
+      current: summarizeMonth(now),
+      previous: summarizeMonth(previousMonth),
+    };
+  }, [transactions, incomeJorge, incomeLilian]);
+
   const topExpenses = useMemo(() => {
     return [...transactions]
-      .filter((t) => t.type === "EXPENSE")
+      .filter((t) => isExpenseTransaction(t) && isSameMonth(new Date(t.date), new Date()))
       .sort((a, b) => Math.abs(b.amount || 0) - Math.abs(a.amount || 0))
       .slice(0, 5);
   }, [transactions]);
+
+  const categoryOptions = useMemo(() => {
+    const periodTxs = transactions.filter((t) => isInCategoryPeriod(t.date, categoryChartPeriod));
+    const modeFilter = categoryChartMode === "Gastos" ? isExpenseTransaction : isIncomeTransaction;
+    return Array.from(
+      new Set(
+        periodTxs
+          .filter(modeFilter)
+          .map((t) => t.category)
+          .filter(Boolean),
+      ),
+    ).sort();
+  }, [transactions, categoryChartMode, categoryChartPeriod]);
+
+  useEffect(() => {
+    if (selectedCategory !== "Todas" && !categoryOptions.includes(selectedCategory)) {
+      setSelectedCategory("Todas");
+    }
+  }, [categoryOptions, selectedCategory]);
+
+  const categoryChartData = useMemo(() => {
+    const modeFilter = categoryChartMode === "Gastos" ? isExpenseTransaction : isIncomeTransaction;
+    const totals = transactions
+      .filter((t) => isInCategoryPeriod(t.date, categoryChartPeriod))
+      .filter(modeFilter)
+      .filter((t) => selectedCategory === "Todas" || t.category === selectedCategory)
+      .reduce<Record<string, number>>((acc, transaction) => {
+        const category = transaction.category || "Sem categoria";
+        acc[category] = (acc[category] || 0) + Math.abs(transaction.amount || 0);
+        return acc;
+      }, {});
+
+    const total = Object.values(totals).reduce((acc, amount) => acc + amount, 0);
+
+    return Object.entries(totals)
+      .sort(([, a], [, b]) => b - a)
+      .map(([name, value], index) => ({
+        name,
+        value,
+        percentage: total > 0 ? (value / total) * 100 : 0,
+        color: CATEGORY_CHART_COLORS[index % CATEGORY_CHART_COLORS.length],
+      }));
+  }, [transactions, categoryChartMode, categoryChartPeriod, selectedCategory]);
+
+  const categoryChartTotal = useMemo(
+    () => categoryChartData.reduce((acc, item) => acc + item.value, 0),
+    [categoryChartData],
+  );
 
   const categoryTotals = useMemo(() => {
     const totals: Record<string, number> = {};
@@ -448,6 +586,69 @@ function RelatoriosPage() {
           </Card>
         </motion.div>
 
+        {/* Section: Comparações */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="apple-card border-none bg-white/50 shadow-sm dark:bg-black/20">
+            <CardContent className="p-5 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Gastos vs mês anterior
+              </p>
+              <p className="text-2xl font-black text-rose-600">
+                {formatCurrency(monthlyComparison.current.expenses)}
+              </p>
+              <p className="text-xs font-bold text-muted-foreground">
+                {getComparisonCopy(
+                  monthlyComparison.current.expenses,
+                  monthlyComparison.previous.expenses,
+                  "Aumentou",
+                  "Caiu",
+                )}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="apple-card border-none bg-white/50 shadow-sm dark:bg-black/20">
+            <CardContent className="p-5 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Economia do mês
+              </p>
+              <p className="text-2xl font-black text-emerald-600">
+                {formatCurrency(monthlyComparison.current.savings)}
+              </p>
+              <p className="text-xs font-bold text-muted-foreground">
+                {getComparisonCopy(
+                  monthlyComparison.current.savings,
+                  monthlyComparison.previous.savings,
+                  "Melhorou",
+                  "Reduziu",
+                )}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="apple-card border-none bg-white/50 shadow-sm dark:bg-black/20">
+            <CardContent className="p-5 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Investimentos registrados
+              </p>
+              <p className="text-2xl font-black text-primary">
+                {formatCurrency(monthlyComparison.current.investments)}
+              </p>
+              <p className="text-xs font-bold text-muted-foreground">
+                {monthlyComparison.current.investments > 0 ||
+                monthlyComparison.previous.investments > 0
+                  ? getComparisonCopy(
+                      monthlyComparison.current.investments,
+                      monthlyComparison.previous.investments,
+                      "Aumentou",
+                      "Caiu",
+                    )
+                  : "Sem lançamentos de investimento neste período."}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Section: Gráficos Interativos */}
         <motion.div variants={itemVariants}>
           <Card className="apple-card border-none shadow-sm overflow-hidden bg-white/50 dark:bg-black/20">
@@ -574,6 +775,156 @@ function RelatoriosPage() {
           </Card>
         </motion.div>
 
+        {/* Section: Total por Categoria */}
+        <motion.div variants={itemVariants}>
+          <Card className="apple-card border-none shadow-sm overflow-hidden bg-white/50 dark:bg-black/20">
+            <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <CardTitle className="text-xl">
+                  Total de {categoryChartMode === "Gastos" ? "gastos" : "ganhos"}
+                </CardTitle>
+                <CardDescription>
+                  Filtre por período e categoria para ver a composição em porcentagem.
+                </CardDescription>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <Select
+                  value={categoryChartMode}
+                  onValueChange={(value) => setCategoryChartMode(value as CategoryChartMode)}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="apple-card">
+                    <SelectItem value="Gastos">Gastos</SelectItem>
+                    <SelectItem value="Ganhos">Ganhos</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={categoryChartPeriod}
+                  onValueChange={(value) => setCategoryChartPeriod(value as CategoryChartPeriod)}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="apple-card">
+                    <SelectItem value="Dia">Dia</SelectItem>
+                    <SelectItem value="Mês">Mês</SelectItem>
+                    <SelectItem value="Ano">Ano</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="apple-card">
+                    <SelectItem value="Todas">Todas</SelectItem>
+                    {categoryOptions.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 lg:grid-cols-[minmax(260px,380px),1fr] lg:items-center">
+                <div className="relative h-[280px]">
+                  {categoryChartData.length > 0 ? (
+                    <>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={categoryChartData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={76}
+                            outerRadius={120}
+                            paddingAngle={3}
+                          >
+                            {categoryChartData.map((entry) => (
+                              <Cell
+                                key={entry.name}
+                                fill={entry.color}
+                                stroke="hsl(var(--background))"
+                                strokeWidth={3}
+                              />
+                            ))}
+                          </Pie>
+                          <RechartsTooltip
+                            content={({ active, payload }) => {
+                              const data = payload?.[0]?.payload as
+                                | (typeof categoryChartData)[number]
+                                | undefined;
+
+                              if (!active || !data) return null;
+
+                              return (
+                                <div className="rounded-2xl border border-border bg-popover p-3 text-xs text-popover-foreground shadow-2xl">
+                                  <p className="font-black text-primary">{data.name}</p>
+                                  <p className="font-bold">{formatCurrency(data.value)}</p>
+                                  <p className="text-muted-foreground">
+                                    {data.percentage.toFixed(1)}% do total
+                                  </p>
+                                </div>
+                              );
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          Total
+                        </span>
+                        <span className="text-2xl font-black text-foreground">
+                          {formatCurrency(categoryChartTotal)}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center rounded-3xl border border-dashed border-border/70 text-center">
+                      <HelpCircle size={28} className="mb-2 text-muted-foreground opacity-40" />
+                      <p className="max-w-[220px] text-sm text-muted-foreground">
+                        Nenhum lançamento encontrado para estes filtros.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {categoryChartData.map((item) => (
+                    <div
+                      key={item.name}
+                      className="rounded-2xl border border-border/60 bg-background/50 p-4"
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <p className="font-bold">{item.name}</p>
+                        </div>
+                        <p className="text-sm font-black">{item.percentage.toFixed(1)}%</p>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
+                        <span>{formatCurrency(item.value)}</span>
+                        <span>
+                          {categoryChartMode === "Gastos" ? "do gasto total" : "do ganho total"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Section: Métricas Inteligentes */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card className="apple-card border-none shadow-sm bg-gradient-to-br from-emerald-500/10 to-transparent">
@@ -668,7 +1019,7 @@ function RelatoriosPage() {
           <motion.div variants={itemVariants} className="lg:col-span-2">
             <Card className="apple-card apple-card-hover h-full border-2 border-primary/5 dark:border-white/5">
               <CardHeader>
-                <CardTitle>Top Maiores Gastos</CardTitle>
+                <CardTitle>Maiores gastos do mês</CardTitle>
                 <CardDescription>Os 5 maiores lançamentos do mês.</CardDescription>
               </CardHeader>
               <CardContent>
@@ -688,7 +1039,8 @@ function RelatoriosPage() {
                           <div>
                             <p className="text-sm font-bold">{tx.description}</p>
                             <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">
-                              {tx.category}
+                              {tx.category} ·{" "}
+                              {format(new Date(tx.date), "dd MMM", { locale: ptBR })}
                             </p>
                           </div>
                         </div>

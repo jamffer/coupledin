@@ -37,26 +37,52 @@ import { useProfile } from "@/hooks/use-profile";
 import { calculateBillingMonth } from "@/lib/billing-engine";
 import { CATEGORY_ICONS, DIVISION_ICONS, type Transaction } from "@/hooks/use-finance-store";
 
-const transactionSchema = z.object({
-  description: z.string().min(1, "A descrição é obrigatória"),
-  amount: z.coerce.number().min(0.01, "O valor deve ser maior que zero"),
-  type: z.enum(["Entrada", "Saída", "Crédito"]),
-  date: z.string().min(1, "A data é obrigatória"),
-  category: z.string().min(1, "A categoria é obrigatória"),
-  responsible: z.string().min(1, "O responsável é obrigatório"),
-  division: z.string().min(1, "A divisão é obrigatória"),
-  card_id: z.string().optional(),
-  isInstallment: z.boolean().default(false).optional(),
-  installmentsCount: z.coerce.number().int().min(1).max(24).optional(),
-}).refine(data => {
-  if (data.type === "Crédito" && !data.card_id) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Selecione um cartão para compras no crédito",
-  path: ["card_id"]
-});
+const EXPENSE_CATEGORIES = ["Alimentação", "Lazer", "Transporte", "Moradia", "Saúde", "Outros"];
+const INCOME_CATEGORIES = [
+  "Salário",
+  "Renda extra",
+  "Freelance",
+  "Vendas",
+  "Reembolso",
+  "Presente recebido",
+  "Rendimentos",
+  "Aluguel recebido",
+  "Bônus",
+  "Outros ganhos",
+];
+
+type CardOption = {
+  id: string;
+  name: string;
+  last_four?: string | null;
+  closing_day?: number | null;
+};
+
+const transactionSchema = z
+  .object({
+    description: z.string().min(1, "A descrição é obrigatória"),
+    amount: z.coerce.number().min(0.01, "O valor deve ser maior que zero"),
+    type: z.enum(["Entrada", "Saída", "Crédito"]),
+    date: z.string().min(1, "A data é obrigatória"),
+    category: z.string().min(1, "A categoria é obrigatória"),
+    responsible: z.string().min(1, "O responsável é obrigatório"),
+    division: z.string().min(1, "A divisão é obrigatória"),
+    card_id: z.string().optional(),
+    isInstallment: z.boolean().default(false).optional(),
+    installmentsCount: z.coerce.number().int().min(1).max(24).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.type === "Crédito" && !data.card_id) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Selecione um cartão para compras no crédito",
+      path: ["card_id"],
+    },
+  );
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
 
@@ -77,7 +103,7 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
     queryFn: async () => {
       const { data, error } = await supabase.from("cards").select("*");
       if (error) throw error;
-      return data;
+      return data as CardOption[];
     },
     enabled: isOpen,
   });
@@ -87,7 +113,7 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
     defaultValues: {
       description: "",
       amount: 0,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split("T")[0],
       category: "Outros",
       responsible: "Jorge",
       division: "Conjunta 50/50",
@@ -104,18 +130,18 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
         form.reset({
           description: editingTx.description,
           amount: Math.abs(editingTx.amount),
-          date: new Date(editingTx.date).toISOString().split('T')[0],
+          date: new Date(editingTx.date).toISOString().split("T")[0],
           category: editingTx.category,
           responsible: editingTx.responsible,
           division: editingTx.division,
-          type: editingTx.type === "Entrada" ? "Entrada" : ((editingTx as any).card_id ? "Crédito" : "Saída"),
-          card_id: (editingTx as any).card_id || undefined,
+          type: editingTx.type === "Entrada" ? "Entrada" : editingTx.card_id ? "Crédito" : "Saída",
+          card_id: editingTx.card_id || undefined,
         });
       } else {
         form.reset({
           description: "",
           amount: 0,
-          date: new Date().toISOString().split('T')[0],
+          date: new Date().toISOString().split("T")[0],
           category: "Outros",
           responsible: "Jorge",
           division: "Conjunta 50/50",
@@ -129,6 +155,14 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
   }, [isOpen, editingTx, form]);
 
   const watchType = form.watch("type");
+  const categoryOptions = watchType === "Entrada" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+
+  useEffect(() => {
+    const currentCategory = form.getValues("category");
+    if (!categoryOptions.includes(currentCategory)) {
+      form.setValue("category", watchType === "Entrada" ? "Outros ganhos" : "Outros");
+    }
+  }, [categoryOptions, form, watchType]);
 
   async function onSubmit(values: TransactionFormValues) {
     if (!user || !profile?.couple_id) return;
@@ -136,9 +170,9 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
     setIsSubmitting(true);
     try {
       let billing_date = values.date.substring(0, 8) + "01";
-      
+
       if (values.type === "Crédito" && values.card_id) {
-        const card = cards.find(c => c.id === values.card_id);
+        const card = cards.find((c) => c.id === values.card_id);
         if (card && card.closing_day) {
           billing_date = calculateBillingMonth(values.date, card.closing_day);
         }
@@ -146,14 +180,20 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
 
       const sign = values.type === "Entrada" ? 1 : -1;
 
-      if (!editingTx && values.type === "Crédito" && values.isInstallment && values.installmentsCount && values.installmentsCount > 1) {
+      if (
+        !editingTx &&
+        values.type === "Crédito" &&
+        values.isInstallment &&
+        values.installmentsCount &&
+        values.installmentsCount > 1
+      ) {
         const count = values.installmentsCount;
         const totalAmount = Math.abs(values.amount);
         const installmentAmount = Math.floor((totalAmount / count) * 100) / 100;
-        const remainder = Math.round((totalAmount - (installmentAmount * count)) * 100) / 100;
+        const remainder = Math.round((totalAmount - installmentAmount * count) * 100) / 100;
 
         const txsToInsert = [];
-        
+
         for (let i = 0; i < count; i++) {
           const currentAmount = installmentAmount + (i === 0 ? remainder : 0);
           const dateObj = parseISO(billing_date);
@@ -200,9 +240,7 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
           if (error) throw error;
           toast.success("Transação atualizada!");
         } else {
-          const { error } = await supabase
-            .from("transactions")
-            .insert(txData);
+          const { error } = await supabase.from("transactions").insert(txData);
           if (error) throw error;
           toast.success("Transação adicionada!");
         }
@@ -212,8 +250,9 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
       queryClient.invalidateQueries({ queryKey: ["cards"] });
       queryClient.invalidateQueries({ queryKey: ["card-invoice"] });
       onClose();
-    } catch (error: any) {
-      toast.error("Erro ao salvar transação", { description: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Tente novamente em instantes.";
+      toast.error("Erro ao salvar transação", { description: message });
     } finally {
       setIsSubmitting(false);
     }
@@ -227,7 +266,9 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
             {editingTx ? "Editar Lançamento" : "Novo Lançamento"}
           </DialogTitle>
           <DialogDescription>
-            {editingTx ? "Altere as informações da transação." : "Insira os detalhes do gasto ou entrada manualmente."}
+            {editingTx
+              ? "Altere as informações da transação."
+              : "Insira os detalhes do gasto ou entrada manualmente."}
           </DialogDescription>
         </DialogHeader>
 
@@ -238,9 +279,16 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Descrição</FormLabel>
+                  <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                    Descrição
+                  </FormLabel>
                   <FormControl>
-                    <Input className="rounded-xl" placeholder="Ex: Aluguel, Supermercado..." {...field} disabled={isSubmitting} />
+                    <Input
+                      className="rounded-xl"
+                      placeholder="Ex: Aluguel, Supermercado..."
+                      {...field}
+                      disabled={isSubmitting}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -253,14 +301,18 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Valor</FormLabel>
+                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                      Valor
+                    </FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">R$</span>
-                        <Input 
-                          type="number" 
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
+                          R$
+                        </span>
+                        <Input
+                          type="number"
                           step="0.01"
-                          className="pl-9 rounded-xl font-bold" 
+                          className="pl-9 rounded-xl font-bold"
                           placeholder="0,00"
                           {...field}
                           disabled={isSubmitting}
@@ -277,8 +329,14 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Tipo</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                      Tipo
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isSubmitting}
+                    >
                       <FormControl>
                         <SelectTrigger className="rounded-xl">
                           <SelectValue placeholder="Selecione o tipo" />
@@ -302,9 +360,16 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Data</FormLabel>
+                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                      Data
+                    </FormLabel>
                     <FormControl>
-                      <Input type="date" className="rounded-xl" {...field} disabled={isSubmitting} />
+                      <Input
+                        type="date"
+                        className="rounded-xl"
+                        {...field}
+                        disabled={isSubmitting}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -316,16 +381,24 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                      Categoria
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isSubmitting}
+                    >
                       <FormControl>
                         <SelectTrigger className="rounded-xl">
                           <SelectValue placeholder="Selecione a categoria" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="apple-card h-64">
-                        {Object.keys(CATEGORY_ICONS).map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        {categoryOptions.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -342,15 +415,21 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                   name="card_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Cartão de Crédito</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                      <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                        Cartão de Crédito
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isSubmitting}
+                      >
                         <FormControl>
                           <SelectTrigger className="rounded-xl">
                             <SelectValue placeholder="Selecione o cartão" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="apple-card">
-                          {cards.map((card: any) => (
+                          {cards.map((card) => (
                             <SelectItem key={card.id} value={card.id}>
                               {card.name} (final {card.last_four || "0000"})
                             </SelectItem>
@@ -385,22 +464,24 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                         </FormItem>
                       )}
                     />
-                    
+
                     {form.watch("isInstallment") && (
                       <FormField
                         control={form.control}
                         name="installmentsCount"
                         render={({ field }) => (
                           <FormItem className="animate-in fade-in zoom-in-95 duration-200">
-                            <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Número de Parcelas</FormLabel>
+                            <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                              Número de Parcelas
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
-                                min="2" 
-                                max="24" 
-                                className="rounded-xl" 
-                                {...field} 
-                                disabled={isSubmitting} 
+                              <Input
+                                type="number"
+                                min="2"
+                                max="24"
+                                className="rounded-xl"
+                                {...field}
+                                disabled={isSubmitting}
                               />
                             </FormControl>
                             <FormMessage />
@@ -419,8 +500,14 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                 name="responsible"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Responsável</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                      Responsável
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isSubmitting}
+                    >
                       <FormControl>
                         <SelectTrigger className="rounded-xl">
                           <SelectValue placeholder="Selecione..." />
@@ -441,16 +528,24 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                 name="division"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">Divisão</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                    <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                      Divisão
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isSubmitting}
+                    >
                       <FormControl>
                         <SelectTrigger className="rounded-xl">
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="apple-card">
-                        {Object.keys(DIVISION_ICONS).map(div => (
-                          <SelectItem key={div} value={div}>{div}</SelectItem>
+                        {Object.keys(DIVISION_ICONS).map((div) => (
+                          <SelectItem key={div} value={div}>
+                            {div}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -460,11 +555,19 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
               />
             </div>
 
-            <Button type="submit" className="w-full rounded-xl shadow-lg font-bold py-6 mt-4" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full rounded-xl shadow-lg font-bold py-6 mt-4"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? (
-                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Salvando...</>
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Salvando...
+                </>
+              ) : editingTx ? (
+                "Atualizar Lançamento"
               ) : (
-                editingTx ? "Atualizar Lançamento" : "Adicionar Lançamento"
+                "Adicionar Lançamento"
               )}
             </Button>
           </form>

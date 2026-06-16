@@ -1,16 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { 
-  ShoppingBag, 
-  Coffee, 
-  Car, 
-  Home, 
-  Heart, 
-  TrendingUp, 
+import {
+  ShoppingBag,
+  Coffee,
+  Car,
+  Home,
+  Heart,
+  TrendingUp,
   HelpCircle,
   User,
   Users,
-  Split
+  Split,
+  type LucideIcon,
 } from "lucide-react";
 
 export type Transaction = {
@@ -24,6 +25,8 @@ export type Transaction = {
   division: string;
   user_id: string;
   couple_id: string;
+  card_id?: string | null;
+  billing_date?: string | null;
   profiles?: {
     display_name: string;
     avatar_url: string;
@@ -52,25 +55,32 @@ export const useFinanceStore = create<FinanceStore>()(
       incomeLilian: 0,
 
       addTransaction: (tx) => set((state) => ({ transactions: [tx, ...state.transactions] })),
-      updateTransaction: (id, updatedTx) => set((state) => ({
-        transactions: state.transactions.map((tx) => tx.id === id ? { ...tx, ...updatedTx } : tx)
-      })),
-      deleteTransaction: (id) => set((state) => ({
-        transactions: state.transactions.filter((tx) => tx.id !== id)
-      })),
-      setTransactions: (transactions) => set((state) => ({ 
-        transactions: typeof transactions === 'function' ? transactions(state.transactions) : transactions 
-      })),
+      updateTransaction: (id, updatedTx) =>
+        set((state) => ({
+          transactions: state.transactions.map((tx) =>
+            tx.id === id ? { ...tx, ...updatedTx } : tx,
+          ),
+        })),
+      deleteTransaction: (id) =>
+        set((state) => ({
+          transactions: state.transactions.filter((tx) => tx.id !== id),
+        })),
+      setTransactions: (transactions) =>
+        set((state) => ({
+          transactions:
+            typeof transactions === "function" ? transactions(state.transactions) : transactions,
+        })),
       setIncomes: (jorge, lilian) => set({ incomeJorge: jorge, incomeLilian: lilian }),
       userNames: { Jorge: "Jorge", Lilian: "Lilian" },
-      userAvatars: { 
-        Jorge: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
-        Lilian: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella" 
+      userAvatars: {
+        Jorge: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+        Lilian: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
       },
-      updateUserProfile: (user, name, avatar) => set((state) => ({
-        userNames: { ...state.userNames, [user]: name },
-        userAvatars: { ...state.userAvatars, [user]: avatar }
-      })),
+      updateUserProfile: (user, name, avatar) =>
+        set((state) => ({
+          userNames: { ...state.userNames, [user]: name },
+          userAvatars: { ...state.userAvatars, [user]: avatar },
+        })),
     }),
     {
       name: "finance-storage",
@@ -79,24 +89,34 @@ export const useFinanceStore = create<FinanceStore>()(
         incomeLilian: state.incomeLilian,
         userNames: state.userNames,
       }),
-    }
-  )
+    },
+  ),
 );
 
-export const CATEGORY_ICONS: Record<string, any> = {
-  "Alimentação": ShoppingBag,
-  "Lazer": Coffee,
-  "Transporte": Car,
-  "Moradia": Home,
-  "Saúde": Heart,
-  "Renda": TrendingUp,
-  "Outros": HelpCircle,
+export const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  Alimentação: ShoppingBag,
+  Lazer: Coffee,
+  Transporte: Car,
+  Moradia: Home,
+  Saúde: Heart,
+  Salário: TrendingUp,
+  Renda: TrendingUp,
+  "Renda extra": TrendingUp,
+  Freelance: TrendingUp,
+  Vendas: ShoppingBag,
+  Reembolso: TrendingUp,
+  "Presente recebido": Heart,
+  Rendimentos: TrendingUp,
+  "Aluguel recebido": Home,
+  Bônus: TrendingUp,
+  Outros: HelpCircle,
+  "Outros ganhos": HelpCircle,
 };
 
-export const DIVISION_ICONS: Record<string, any> = {
+export const DIVISION_ICONS: Record<string, LucideIcon> = {
   "Conjunta 50/50": Users,
-  "Proporcional": Split,
-  "Individual": User,
+  Proporcional: Split,
+  Individual: User,
 };
 
 // Removendo AVATARS estáticos para usar os do store dinamicamente
