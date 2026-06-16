@@ -1,12 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/layout-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Plus, 
-  TrendingUp, 
+import {
+  Plus,
+  TrendingUp,
   Wallet,
   ArrowUp,
   ArrowDown,
@@ -14,10 +14,7 @@ import {
   Coins,
   Building2,
   Activity,
-  MoreVertical,
-  Pencil,
-  Trash2,
-  ChevronDown
+  ChevronDown,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,14 +25,10 @@ import { EmptyState } from "@/components/empty-state";
 import { useInvestmentPortfolio, ConsolidatedAsset } from "@/hooks/use-investment-portfolio";
 import { NewAssetModal } from "@/components/investments/new-asset-modal";
 import { EditAssetModal } from "@/components/investments/edit-asset-modal";
+import { AssetDetails } from "@/components/investments/asset-details";
+import { PortfolioAllocationChart } from "@/components/investments/portfolio-allocation-chart";
 import { useDeleteInvestment } from "@/hooks/use-investment-mutations";
 import { Database } from "@/integrations/supabase/types";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,24 +59,26 @@ export const Route = createFileRoute("/investimentos")({
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
 };
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1 }
+  visible: { y: 0, opacity: 1 },
 };
 
 type RawInvestment = Database["public"]["Tables"]["investments"]["Row"];
 
-function ConsolidatedAssetCards({ 
-  data, 
-  onEdit, 
-  onDelete 
-}: { 
-  data: ConsolidatedAsset[],
-  onEdit: (asset: RawInvestment) => void,
-  onDelete: (asset: RawInvestment, ticker: string) => void 
+function ConsolidatedAssetCards({
+  data,
+  portfolioTotal,
+  onEdit,
+  onDelete,
+}: {
+  data: ConsolidatedAsset[];
+  portfolioTotal: number;
+  onEdit: (asset: RawInvestment) => void;
+  onDelete: (asset: RawInvestment, ticker: string) => void;
 }) {
   if (data.length === 0) {
     return (
@@ -104,16 +99,21 @@ function ConsolidatedAssetCards({
             <Card className="apple-card group border-border/40 hover:border-primary/20 transition-all overflow-hidden">
               <AccordionTrigger className="hover:no-underline py-0 [&[data-state=open]>div>div:last-child>svg]:rotate-180 cursor-pointer">
                 <CardContent className="p-4 sm:p-6 w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  
                   {/* Left Side: Icon & Ticker */}
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-muted/50 border border-border/40 flex items-center justify-center shrink-0">
-                       {asset.asset_type === 'CRYPTO' ? <Coins size={20} className="text-secondary-foreground" /> :
-                        asset.asset_type === 'FIXED_INCOME' ? <Building2 size={20} className="text-amber-500" /> :
-                        <Activity size={20} className="text-primary" />}
+                      {asset.asset_type === "CRYPTO" ? (
+                        <Coins size={20} className="text-secondary-foreground" />
+                      ) : asset.asset_type === "FIXED_INCOME" ? (
+                        <Building2 size={20} className="text-amber-500" />
+                      ) : (
+                        <Activity size={20} className="text-primary" />
+                      )}
                     </div>
                     <div className="text-left">
-                      <h3 className="text-lg font-black uppercase tracking-tight">{asset.ticker}</h3>
+                      <h3 className="text-lg font-black uppercase tracking-tight">
+                        {asset.ticker}
+                      </h3>
                       <p className="text-xs font-medium text-muted-foreground">
                         {asset.total_quantity} cotas | P.M {formatCurrency(asset.average_price)}
                       </p>
@@ -123,28 +123,45 @@ function ConsolidatedAssetCards({
                   {/* Right Side: Balances & Accordion Icon */}
                   <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-8 w-full sm:w-auto mt-2 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-0 border-border/20">
                     <div className="text-left sm:text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Saldo Atual</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                        Saldo Atual
+                      </p>
                       <p className="text-base sm:text-lg font-black">
                         {formatCurrency(asset.current_value)}
                       </p>
                     </div>
 
                     <div className="text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">P&L</p>
-                      <div className={cn(
-                        "flex items-center gap-1 font-bold text-sm",
-                        isPositive ? "text-emerald-500" : isNegative ? "text-rose-500" : "text-muted-foreground"
-                      )}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                        P&L
+                      </p>
+                      <div
+                        className={cn(
+                          "flex items-center gap-1 font-bold text-sm",
+                          isPositive
+                            ? "text-emerald-500"
+                            : isNegative
+                              ? "text-rose-500"
+                              : "text-muted-foreground",
+                        )}
+                      >
                         {isPositive && <ArrowUp size={14} />}
                         {isNegative && <ArrowDown size={14} />}
                         {!isPositive && !isNegative && <span className="mr-1">-</span>}
                         {Math.abs(asset.profit_loss_percentage).toFixed(2)}%
                       </div>
-                      <p className={cn(
-                        "text-[10px] font-bold",
-                        isPositive ? "text-emerald-500/80" : isNegative ? "text-rose-500/80" : "text-muted-foreground"
-                      )}>
-                        {isPositive ? '+' : ''}{formatCurrency(asset.profit_loss_value)}
+                      <p
+                        className={cn(
+                          "text-[10px] font-bold",
+                          isPositive
+                            ? "text-emerald-500/80"
+                            : isNegative
+                              ? "text-rose-500/80"
+                              : "text-muted-foreground",
+                        )}
+                      >
+                        {isPositive ? "+" : ""}
+                        {formatCurrency(asset.profit_loss_value)}
                       </p>
                     </div>
 
@@ -157,48 +174,12 @@ function ConsolidatedAssetCards({
               </AccordionTrigger>
 
               <AccordionContent className="bg-muted/10 border-t border-border/20 px-4 sm:px-6 py-4">
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-80">
-                    Histórico de Aportes
-                  </h4>
-                  
-                  <div className="space-y-2">
-                    {asset.history.map((inv) => (
-                      <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/40 hover:border-border/80 transition-colors">
-                        <div>
-                          <p className="text-sm font-bold">{new Date(inv.purchase_date || inv.created_at).toLocaleDateString('pt-BR')}</p>
-                          <p className="text-xs text-muted-foreground font-medium">
-                            {Number(inv.quantity)} cotas a {formatCurrency(Number(inv.average_price))}
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm font-bold hidden sm:inline-block">
-                            {formatCurrency(Number(inv.quantity) * Number(inv.average_price))}
-                          </span>
-                          
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                                <MoreVertical size={14} className="text-muted-foreground" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="apple-card rounded-xl w-40">
-                              <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onEdit(inv)}>
-                                <Pencil size={14} />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer gap-2 text-rose-500 focus:text-rose-600 focus:bg-rose-500/10" onClick={() => onDelete(inv, asset.ticker)}>
-                                <Trash2 size={14} />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <AssetDetails
+                  asset={asset}
+                  portfolioTotal={portfolioTotal}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
               </AccordionContent>
             </Card>
           </AccordionItem>
@@ -213,7 +194,9 @@ export function InvestimentosPage() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assetToEdit, setAssetToEdit] = useState<RawInvestment | null>(null);
-  const [assetToDelete, setAssetToDelete] = useState<{ raw: RawInvestment; ticker: string } | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<{ raw: RawInvestment; ticker: string } | null>(
+    null,
+  );
 
   const deleteMutation = useDeleteInvestment();
 
@@ -232,7 +215,7 @@ export function InvestimentosPage() {
     isLoading,
     isRefetching,
     refetch,
-    isError
+    isError,
   } = useInvestmentPortfolio();
 
   const handleRefresh = async () => {
@@ -242,11 +225,14 @@ export function InvestimentosPage() {
 
   const handleConfirmDelete = () => {
     if (assetToDelete) {
-      deleteMutation.mutate({ id: assetToDelete.raw.id, ticker: assetToDelete.ticker }, {
-        onSuccess: () => {
-          setAssetToDelete(null);
-        }
-      });
+      deleteMutation.mutate(
+        { id: assetToDelete.raw.id, ticker: assetToDelete.ticker },
+        {
+          onSuccess: () => {
+            setAssetToDelete(null);
+          },
+        },
+      );
     }
   };
 
@@ -256,32 +242,40 @@ export function InvestimentosPage() {
 
   const hasInvestments = investments && investments.length > 0;
 
-  const acoes = investments?.filter(i => i.asset_type === "STOCK") || [];
-  const fiis = investments?.filter(i => i.asset_type === "FII") || [];
-  const cripto = investments?.filter(i => i.asset_type === "CRYPTO") || [];
-  const rendafixa = investments?.filter(i => i.asset_type === "FIXED_INCOME") || [];
+  const acoes = investments?.filter((i) => i.asset_type === "STOCK") || [];
+  const fiis = investments?.filter((i) => i.asset_type === "FII") || [];
+  const cripto = investments?.filter((i) => i.asset_type === "CRYPTO") || [];
+  const rendafixa = investments?.filter((i) => i.asset_type === "FIXED_INCOME") || [];
 
   return (
     <DashboardLayout>
       <NewAssetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-      <EditAssetModal isOpen={!!assetToEdit} onClose={() => setAssetToEdit(null)} asset={assetToEdit} />
+      <EditAssetModal
+        isOpen={!!assetToEdit}
+        onClose={() => setAssetToEdit(null)}
+        asset={assetToEdit}
+      />
 
       <AlertDialog open={!!assetToDelete} onOpenChange={(open) => !open && setAssetToDelete(null)}>
         <AlertDialogContent className="apple-card rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Aporte?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover este aporte em <strong className="uppercase">{assetToDelete?.ticker}</strong>? A rentabilidade e o preço médio do ativo serão recalculados.
+              Tem certeza que deseja remover este aporte em{" "}
+              <strong className="uppercase">{assetToDelete?.ticker}</strong>? A rentabilidade e o
+              preço médio do ativo serão recalculados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending} className="rounded-xl">Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogCancel disabled={deleteMutation.isPending} className="rounded-xl">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
                 handleConfirmDelete();
               }}
-              disabled={deleteMutation.isPending} 
+              disabled={deleteMutation.isPending}
               className="bg-rose-500 hover:bg-rose-600 text-white rounded-xl gap-2"
             >
               {deleteMutation.isPending && <RefreshCw size={14} className="animate-spin" />}
@@ -290,8 +284,8 @@ export function InvestimentosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      <motion.div 
+
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -300,21 +294,30 @@ export function InvestimentosPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Carteira Consolidada</h1>
-            <p className="text-muted-foreground italic">Seus ativos agrupados e atualizados em tempo real.</p>
+            <p className="text-muted-foreground italic">
+              Seus ativos agrupados e atualizados em tempo real.
+            </p>
           </div>
           {hasInvestments && (
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleRefresh}
                 className="rounded-full apple-interactive border-border/40 gap-2"
                 disabled={isRefetching || isLoading}
               >
-                <RefreshCw size={16} className={cn((isRefetching || isLoading) && "animate-spin")} />
+                <RefreshCw
+                  size={16}
+                  className={cn((isRefetching || isLoading) && "animate-spin")}
+                />
                 {isRefetching || isLoading ? "Buscando..." : "Atualizar"}
               </Button>
-              <Button size="sm" className="rounded-full gap-2 shadow-lg" onClick={() => setIsModalOpen(true)}>
+              <Button
+                size="sm"
+                className="rounded-full gap-2 shadow-lg"
+                onClick={() => setIsModalOpen(true)}
+              >
                 <Plus size={16} />
                 Novo Aporte
               </Button>
@@ -325,7 +328,8 @@ export function InvestimentosPage() {
         {isError && hasInvestments && (
           <div className="bg-rose-500/10 text-rose-500 p-4 rounded-xl border border-rose-500/20 font-medium flex items-center gap-3">
             <Activity size={20} />
-            Houve um erro de rede em algumas integrações. Exibindo últimos preços cacheados ou o preço médio.
+            Houve um erro de rede em algumas integrações. Exibindo últimos preços cacheados ou o
+            preço médio.
           </div>
         )}
 
@@ -336,21 +340,32 @@ export function InvestimentosPage() {
             </div>
             <div>
               <h3 className="text-xl font-bold mb-2">Falha ao Carregar</h3>
-              <p className="text-sm opacity-80 max-w-md mx-auto">Não foi possível carregar seus investimentos no momento. Verifique sua conexão ou tente novamente.</p>
+              <p className="text-sm opacity-80 max-w-md mx-auto">
+                Não foi possível carregar seus investimentos no momento. Verifique sua conexão ou
+                tente novamente.
+              </p>
             </div>
-            <Button onClick={() => refetch()} variant="outline" className="mt-4 border-rose-500/30 text-rose-500 hover:bg-rose-500/20">
-               <RefreshCw size={16} className="mr-2" /> Tentar Novamente
+            <Button
+              onClick={() => refetch()}
+              variant="outline"
+              className="mt-4 border-rose-500/30 text-rose-500 hover:bg-rose-500/20"
+            >
+              <RefreshCw size={16} className="mr-2" /> Tentar Novamente
             </Button>
           </div>
         ) : isLoading ? (
           // Skeletons Premium para carregamento
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl w-full apple-card" />)}
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32 rounded-2xl w-full apple-card" />
+              ))}
             </div>
             <Skeleton className="h-14 w-full max-w-md rounded-2xl apple-card" />
             <div className="space-y-4">
-              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 w-full rounded-2xl apple-card" />)}
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-2xl apple-card" />
+              ))}
             </div>
           </div>
         ) : hasInvestments ? (
@@ -365,7 +380,9 @@ export function InvestimentosPage() {
                       <div className="p-2 bg-white/20 rounded-lg text-white">
                         <Wallet size={24} />
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">Consolidado</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">
+                        Consolidado
+                      </span>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-white/80">Patrimônio Total</p>
@@ -385,16 +402,25 @@ export function InvestimentosPage() {
                       <div className="p-2 bg-white/20 rounded-lg text-white">
                         <TrendingUp size={24} />
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">P&L Geral</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">
+                        P&L Geral
+                      </span>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-white/80 flex items-center gap-1">
                         Rentabilidade da Carteira
-                        <span className={cn(
-                          "ml-1 font-bold",
-                          isGlobalPositive ? "text-emerald-300" : isGlobalNegative ? "text-rose-300" : "text-white"
-                        )}>
-                          ({isGlobalPositive ? '+' : ''}{totalProfitPercentage.toFixed(2)}%)
+                        <span
+                          className={cn(
+                            "ml-1 font-bold",
+                            isGlobalPositive
+                              ? "text-emerald-300"
+                              : isGlobalNegative
+                                ? "text-rose-300"
+                                : "text-white",
+                          )}
+                        >
+                          ({isGlobalPositive ? "+" : ""}
+                          {totalProfitPercentage.toFixed(2)}%)
                         </span>
                       </p>
                       <h3 className="text-3xl md:text-4xl font-black tracking-tight text-white mt-1 flex items-center gap-2">
@@ -418,7 +444,7 @@ export function InvestimentosPage() {
                         Maior Posição
                       </span>
                     </div>
-                    
+
                     {topAsset ? (
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">
@@ -441,23 +467,39 @@ export function InvestimentosPage() {
               </motion.div>
             </div>
 
+            <motion.div variants={itemVariants}>
+              <PortfolioAllocationChart assets={investments} totalPatrimony={totalPatrimony} />
+            </motion.div>
+
             {/* Ativos Categorizados - Cartões Expansíveis */}
             <motion.div variants={itemVariants}>
               <Tabs defaultValue="visaogeral" className="w-full">
                 <TabsList className="bg-muted/50 p-1 rounded-2xl h-auto border border-border/40 gap-1 w-full md:w-fit flex-wrap md:flex-nowrap justify-start">
-                  <TabsTrigger value="visaogeral" className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all">
+                  <TabsTrigger
+                    value="visaogeral"
+                    className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all"
+                  >
                     <Activity size={16} />
                     Visão Geral
                   </TabsTrigger>
-                  <TabsTrigger value="acoes_fiis" className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all">
+                  <TabsTrigger
+                    value="acoes_fiis"
+                    className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all"
+                  >
                     <TrendingUp size={16} />
                     Renda Variável
                   </TabsTrigger>
-                  <TabsTrigger value="cripto" className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all">
+                  <TabsTrigger
+                    value="cripto"
+                    className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all"
+                  >
                     <Coins size={16} />
                     Criptomoedas
                   </TabsTrigger>
-                  <TabsTrigger value="rendafixa" className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all">
+                  <TabsTrigger
+                    value="rendafixa"
+                    className="rounded-xl px-6 h-11 data-[state=active]:bg-card data-[state=active]:shadow-sm gap-2 transition-all"
+                  >
                     <Building2 size={16} />
                     Renda Fixa
                   </TabsTrigger>
@@ -465,34 +507,38 @@ export function InvestimentosPage() {
 
                 <div className="mt-8">
                   <TabsContent value="visaogeral" className="mt-0">
-                    <ConsolidatedAssetCards 
-                      data={investments} 
-                      onEdit={setAssetToEdit} 
-                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })} 
+                    <ConsolidatedAssetCards
+                      data={investments}
+                      portfolioTotal={totalPatrimony}
+                      onEdit={setAssetToEdit}
+                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })}
                     />
                   </TabsContent>
 
                   <TabsContent value="acoes_fiis" className="mt-0">
-                    <ConsolidatedAssetCards 
-                      data={[...acoes, ...fiis]} 
-                      onEdit={setAssetToEdit} 
-                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })} 
+                    <ConsolidatedAssetCards
+                      data={[...acoes, ...fiis]}
+                      portfolioTotal={totalPatrimony}
+                      onEdit={setAssetToEdit}
+                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })}
                     />
                   </TabsContent>
 
                   <TabsContent value="cripto" className="mt-0">
-                    <ConsolidatedAssetCards 
-                      data={cripto} 
-                      onEdit={setAssetToEdit} 
-                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })} 
+                    <ConsolidatedAssetCards
+                      data={cripto}
+                      portfolioTotal={totalPatrimony}
+                      onEdit={setAssetToEdit}
+                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })}
                     />
                   </TabsContent>
 
                   <TabsContent value="rendafixa" className="mt-0">
-                    <ConsolidatedAssetCards 
-                      data={rendafixa} 
-                      onEdit={setAssetToEdit} 
-                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })} 
+                    <ConsolidatedAssetCards
+                      data={rendafixa}
+                      portfolioTotal={totalPatrimony}
+                      onEdit={setAssetToEdit}
+                      onDelete={(raw, ticker) => setAssetToDelete({ raw, ticker })}
                     />
                   </TabsContent>
                 </div>
@@ -500,7 +546,7 @@ export function InvestimentosPage() {
             </motion.div>
           </>
         ) : (
-          <EmptyState 
+          <EmptyState
             icon={TrendingUp}
             title="Sua carteira está vazia"
             description="Comece a adicionar seus ativos para criar sua carteira consolidada e acompanhar a rentabilidade."
