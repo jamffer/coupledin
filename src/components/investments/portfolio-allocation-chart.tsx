@@ -92,14 +92,26 @@ export function PortfolioAllocationChart({
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value, _name, item) => [
-                  `${formatCurrency(Number(value ?? 0))} (${Number(item.payload.percentage).toFixed(1)}%)`,
-                  item.payload.name,
-                ]}
-                contentStyle={{
-                  borderRadius: "14px",
-                  border: "1px solid hsl(var(--border))",
-                  background: "hsl(var(--background))",
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+
+                  const item = payload[0].payload;
+
+                  return (
+                    <div className="rounded-2xl border border-border bg-popover px-4 py-3 text-popover-foreground shadow-2xl">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <p className="text-sm font-black">{item.name}</p>
+                      </div>
+                      <p className="text-base font-black">{formatCurrency(Number(item.value))}</p>
+                      <p className="text-xs font-bold text-muted-foreground">
+                        {Number(item.percentage).toFixed(1)}% da carteira
+                      </p>
+                    </div>
+                  );
                 }}
               />
             </PieChart>
