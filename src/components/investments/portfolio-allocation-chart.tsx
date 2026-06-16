@@ -4,7 +4,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConsolidatedAsset } from "@/hooks/use-investment-portfolio";
 import { formatCurrency } from "@/lib/utils";
 
-const ALLOCATION_COLORS = ["#2563eb", "#8b5cf6", "#10b981", "#f59e0b", "#ec4899", "#06b6d4"];
+const ALLOCATION_CATEGORIES = [
+  {
+    key: "fixed-income",
+    name: "Renda fixa",
+    color: "#f59e0b",
+    matches: (asset: ConsolidatedAsset) => asset.asset_type === "FIXED_INCOME",
+  },
+  {
+    key: "variable-income",
+    name: "Renda variável",
+    color: "#2563eb",
+    matches: (asset: ConsolidatedAsset) =>
+      (asset.asset_type === "STOCK" || asset.asset_type === "FII") && !isInternationalAsset(asset),
+  },
+  {
+    key: "crypto",
+    name: "Criptomoedas",
+    color: "#8b5cf6",
+    matches: (asset: ConsolidatedAsset) => asset.asset_type === "CRYPTO",
+  },
+  {
+    key: "international",
+    name: "Ativos internacionais",
+    color: "#10b981",
+    matches: (asset: ConsolidatedAsset) => isInternationalAsset(asset),
+  },
+] as const;
+
+function isInternationalAsset(asset: ConsolidatedAsset) {
+  const ticker = asset.ticker.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  // BDRs negociados na B3 costumam seguir padrões como AAPL34, MSFT34, NVDC34.
+  return asset.asset_type === "STOCK" && /^[A-Z]{4,5}3[1-9]$/.test(ticker);
+}
 
 interface PortfolioAllocationChartProps {
   assets: ConsolidatedAsset[];
@@ -15,19 +48,25 @@ export function PortfolioAllocationChart({
   assets,
   totalPatrimony,
 }: PortfolioAllocationChartProps) {
-  const chartData = assets.map((asset, index) => ({
-    name: asset.ticker,
-    value: asset.current_value,
-    percentage: totalPatrimony > 0 ? (asset.current_value / totalPatrimony) * 100 : 0,
-    color: ALLOCATION_COLORS[index % ALLOCATION_COLORS.length],
-  }));
+  const categoryData = ALLOCATION_CATEGORIES.map((category) => {
+    const categoryAssets = assets.filter(category.matches);
+    const value = categoryAssets.reduce((sum, asset) => sum + asset.current_value, 0);
+
+    return {
+      ...category,
+      value,
+      tickers: categoryAssets.map((asset) => asset.ticker).join(", "),
+      percentage: totalPatrimony > 0 ? (value / totalPatrimony) * 100 : 0,
+    };
+  });
+  const chartData = categoryData.filter((category) => category.value > 0);
 
   return (
     <Card className="apple-card overflow-hidden border-border/40">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-bold">Composição da carteira</CardTitle>
         <p className="text-xs text-muted-foreground">
-          Participação de cada ativo no patrimônio investido.
+          Percentual por classe: renda fixa, renda variável, cripto e BDRs/ativos internacionais.
         </p>
       </CardHeader>
       <CardContent className="grid gap-6 lg:grid-cols-[minmax(280px,0.9fr)_1.1fr] lg:items-center">
@@ -49,7 +88,7 @@ export function PortfolioAllocationChart({
                 stroke="transparent"
               >
                 {chartData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
+                  <Cell key={entry.key} fill={entry.color} />
                 ))}
               </Pie>
               <Tooltip
@@ -74,9 +113,9 @@ export function PortfolioAllocationChart({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          {chartData.map((entry) => (
+          {categoryData.map((entry) => (
             <div
-              key={entry.name}
+              key={entry.key}
               className="flex items-center justify-between gap-3 rounded-xl border border-border/40 bg-muted/20 p-3"
             >
               <div className="flex min-w-0 items-center gap-3">
@@ -85,8 +124,10 @@ export function PortfolioAllocationChart({
                   style={{ backgroundColor: entry.color }}
                 />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-black uppercase">{entry.name}</p>
-                  <p className="text-xs text-muted-foreground">{formatCurrency(entry.value)}</p>
+                  <p className="truncate text-sm font-black">{entry.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {entry.tickers || "Sem ativos"} · {formatCurrency(entry.value)}
+                  </p>
                 </div>
               </div>
               <strong className="text-sm tabular-nums">{entry.percentage.toFixed(1)}%</strong>

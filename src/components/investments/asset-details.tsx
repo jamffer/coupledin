@@ -31,46 +31,47 @@ interface AssetDetailsProps {
   onDelete: (asset: RawInvestment, ticker: string) => void;
 }
 
-function buildEstimatedEvolution(asset: ConsolidatedAsset) {
+function buildPriceEvolution(asset: ConsolidatedAsset) {
   const sortedHistory = [...asset.history].sort((a, b) => {
     const first = new Date(a.purchase_date || a.created_at).getTime();
     const second = new Date(b.purchase_date || b.created_at).getTime();
     return first - second;
   });
-  const startDate = new Date(
-    sortedHistory[0]?.purchase_date || sortedHistory[0]?.created_at || Date.now(),
-  );
-  const endDate = new Date();
-  const points = 8;
-  const seed = asset.ticker.split("").reduce((sum, character) => sum + character.charCodeAt(0), 0);
-  const startPrice = asset.average_price || asset.current_price;
 
-  return Array.from({ length: points }, (_, index) => {
-    const progress = index / (points - 1);
-    const date = new Date(
-      startDate.getTime() + (endDate.getTime() - startDate.getTime()) * progress,
-    );
-    const trend = startPrice + (asset.current_price - startPrice) * progress;
-    const wave =
-      Math.sin(progress * Math.PI) *
-      Math.sin((progress * 4 + seed) * Math.PI) *
-      Math.max(startPrice, 1) *
-      0.06;
+  return [
+    ...sortedHistory.map((investment, index) => {
+      const date = new Date(investment.purchase_date || investment.created_at);
 
-    return {
-      date: date
-        .toLocaleDateString("pt-BR", { month: "short", year: "2-digit" })
-        .replace(" de ", "/"),
-      price: Math.max(0, trend + wave),
-    };
-  });
+      return {
+        date: date.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "2-digit",
+        }),
+        label: `Aporte ${index + 1}`,
+        price: Number(investment.average_price || 0),
+      };
+    }),
+    {
+      date: "Hoje",
+      label: "Cotação atual",
+      price: asset.current_price,
+    },
+  ];
 }
 
 export function AssetDetails({ asset, portfolioTotal, onEdit, onDelete }: AssetDetailsProps) {
   const allocation = portfolioTotal > 0 ? (asset.current_value / portfolioTotal) * 100 : 0;
   const isPositive = asset.profit_loss_percentage > 0;
   const isNegative = asset.profit_loss_percentage < 0;
-  const evolution = buildEstimatedEvolution(asset);
+  const evolution = buildPriceEvolution(asset);
+  const firstInvestmentDate = asset.history.reduce<Date | null>((oldestDate, investment) => {
+    const investmentDate = new Date(investment.purchase_date || investment.created_at);
+    return !oldestDate || investmentDate < oldestDate ? investmentDate : oldestDate;
+  }, null);
+  const periodLabel = firstInvestmentDate
+    ? `${firstInvestmentDate.toLocaleDateString("pt-BR")} até hoje`
+    : "Histórico da posição";
   const AssetIcon =
     asset.asset_type === "CRYPTO"
       ? Coins
@@ -183,14 +184,34 @@ export function AssetDetails({ asset, portfolioTotal, onEdit, onDelete }: AssetD
         <CardContent className="p-4 sm:p-6">
           <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h4 className="font-bold">Evolução estimada do ativo</h4>
+              <h4 className="font-bold">Preço nos aportes x cotação atual</h4>
               <p className="text-xs text-muted-foreground">
-                Projeção visual entre o preço médio e a cotação atual.
+                Janela real da sua posição: {periodLabel}.
               </p>
             </div>
             <span className="text-xs font-medium text-amber-500">
-              Ainda sem histórico oficial de bolsa
+              Sem série histórica oficial de bolsa
             </span>
+          </div>
+          <div className="mb-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-border/40 bg-muted/20 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Cotação hoje
+              </p>
+              <strong className="text-lg">{formatCurrency(asset.current_price)}</strong>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-muted/20 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Preço médio
+              </p>
+              <strong className="text-lg">{formatCurrency(asset.average_price)}</strong>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-muted/20 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Aportes
+              </p>
+              <strong className="text-lg">{asset.history.length}</strong>
+            </div>
           </div>
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -220,7 +241,8 @@ export function AssetDetails({ asset, portfolioTotal, onEdit, onDelete }: AssetD
                   tickFormatter={(value) => `R$${Number(value).toFixed(0)}`}
                 />
                 <Tooltip
-                  formatter={(value) => [formatCurrency(Number(value ?? 0)), "Preço estimado"]}
+                  formatter={(value) => [formatCurrency(Number(value ?? 0)), "Preço"]}
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.label || ""}
                   contentStyle={{
                     borderRadius: "14px",
                     border: "1px solid hsl(var(--border))",
@@ -238,6 +260,8 @@ export function AssetDetails({ asset, portfolioTotal, onEdit, onDelete }: AssetD
                   dataKey="price"
                   stroke="#14b8a6"
                   strokeWidth={3}
+                  dot={{ r: 3, strokeWidth: 2 }}
+                  activeDot={{ r: 5 }}
                   fill={`url(#asset-evolution-${asset.id})`}
                 />
               </AreaChart>
