@@ -71,6 +71,56 @@ const itemVariants = {
 
 type ReportPeriod = "Este Mês" | "Últimos 3 Meses" | "Este Ano";
 
+function ChartXAxisTick({
+  x,
+  y,
+  payload,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value: string };
+}) {
+  if (x === undefined || y === undefined || !payload) return null;
+
+  return (
+    <text
+      x={x}
+      y={y + 16}
+      textAnchor="middle"
+      fill="hsl(var(--foreground))"
+      className="text-[12px] font-black"
+      style={{ filter: "drop-shadow(0 1px 2px hsl(var(--background)))" }}
+    >
+      {payload.value}
+    </text>
+  );
+}
+
+function ChartYAxisTick({
+  x,
+  y,
+  payload,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value: number };
+}) {
+  if (x === undefined || y === undefined || !payload) return null;
+
+  return (
+    <text
+      x={x - 8}
+      y={y + 4}
+      textAnchor="end"
+      fill="hsl(var(--foreground))"
+      className="text-[12px] font-black"
+      style={{ filter: "drop-shadow(0 1px 2px hsl(var(--background)))" }}
+    >
+      {`R$${Number(payload.value) / 1000}k`}
+    </text>
+  );
+}
+
 function RelatoriosPage() {
   const { transactions, incomeJorge, incomeLilian } = useFinanceStore();
   const { user, loading: authLoading } = useAuth();
@@ -450,16 +500,16 @@ function RelatoriosPage() {
                         axisLine={false}
                         tickLine={false}
                         stroke="hsl(var(--border))"
-                        tick={{ fontSize: 11, fontWeight: 800, fill: "hsl(var(--foreground))" }}
+                        tick={<ChartXAxisTick />}
                         dy={10}
                       />
                       <YAxis
                         axisLine={false}
                         tickLine={false}
                         stroke="hsl(var(--border))"
-                        tick={{ fontSize: 11, fontWeight: 800, fill: "hsl(var(--foreground))" }}
+                        tick={<ChartYAxisTick />}
                         tickFormatter={(value) => `R$${Number(value) / 1000}k`}
-                        dx={-6}
+                        width={64}
                       />
                       <Legend
                         verticalAlign="top"
