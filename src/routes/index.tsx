@@ -107,7 +107,7 @@ function Dashboard() {
   const search = useSearch({ from: "/" });
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const { user, loading: authLoading } = useAuth();
-  const { transactions, userAvatars, setTransactions } = useFinanceStore();
+  const { transactions, setTransactions } = useFinanceStore();
   const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const { step, message, setStep, reset: resetOnboarding } = useSpaceOnboardingStore();
 
@@ -413,7 +413,7 @@ function Dashboard() {
   const renderTransactionItem = (tx: Transaction) => {
     const Icon = CATEGORY_ICONS[tx.category] || HelpCircle;
     const avatar =
-      tx.profiles?.avatar_url || userAvatars[tx.responsible as keyof typeof userAvatars];
+      tx.profiles?.avatar_url;
     const responsibleName = tx.profiles?.display_name || tx.responsible;
 
     return (
@@ -542,7 +542,7 @@ function Dashboard() {
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white/80">Saídas (Débito)</p>
+                  <p className="text-sm font-medium text-white/80">Débitos</p>
                   <h3 className="text-2xl font-bold tracking-tight text-white">
                     {formatCurrency(totals.expenses)}
                   </h3>
@@ -617,7 +617,12 @@ function Dashboard() {
                           <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="hsl(var(--border))"
+                        strokeOpacity={0.55}
+                      />
                       <XAxis
                         dataKey="name"
                         axisLine={false}
@@ -648,7 +653,7 @@ function Dashboard() {
                         fill="url(#colorEntradas)"
                       />
                       <Area
-                        name="Saídas"
+                        name="Débitos"
                         type="monotone"
                         dataKey="saidas"
                         stroke="#f43f5e"
@@ -678,7 +683,7 @@ function Dashboard() {
             <Card className="apple-card apple-card-hover">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-bold">Transações</CardTitle>
+                  <CardTitle className="text-lg font-bold">Lançamentos</CardTitle>
                   <p className="text-xs text-muted-foreground">Últimos registros do casal</p>
                 </div>
               </CardHeader>
@@ -708,8 +713,7 @@ function Dashboard() {
                               <div className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
                                 <img
                                   src={
-                                    tx.profiles?.avatar_url ||
-                                    userAvatars[tx.responsible as keyof typeof userAvatars]
+                                  tx.profiles?.avatar_url
                                   }
                                   alt={tx.profiles?.display_name || tx.responsible}
                                   className="w-3 h-3 rounded-full"
@@ -780,7 +784,7 @@ function Dashboard() {
                 )}
                 {activeSheet === "expenses" && (
                   <>
-                    <ArrowDownRight className="text-rose-500" /> Saídas (Débito)
+                    <ArrowDownRight className="text-rose-500" /> Débitos
                   </>
                 )}
                 {activeSheet === "credit" && (
@@ -792,7 +796,7 @@ function Dashboard() {
               <SheetDescription>
                 {activeSheet === "credit"
                   ? "Todas as faturas de crédito em aberto"
-                  : `Transações de ${format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })}`}
+                  : `Lançamentos de ${format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })}`}
               </SheetDescription>
             </SheetHeader>
 
@@ -926,8 +930,7 @@ function Dashboard() {
                   <div className="flex items-center gap-2">
                     <img
                       src={
-                        selectedTx.profiles?.avatar_url ||
-                        userAvatars[selectedTx.responsible as keyof typeof userAvatars]
+                      selectedTx.profiles?.avatar_url
                       }
                       alt={selectedTx.profiles?.display_name || selectedTx.responsible}
                       className="w-6 h-6 rounded-full"

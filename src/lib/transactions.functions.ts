@@ -6,6 +6,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const InputSchema = z.object({
   text: z.string().min(3).max(500),
+  userName: z.string().min(1).max(100).optional(),
+  partnerName: z.string().min(1).max(100).optional(),
 });
 
 const TransactionSchema = z.object({
@@ -22,7 +24,7 @@ const TransactionSchema = z.object({
   ]),
   amount: z.number().describe("Valor absoluto positivo em reais"),
   type: z.enum(["Crédito", "Débito", "Entrada"]),
-  responsible: z.enum(["Jorge", "Lilian"]),
+  responsible: z.enum(["user", "partner"]),
   division: z.enum(["Conjunta 50/50", "Proporcional", "Individual"]),
 });
 
@@ -41,7 +43,7 @@ export const parseTransactionFromText = createServerFn({ method: "POST" })
       const { text } = await generateText({
         // gemini-2.0-flash: modelo rápido, gratuito no tier free do AI Studio
         model: gemini("gemini-2.0-flash"),
-        system: `Você é um assistente financeiro de um casal (Jorge e Lilian). Hoje é ${today}.
+        system: `Você é um assistente financeiro de um casal. A pessoa logada se chama ${data.userName || "Usuário"} e o parceiro se chama ${data.partnerName || "Parceiro(a)"}. Hoje é ${today}.
 Extraia os campos de uma transação a partir da descrição em português e responda APENAS com um JSON válido (sem markdown, sem texto extra, sem \`\`\`json) com este formato exato:
 {
   "date": "YYYY-MM-DD",
@@ -49,14 +51,14 @@ Extraia os campos de uma transação a partir da descrição em português e res
   "category": "Alimentação" | "Lazer" | "Transporte" | "Moradia" | "Saúde" | "Renda" | "Outros",
   "amount": <número positivo>,
   "type": "Crédito" | "Débito" | "Entrada",
-  "responsible": "Jorge" | "Lilian",
+  "responsible": "user" | "partner",
   "division": "Conjunta 50/50" | "Proporcional" | "Individual"
 }
 Regras:
 - "cartão de crédito" / "no crédito" → "Crédito"
 - "débito" / "pix" / "dinheiro" / "transferência" → "Débito"
 - "recebi" / "salário" / "freela" / "rendimento" → "Entrada"
-- Se não disser quem pagou, use "Jorge"
+- Use "user" para a pessoa logada e "partner" para o parceiro. Se não disser quem pagou, use "user"
 - Padrão de divisão: "Conjunta 50/50"; "Individual" se claramente pessoal; "Proporcional" se mencionado
 - "hoje" → ${today}; "ontem" → ${new Date(Date.now() - 86400000).toISOString().slice(0, 10)}; senão → ${today}
 - Retorne SOMENTE o JSON, sem nenhum texto antes ou depois.`,

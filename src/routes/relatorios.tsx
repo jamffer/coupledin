@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,8 @@ import { format, subMonths, startOfMonth, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 import { useProfile } from "@/hooks/use-profile";
+import { useSettlements } from "@/hooks/use-settlements";
+import { useBudgets } from "@/hooks/use-budgets";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
@@ -188,20 +191,24 @@ function ChartYAxisTick({
 }
 
 function RelatoriosPage() {
-  const { transactions, incomeJorge, incomeLilian } = useFinanceStore();
+  const { transactions, incomeUser, incomePartner } = useFinanceStore();
   const { user, loading: authLoading } = useAuth();
   const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const navigate = useNavigate();
 
-  const [isSettled, setIsSettled] = useState(false);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<ReportPeriod>("Este Mês");
   const [categoryChartMode, setCategoryChartMode] = useState<CategoryChartMode>("Gastos");
   const [categoryChartPeriod, setCategoryChartPeriod] = useState<CategoryChartPeriod>("Mês");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
 
-  const userName = profile?.display_name || "Jorge";
-  const partnerName = partnerProfile?.display_name || "Lilian";
+  const userName = profile?.display_name || "Você";
+  const partnerName = partnerProfile?.display_name || "Parceiro(a)";
+  const currentMonth = format(startOfMonth(new Date()), "yyyy-MM-01");
+  const { data: settlements = [], createSettlement, deleteSettlement } = useSettlements();
+  const { data: budgets = [] } = useBudgets();
+  const currentSettlement = settlements.find((settlement) => settlement.month === currentMonth);
+  const isSettled = !!currentSettlement;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -210,40 +217,52 @@ function RelatoriosPage() {
   }, [user, authLoading, navigate]);
 
   // Cálculo de Despesas Conjuntas e Proporção
-  const jointExpenses = transactions.filter((t) => t.division !== "Individual");
+  const jointExpenses = transactions.filter(
+    (t) => t.division !== "Individual" && isSameMonth(new Date(t.date), new Date()),
+  );
   const totalJoint = jointExpenses.reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
 
-  const totalIncome = (incomeJorge || 0) + (incomeLilian || 0);
-  const jorgeShare = totalIncome > 0 ? (incomeJorge || 0) / totalIncome : 0.5;
+  const totalIncome = (incomeUser || 0) + (incomePartner || 0);
+  const userShare = totalIncome > 0 ? (incomeUser || 0) / totalIncome : 0.5;
 
-  const jorgeShouldPay = jointExpenses.reduce((acc, t) => {
-    const share = t.division === "Conjunta 50/50" ? 0.5 : jorgeShare;
+  const userShouldPay = jointExpenses.reduce((acc, t) => {
+    const share = t.division === "Conjunta 50/50" ? 0.5 : userShare;
     return acc + Math.abs(t.amount || 0) * share;
   }, 0);
 
-  const lilianShouldPay = totalJoint - jorgeShouldPay;
-  const jorgePaid = jointExpenses
-    .filter((t) => t.responsible === "Jorge")
+  const partnerShouldPay = totalJoint - userShouldPay;
+  const userPaid = jointExpenses
+    .filter((t) => t.responsible_id === profile?.id || t.responsible === userName)
     .reduce((acc, t) => acc + Math.abs(t.amount || 0), 0);
 
-  const diff = jorgePaid - jorgeShouldPay;
+  const diff = userPaid - userShouldPay;
   const settlementAmount = Math.abs(diff);
 
-  const handleSettlementConfirm = () => {
-    setIsSettled(true);
-    setIsSettlementModalOpen(false);
-    toast.success("Acerto realizado com sucesso!");
+  const handleSettlementConfirm = async () => {
+    if (!profile?.id || !partnerProfile?.id) return;
+    try {
+      await createSettlement.mutateAsync({
+        month: currentMonth,
+        amount: settlementAmount,
+        payer_id: diff < 0 ? profile.id : partnerProfile.id,
+        receiver_id: diff < 0 ? partnerProfile.id : profile.id,
+      });
+      setIsSettlementModalOpen(false);
+      toast.success("Acerto realizado com sucesso!");
+    } catch (error) {
+      toast.error("Não foi possível registrar o acerto.");
+    }
   };
 
   const handleShareSummary = () => {
-    const summary = `Resumo Financeiro\nTotal Gastos Conjuntos: ${formatCurrency(totalJoint)}\nStatus: ${isSettled ? "Tudo quite!" : (diff < 0 ? "Jorge deve transferir" : "Lilian deve transferir") + " " + formatCurrency(Math.abs(settlementAmount))}`;
+    const summary = `Resumo Financeiro\nTotal Gastos Conjuntos: ${formatCurrency(totalJoint)}\nStatus: ${isSettled ? "Tudo quite!" : (diff < 0 ? `${userName} deve transferir` : `${partnerName} deve transferir`) + " " + formatCurrency(Math.abs(settlementAmount))}`;
     navigator.clipboard.writeText(summary);
     toast.success("Resumo copiado para a área de transferência!");
   };
 
   const monthlyEvolutionData = useMemo(() => {
     const now = new Date();
-    const monthlyBaseIncome = (incomeJorge || 0) + (incomeLilian || 0);
+    const monthlyBaseIncome = (incomeUser || 0) + (incomePartner || 0);
 
     const generateMonthlyData = (count: number) => {
       const data = [];
@@ -274,7 +293,7 @@ function RelatoriosPage() {
       "Últimos 3 Meses": generateMonthlyData(3),
       "Este Ano": generateMonthlyData(12),
     };
-  }, [transactions, incomeJorge, incomeLilian]);
+  }, [transactions, incomeUser, incomePartner]);
 
   const hasGraphData = useMemo(() => {
     return monthlyEvolutionData[selectedPeriod].some((d) => d.gastos > 0 || d.ganhos > 0);
@@ -283,7 +302,7 @@ function RelatoriosPage() {
   const monthlyComparison = useMemo(() => {
     const now = new Date();
     const previousMonth = subMonths(now, 1);
-    const monthlyBaseIncome = (incomeJorge || 0) + (incomeLilian || 0);
+    const monthlyBaseIncome = (incomeUser || 0) + (incomePartner || 0);
 
     const summarizeMonth = (date: Date) => {
       const periodTxs = transactions.filter((t) => isSameMonth(new Date(t.date), date));
@@ -310,7 +329,7 @@ function RelatoriosPage() {
       current: summarizeMonth(now),
       previous: summarizeMonth(previousMonth),
     };
-  }, [transactions, incomeJorge, incomeLilian]);
+  }, [transactions, incomeUser, incomePartner]);
 
   const topExpenses = useMemo(() => {
     return [...transactions]
@@ -388,13 +407,13 @@ function RelatoriosPage() {
     const actualIncome = transactions
       .filter((t) => t.type === "INCOME" || (t.amount || 0) > 0)
       .reduce((acc, t) => acc + (t.amount || 0), 0);
-    const baseIncome = (incomeJorge || 0) + (incomeLilian || 0);
+    const baseIncome = (incomeUser || 0) + (incomePartner || 0);
     const incomeToUse = actualIncome > 0 ? actualIncome : baseIncome;
 
     if (incomeToUse <= 0) return 0;
     const saved = incomeToUse - totalExpensesAmount;
     return Math.max(0, (saved / incomeToUse) * 100);
-  }, [totalExpensesAmount, transactions, incomeJorge, incomeLilian]);
+  }, [totalExpensesAmount, transactions, incomeUser, incomePartner]);
 
   const mostExpensiveCategory = useMemo(() => {
     if (categoryTotals.length === 0) return { name: "N/A", amount: 0 };
@@ -586,6 +605,80 @@ function RelatoriosPage() {
           </Card>
         </motion.div>
 
+        {settlements.length > 0 && (
+          <motion.div variants={itemVariants}>
+            <Card className="apple-card">
+              <CardHeader>
+                <CardTitle>Histórico de acertos</CardTitle>
+                <CardDescription>Pagamentos de fechamento registrados pelo casal.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {settlements.slice(0, 6).map((settlement) => {
+                  const payer =
+                    settlement.payer_id === profile?.id ? userName : partnerName;
+                  const receiver =
+                    settlement.receiver_id === profile?.id ? userName : partnerName;
+                  return (
+                    <div key={settlement.id} className="flex items-center justify-between gap-4 rounded-2xl bg-muted/40 p-4">
+                      <p className="text-sm">
+                        <span className="font-bold capitalize">
+                          {format(new Date(settlement.month), "MMMM yyyy", { locale: ptBR })}
+                        </span>
+                        : {payer} transferiu {formatCurrency(Number(settlement.amount))} para {receiver}
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteSettlement.mutate(settlement.id)}
+                      >
+                        Desfazer
+                      </Button>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {budgets.length > 0 && (
+          <motion.div variants={itemVariants}>
+            <Card className="apple-card">
+              <CardHeader>
+                <CardTitle>Orçamento por categoria</CardTitle>
+                <CardDescription>Acompanhamento do planejado para este mês.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-2">
+                {budgets.map((budget) => {
+                  const spent = transactions
+                    .filter(
+                      (transaction) =>
+                        transaction.category === budget.category &&
+                        isExpenseTransaction(transaction) &&
+                        isSameMonth(new Date(transaction.date), new Date()),
+                    )
+                    .reduce((total, transaction) => total + Math.abs(transaction.amount), 0);
+                  const percentage = Math.min(
+                    100,
+                    (spent / Number(budget.monthly_limit || 1)) * 100,
+                  );
+                  return (
+                    <div key={budget.id} className="space-y-2 rounded-2xl bg-muted/40 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-bold">{budget.category}</p>
+                        <p className={cn("text-sm font-black", percentage >= 100 && "text-destructive")}>
+                          {formatCurrency(spent)} / {formatCurrency(Number(budget.monthly_limit))}
+                        </p>
+                      </div>
+                      <Progress value={percentage} className="h-2" />
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Section: Comparações */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="apple-card border-none bg-white/50 shadow-sm dark:bg-black/20">
@@ -727,7 +820,7 @@ function RelatoriosPage() {
                                 <p className="font-black mb-1 text-primary">{label}</p>
                                 {payload.map((item) => (
                                   <p
-                                    key={item.dataKey}
+                                    key={String(item.dataKey)}
                                     className="flex items-center gap-2 font-bold"
                                   >
                                     <span

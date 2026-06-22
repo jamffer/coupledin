@@ -77,6 +77,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "@/components/empty-state";
 import { formatCurrency } from "@/lib/utils";
 import { TransactionModal } from "@/components/transaction-modal";
+import { useActiveMonths } from "@/hooks/use-active-months";
+import { format, isSameMonth, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/transacoes")({
   head: () => ({
@@ -87,7 +90,7 @@ export const Route = createFileRoute("/transacoes")({
   }),
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      month: (search.month as string) || "june",
+      month: (search.month as string) || format(new Date(), "yyyy-MM"),
       category: (search.category as string) || "all-cats",
       type: (search.type as string) || "all-types",
       responsible: (search.responsible as string) || "both",
@@ -135,9 +138,10 @@ function TransactionsPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/transacoes" });
   const { user, loading: authLoading } = useAuth();
-  const { profile, isLoading: isProfileLoading } = useProfile();
+  const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const queryClient = useQueryClient();
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, userAvatars, setTransactions } = useFinanceStore();
+  const { transactions, setTransactions } = useFinanceStore();
+  const { data: activeMonths = [] } = useActiveMonths();
 
   const { data: cards = [] } = useQuery({
     queryKey: ["cards"],
@@ -232,7 +236,14 @@ function TransactionsPage() {
 
   const parseFn = useServerFn(parseTransactionFromText);
   const mutation = useMutation({
-    mutationFn: (text: string) => parseFn({ data: { text } }),
+    mutationFn: (text: string) =>
+      parseFn({
+        data: {
+          text,
+          userName: profile?.display_name || "Você",
+          partnerName: partnerProfile?.display_name || "Parceiro(a)",
+        },
+      }),
     onSuccess: (parsed) => {
       setTimeout(() => {
         setParsedData(parsed);
@@ -271,7 +282,12 @@ function TransactionsPage() {
       amount: (parsedData.type === "Entrada" ? 1 : -1) * Math.abs(parsedData.amount),
       date: parsedData.date,
       category: parsedData.category,
-      responsible: parsedData.responsible as string,
+      responsible:
+        parsedData.responsible === "partner"
+          ? partnerProfile?.display_name || "Parceiro(a)"
+          : profile.display_name || "Você",
+      responsible_id:
+        parsedData.responsible === "partner" ? partnerProfile?.id || user.id : user.id,
       division: parsedData.division as string,
       type: parsedData.type,
       user_id: user.id,
@@ -312,7 +328,7 @@ function TransactionsPage() {
         return;
       }
       
-      toast.error("Transação excluída");
+      toast.success("Lançamento excluído");
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["cards"] });
       setIsDeleteModalOpen(false);
@@ -330,8 +346,15 @@ function TransactionsPage() {
     return transactions.filter(t => {
       const matchCategory = !filters.category || filters.category === "all-cats" || t.category === filters.category;
       const matchType = !filters.type || filters.type === "all-types" || t.type === filters.type;
-      const matchResponsible = !filters.responsible || filters.responsible === "both" || t.responsible === filters.responsible;
-      return matchCategory && matchType && matchResponsible;
+      const matchResponsible =
+        !filters.responsible ||
+        filters.responsible === "both" ||
+        t.responsible_id === filters.responsible ||
+        t.responsible === filters.responsible;
+      const matchMonth =
+        !filters.month ||
+        isSameMonth(new Date(t.date), parseISO(`${filters.month}-01`));
+      return matchCategory && matchType && matchResponsible && matchMonth;
     });
   }, [transactions, filters]);
 
@@ -417,9 +440,14 @@ function TransactionsPage() {
                   <SelectValue placeholder="Mês" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="june">Junho</SelectItem>
-                  <SelectItem value="may">Maio</SelectItem>
-                  <SelectItem value="april">Abril</SelectItem>
+                  {activeMonths.map((month) => {
+                    const value = format(month.date, "yyyy-MM");
+                    return (
+                      <SelectItem key={value} value={value} className="capitalize">
+                        {format(month.date, "MMMM yyyy", { locale: ptBR })}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
 
@@ -462,8 +490,14 @@ function TransactionsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="both">O Casal</SelectItem>
-                  <SelectItem value="Jorge">Jorge</SelectItem>
-                  <SelectItem value="Lilian">Lilian</SelectItem>
+                  {profile && (
+                    <SelectItem value={profile.id}>{profile.display_name || "Você"}</SelectItem>
+                  )}
+                  {partnerProfile && (
+                    <SelectItem value={partnerProfile.id}>
+                      {partnerProfile.display_name || "Parceiro(a)"}
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
 
@@ -488,7 +522,7 @@ function TransactionsPage() {
                 title="Nenhuma transação encontrada"
                 description={`Não encontramos lançamentos com os filtros selecionados.`}
                 actionLabel="Limpar Filtros"
-                onAction={() => setFilters({ month: "june", category: "all-cats", type: "all-types", responsible: "both" })}
+                onAction={() => setFilters({ month: format(new Date(), "yyyy-MM"), category: "all-cats", type: "all-types", responsible: "both" })}
               />
             </motion.div>
           ) : (
@@ -512,7 +546,7 @@ function TransactionsPage() {
                     {filteredTransactions.map((tx) => {
                       const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                       const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                      const avatarUrl = tx.profiles?.avatar_url || (tx.responsible ? userAvatars[tx.responsible as keyof typeof userAvatars] : undefined);
+                      const avatarUrl = tx.profiles?.avatar_url;
                       const responsibleName = tx.profiles?.display_name || tx.responsible || "Desconhecido";
 
                       return (
@@ -600,7 +634,7 @@ function TransactionsPage() {
                 {filteredTransactions.map((tx) => {
                   const CategoryIcon = CATEGORY_ICONS[tx.category] || HelpCircle;
                   const DivisionIcon = DIVISION_ICONS[tx.division] || Users;
-                  const avatarUrl = tx.profiles?.avatar_url || (tx.responsible ? userAvatars[tx.responsible as keyof typeof userAvatars] : undefined);
+                  const avatarUrl = tx.profiles?.avatar_url;
                   const responsibleName = tx.profiles?.display_name || tx.responsible || "Desconhecido";
                   
                   return (
@@ -704,23 +738,65 @@ function TransactionsPage() {
           
           {parsedData && (
             <div className="space-y-4 py-4 bg-muted/30 p-6 rounded-3xl border border-muted-foreground/10">
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-medium text-muted-foreground">O que é?</p>
-                <p className="font-bold">{parsedData.description}</p>
+              <div className="space-y-2">
+                <Label>Descrição</Label>
+                <Input
+                  value={parsedData.description}
+                  onChange={(event) =>
+                    setParsedData({ ...parsedData, description: event.target.value })
+                  }
+                />
               </div>
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-medium text-muted-foreground">Quanto?</p>
-                <p className={`font-black ${parsedData.type === 'Entrada' ? 'text-emerald-600' : 'text-foreground'}`}>
-                  {formatCurrency(Math.abs(parsedData.amount))}
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Valor</Label>
+                  <Input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={parsedData.amount}
+                    onChange={(event) =>
+                      setParsedData({ ...parsedData, amount: Number(event.target.value) })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Data</Label>
+                  <Input
+                    type="date"
+                    value={parsedData.date}
+                    onChange={(event) =>
+                      setParsedData({ ...parsedData, date: event.target.value })
+                    }
+                  />
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-medium text-muted-foreground">Quando?</p>
-                <p className="font-medium">{parsedData.date}</p>
-              </div>
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-medium text-muted-foreground">Categoria</p>
-                <Badge variant="outline" className="font-bold">{parsedData.category}</Badge>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Categoria</Label>
+                  <Input
+                    value={parsedData.category}
+                    onChange={(event) =>
+                      setParsedData({ ...parsedData, category: event.target.value as ParsedTransaction["category"] })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select
+                    value={parsedData.type}
+                    onValueChange={(type) =>
+                      setParsedData({ ...parsedData, type: type as ParsedTransaction["type"] })
+                    }
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Entrada">Entrada</SelectItem>
+                      <SelectItem value="Débito">Débito</SelectItem>
+                      <SelectItem value="Crédito">Crédito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               {parsedData.type === "Crédito" && (
                 <div className="space-y-2 mt-2">
@@ -746,7 +822,7 @@ function TransactionsPage() {
           )}
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" className="rounded-full flex-1" onClick={() => setIsConfirmModalOpen(false)}>Corrigir</Button>
+            <Button variant="ghost" className="rounded-full flex-1" onClick={() => setIsConfirmModalOpen(false)}>Cancelar</Button>
             <Button className="rounded-full flex-1 shadow-lg shadow-primary/20" onClick={handleConfirm}>Confirmar</Button>
           </DialogFooter>
         </DialogContent>

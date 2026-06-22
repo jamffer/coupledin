@@ -463,7 +463,7 @@ function MetasPage() {
         >
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.24em] text-primary/60">
-              Saving Plans
+              Planos de Economia
             </p>
             <h1 className="text-3xl font-black tracking-tight md:text-4xl">Metas e Sonhos</h1>
             <p className="mt-2 text-muted-foreground">

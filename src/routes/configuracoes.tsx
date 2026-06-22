@@ -7,6 +7,7 @@ import { ProfileAvatar } from "@/components/profile-avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
   DialogContent, 
@@ -40,10 +41,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import { useFinanceStore } from "@/hooks/use-finance-store";
+import { CATEGORY_ICONS, useFinanceStore } from "@/hooks/use-finance-store";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoupleSettings } from "@/hooks/use-couple-settings";
+import { downloadTransactionsCsv } from "@/lib/export-csv";
+import { useBudgets } from "@/hooks/use-budgets";
+import { useRecurringTransactions } from "@/hooks/use-recurring-transactions";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -71,13 +75,17 @@ const itemVariants = {
 };
 
 function ConfiguracoesPage() {
-  const { incomeJorge, incomeLilian, setIncomes } = useFinanceStore();
+  const { incomeUser, incomePartner, setIncomes, transactions } = useFinanceStore();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [budgetCategory, setBudgetCategory] = useState("Alimentação");
+  const [budgetValue, setBudgetValue] = useState("");
+  const { data: budgets = [], saveBudget, deleteBudget } = useBudgets();
+  const { data: recurringTransactions = [] } = useRecurringTransactions();
 
   const handleCopyCode = () => {
     if (inviteCode) {
@@ -119,23 +127,38 @@ function ConfiguracoesPage() {
 
   useEffect(() => {
     if (divisionModel === "proportional") {
-      const total = incomeJorge + incomeLilian;
+      const total = incomeUser + incomePartner;
       if (total > 0) {
-        setPercentageA(Math.round((incomeJorge / total) * 100));
-        setPercentageB(Math.round((incomeLilian / total) * 100));
+        setPercentageA(Math.round((incomeUser / total) * 100));
+        setPercentageB(Math.round((incomePartner / total) * 100));
       }
     } else {
       setPercentageA(50);
       setPercentageB(50);
     }
-  }, [divisionModel, incomeJorge, incomeLilian]);
+  }, [divisionModel, incomeUser, incomePartner]);
 
   const handleSaveSettings = () => {
     useUpdateCoupleSettings.mutate({
       divisionModel,
-      incomeA: incomeJorge,
-      incomeB: incomeLilian
+      incomeA: incomeUser,
+      incomeB: incomePartner
     });
+  };
+
+  const handleSaveBudget = async () => {
+    const monthlyLimit = Number(budgetValue);
+    if (!budgetCategory || monthlyLimit <= 0) {
+      toast.error("Informe uma categoria e um limite válido.");
+      return;
+    }
+    try {
+      await saveBudget.mutateAsync({ category: budgetCategory, monthly_limit: monthlyLimit });
+      setBudgetValue("");
+      toast.success("Orçamento salvo!");
+    } catch (error) {
+      toast.error("Não foi possível salvar o orçamento.");
+    }
   };
 
   return (
@@ -337,8 +360,8 @@ function ConfiguracoesPage() {
                         <Input 
                           id="incomeA" 
                           type="number" 
-                           value={incomeJorge} 
-                           onChange={(e) => setIncomes(Number(e.target.value), incomeLilian)}
+                           value={incomeUser}
+                           onChange={(e) => setIncomes(Number(e.target.value), incomePartner)}
                           className="pl-10 h-12 rounded-xl border-muted focus:border-primary/50"
                         />
                       </div>
@@ -350,8 +373,8 @@ function ConfiguracoesPage() {
                         <Input 
                           id="incomeB" 
                           type="number" 
-                          value={incomeLilian} 
-                          onChange={(e) => setIncomes(incomeJorge, Number(e.target.value))}
+                          value={incomePartner}
+                          onChange={(e) => setIncomes(incomeUser, Number(e.target.value))}
                           className="pl-10 h-12 rounded-xl border-muted focus:border-primary/50"
                         />
                       </div>
@@ -412,6 +435,78 @@ function ConfiguracoesPage() {
           </Card>
         </motion.div>
 
+        <motion.div variants={itemVariants}>
+          <Card className="apple-card">
+            <CardHeader>
+              <CardTitle>Orçamentos mensais</CardTitle>
+              <CardDescription>Defina quanto o casal pretende gastar por categoria.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-[1fr,180px,auto]">
+                <select
+                  className="h-10 rounded-xl border border-input bg-background px-3 text-sm"
+                  value={budgetCategory}
+                  onChange={(event) => setBudgetCategory(event.target.value)}
+                >
+                  {Object.keys(CATEGORY_ICONS).map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Limite mensal"
+                  value={budgetValue}
+                  onChange={(event) => setBudgetValue(event.target.value)}
+                />
+                <Button onClick={handleSaveBudget} disabled={saveBudget.isPending}>
+                  Salvar limite
+                </Button>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                {budgets.map((budget) => (
+                  <div key={budget.id} className="flex items-center justify-between rounded-2xl bg-muted/40 p-4">
+                    <div>
+                      <p className="font-bold">{budget.category}</p>
+                      <p className="text-sm text-muted-foreground">
+                        R$ {Number(budget.monthly_limit).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => deleteBudget.mutate(budget.id)}>
+                      Remover
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {recurringTransactions.length > 0 && (
+          <motion.div variants={itemVariants}>
+            <Card className="apple-card">
+              <CardHeader>
+                <CardTitle>Gastos fixos mensais</CardTitle>
+                <CardDescription>Lançamentos recorrentes cadastrados para o casal.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-2 md:grid-cols-2">
+                {recurringTransactions.map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between rounded-2xl bg-muted/40 p-4">
+                    <div>
+                      <p className="font-bold">{transaction.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Todo mês, dia {transaction.recurrence_day || 1}
+                      </p>
+                    </div>
+                    <Badge variant="secondary">Ativo</Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Section 3: Conexões e Exportação */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <motion.div variants={itemVariants}>
@@ -430,21 +525,21 @@ function ConfiguracoesPage() {
                     <p className="text-sm font-bold group-hover:text-primary transition-colors">Notificações de Fatura</p>
                     <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Lembrar dias antes do vencimento.</p>
                   </div>
-                  <Switch defaultChecked />
+                  <div className="flex items-center gap-2"><Badge variant="secondary">Em breve</Badge><Switch disabled /></div>
                 </div>
                 <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold group-hover:text-primary transition-colors">Alertas de Orçamento</p>
                     <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Avisar quando passar de 80% do limite.</p>
                   </div>
-                  <Switch defaultChecked />
+                  <div className="flex items-center gap-2"><Badge variant="secondary">Em breve</Badge><Switch disabled /></div>
                 </div>
                 <div className="flex items-center justify-between p-2 hover:bg-primary/10 rounded-xl transition-colors group cursor-pointer">
                   <div className="space-y-0.5">
                     <p className="text-sm font-bold group-hover:text-primary transition-colors">Relatório Semanal</p>
                     <p className="text-xs text-muted-foreground italic dark:text-muted-foreground">Resumo por e-mail toda segunda-feira.</p>
                   </div>
-                  <Switch />
+                  <div className="flex items-center gap-2"><Badge variant="secondary">Em breve</Badge><Switch disabled /></div>
                 </div>
               </CardContent>
             </Card>
@@ -461,7 +556,11 @@ function ConfiguracoesPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group dark:border-white/5 apple-interactive dark:bg-card active:scale-[0.98]">
+                <Button
+                  variant="outline"
+                  className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group dark:border-white/5 apple-interactive dark:bg-card active:scale-[0.98]"
+                  onClick={() => downloadTransactionsCsv(transactions)}
+                >
                   <div className="flex items-center gap-3">
                     <Download size={18} className="text-muted-foreground group-hover:text-primary" />
                     <div className="text-left">
@@ -472,20 +571,20 @@ function ConfiguracoesPage() {
                   <ChevronRight size={16} className="text-muted-foreground" />
                 </Button>
                 
-                <Button variant="outline" className="w-full justify-between h-14 px-6 rounded-2xl border-muted hover:bg-primary/5 hover:border-primary/30 transition-all group dark:border-white/5 apple-interactive dark:bg-card active:scale-[0.98]">
+                <Button variant="outline" disabled className="w-full justify-between h-14 px-6 rounded-2xl border-muted">
                   <div className="flex items-center gap-3">
                     <Settings2 size={18} className="text-muted-foreground group-hover:text-primary" />
                     <div className="text-left">
                       <p className="text-sm font-bold">Privacidade da Conta</p>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Gestão de acessos</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Em breve</p>
                     </div>
                   </div>
                   <ChevronRight size={16} className="text-muted-foreground" />
                 </Button>
 
                 <div className="pt-4">
-                  <Button variant="ghost" className="w-full text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-2xl font-bold text-xs uppercase tracking-widest">
-                    Desconectar Conta do Casal
+                  <Button variant="ghost" disabled className="w-full rounded-2xl font-bold text-xs uppercase tracking-widest">
+                    Desconectar Conta do Casal · Em breve
                   </Button>
                 </div>
               </CardContent>

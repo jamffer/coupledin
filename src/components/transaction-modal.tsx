@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -61,15 +62,18 @@ type CardOption = {
 const transactionSchema = z
   .object({
     description: z.string().min(1, "A descrição é obrigatória"),
-    amount: z.coerce.number().min(0.01, "O valor deve ser maior que zero"),
-    type: z.enum(["Entrada", "Saída", "Crédito"]),
+    amount: z.number().min(0.01, "O valor deve ser maior que zero"),
+    notes: z.string().max(500).optional(),
+    type: z.enum(["Entrada", "Débito", "Crédito"]),
     date: z.string().min(1, "A data é obrigatória"),
     category: z.string().min(1, "A categoria é obrigatória"),
     responsible: z.string().min(1, "O responsável é obrigatório"),
     division: z.string().min(1, "A divisão é obrigatória"),
     card_id: z.string().optional(),
     isInstallment: z.boolean().default(false).optional(),
-    installmentsCount: z.coerce.number().int().min(1).max(24).optional(),
+    installmentsCount: z.number().int().min(1).max(24).optional(),
+    isRecurring: z.boolean().default(false).optional(),
+    recurrenceDay: z.number().int().min(1).max(31).optional(),
   })
   .refine(
     (data) => {
@@ -95,7 +99,7 @@ interface TransactionModalProps {
 export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
-  const { profile } = useProfile();
+  const { profile, partnerProfile } = useProfile();
   const queryClient = useQueryClient();
 
   const { data: cards = [] } = useQuery({
@@ -112,15 +116,18 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       description: "",
+      notes: "",
       amount: 0,
       date: new Date().toISOString().split("T")[0],
       category: "Outros",
-      responsible: "Jorge",
+      responsible: profile?.id || "",
       division: "Conjunta 50/50",
-      type: "Saída",
+      type: "Débito",
       card_id: undefined,
       isInstallment: false,
       installmentsCount: 1,
+      isRecurring: false,
+      recurrenceDay: new Date().getDate(),
     },
   });
 
@@ -129,30 +136,36 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
       if (editingTx) {
         form.reset({
           description: editingTx.description,
+          notes: editingTx.notes || "",
           amount: Math.abs(editingTx.amount),
           date: new Date(editingTx.date).toISOString().split("T")[0],
           category: editingTx.category,
-          responsible: editingTx.responsible,
+          responsible: editingTx.responsible_id || profile?.id || "",
           division: editingTx.division,
-          type: editingTx.type === "Entrada" ? "Entrada" : editingTx.card_id ? "Crédito" : "Saída",
+          type: editingTx.type === "Entrada" ? "Entrada" : editingTx.card_id ? "Crédito" : "Débito",
           card_id: editingTx.card_id || undefined,
+          isRecurring: editingTx.is_recurring || false,
+          recurrenceDay: editingTx.recurrence_day || new Date(editingTx.date).getDate(),
         });
       } else {
         form.reset({
           description: "",
+          notes: "",
           amount: 0,
           date: new Date().toISOString().split("T")[0],
           category: "Outros",
-          responsible: "Jorge",
+          responsible: profile?.id || "",
           division: "Conjunta 50/50",
-          type: "Saída",
+          type: "Débito",
           card_id: undefined,
           isInstallment: false,
           installmentsCount: 1,
+          isRecurring: false,
+          recurrenceDay: new Date().getDate(),
         });
       }
     }
-  }, [isOpen, editingTx, form]);
+  }, [isOpen, editingTx, form, profile?.id]);
 
   const watchType = form.watch("type");
   const categoryOptions = watchType === "Entrada" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
@@ -179,6 +192,11 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
       }
 
       const sign = values.type === "Entrada" ? 1 : -1;
+      const responsibleProfile =
+        values.responsible === profile.id ? profile : partnerProfile;
+      const responsibleName =
+        responsibleProfile?.display_name ||
+        (values.responsible === profile.id ? "Você" : "Parceiro(a)");
 
       if (
         !editingTx &&
@@ -201,10 +219,12 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
 
           txsToInsert.push({
             description: `${values.description} (${i + 1}/${count})`,
+            notes: values.notes || null,
             amount: sign * currentAmount,
             date: values.date,
             category: values.category,
-            responsible: values.responsible,
+            responsible: responsibleName,
+            responsible_id: values.responsible,
             division: values.division,
             type: values.type,
             user_id: user.id,
@@ -220,16 +240,22 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
       } else {
         const txData = {
           description: values.description,
+          notes: values.notes || null,
           amount: sign * Math.abs(values.amount),
           date: values.date,
           category: values.category,
-          responsible: values.responsible,
+          responsible: responsibleName,
+          responsible_id: values.responsible,
           division: values.division,
           type: values.type,
           user_id: user.id,
           couple_id: profile.couple_id,
           card_id: values.type === "Crédito" ? values.card_id : null,
           billing_date: billing_date,
+          is_recurring: !editingTx && !!values.isRecurring,
+          recurrence_rule: !editingTx && values.isRecurring ? "monthly" : null,
+          recurrence_day: !editingTx && values.isRecurring ? values.recurrenceDay || 1 : null,
+          recurrence_status: "active",
         };
 
         if (editingTx) {
@@ -295,6 +321,27 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-60">
+                    Observações
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      className="min-h-20 rounded-xl"
+                      placeholder="Detalhes opcionais sobre este gasto ou ganho."
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -314,7 +361,8 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                           step="0.01"
                           className="pl-9 rounded-xl font-bold"
                           placeholder="0,00"
-                          {...field}
+                          value={field.value}
+                          onChange={(event) => field.onChange(Number(event.target.value))}
                           disabled={isSubmitting}
                         />
                       </div>
@@ -344,7 +392,7 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                       </FormControl>
                       <SelectContent className="apple-card">
                         <SelectItem value="Entrada">Entrada</SelectItem>
-                        <SelectItem value="Saída">Saída / Débito</SelectItem>
+                        <SelectItem value="Débito">Débito</SelectItem>
                         <SelectItem value="Crédito">Crédito</SelectItem>
                       </SelectContent>
                     </Select>
@@ -480,7 +528,8 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                                 min="2"
                                 max="24"
                                 className="rounded-xl"
-                                {...field}
+                                value={field.value}
+                                onChange={(event) => field.onChange(Number(event.target.value))}
                                 disabled={isSubmitting}
                               />
                             </FormControl>
@@ -514,8 +563,16 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="apple-card">
-                        <SelectItem value="Jorge">Jorge</SelectItem>
-                        <SelectItem value="Lilian">Lilian</SelectItem>
+                        {profile && (
+                          <SelectItem value={profile.id}>
+                            {profile.display_name || "Você"}
+                          </SelectItem>
+                        )}
+                        {partnerProfile && (
+                          <SelectItem value={partnerProfile.id}>
+                            {partnerProfile.display_name || "Parceiro(a)"}
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -554,6 +611,49 @@ export function TransactionModal({ isOpen, onClose, editingTx }: TransactionModa
                 )}
               />
             </div>
+
+            {!editingTx && (
+              <div className="rounded-2xl border border-primary/10 bg-primary/5 p-4">
+                <FormField
+                  control={form.control}
+                  name="isRecurring"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between space-y-0">
+                      <div>
+                        <FormLabel className="font-bold">Repetir todo mês</FormLabel>
+                        <DialogDescription className="text-xs">
+                          Ideal para aluguel, internet, streaming e outros gastos fixos.
+                        </DialogDescription>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                {form.watch("isRecurring") && (
+                  <FormField
+                    control={form.control}
+                    name="recurrenceDay"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Dia do lançamento mensal</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={31}
+                            value={field.value}
+                            onChange={(event) => field.onChange(Number(event.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+            )}
 
             <Button
               type="submit"

@@ -141,6 +141,21 @@ function AuthPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error("Informe seu e-mail primeiro.");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+    if (error) {
+      toast.error("Não foi possível enviar o e-mail.", { description: error.message });
+      return;
+    }
+    toast.success("E-mail de recuperação enviado!");
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -391,6 +406,13 @@ function AuthPage() {
                               required
                             />
                           </div>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-primary hover:underline"
+                            onClick={handleForgotPassword}
+                          >
+                            Esqueci minha senha
+                          </button>
                         </div>
                         <Button className="w-full h-12 rounded-xl text-base font-bold shadow-lg" disabled={loading}>
                           {loading ? <Loader2 className="animate-spin" /> : "Entrar"}

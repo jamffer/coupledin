@@ -61,6 +61,63 @@ export type Database = {
           },
         ];
       };
+      budgets: {
+        Row: {
+          category: string;
+          couple_id: string;
+          created_at: string;
+          id: string;
+          monthly_limit: number;
+          updated_at: string;
+        };
+        Insert: {
+          category: string;
+          couple_id: string;
+          created_at?: string;
+          id?: string;
+          monthly_limit: number;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          couple_id?: string;
+          created_at?: string;
+          id?: string;
+          monthly_limit?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      card_payments: {
+        Row: {
+          amount: number;
+          billing_month: string;
+          card_id: string;
+          couple_id: string;
+          id: string;
+          paid_at: string;
+          paid_by: string;
+        };
+        Insert: {
+          amount: number;
+          billing_month: string;
+          card_id: string;
+          couple_id: string;
+          id?: string;
+          paid_at?: string;
+          paid_by?: string;
+        };
+        Update: {
+          amount?: number;
+          billing_month?: string;
+          card_id?: string;
+          couple_id?: string;
+          id?: string;
+          paid_at?: string;
+          paid_by?: string;
+        };
+        Relationships: [];
+      };
       couples: {
         Row: {
           created_at: string;
@@ -260,6 +317,39 @@ export type Database = {
           },
         ];
       };
+      settlements: {
+        Row: {
+          amount: number;
+          couple_id: string;
+          created_by: string;
+          id: string;
+          month: string;
+          payer_id: string;
+          receiver_id: string;
+          settled_at: string;
+        };
+        Insert: {
+          amount: number;
+          couple_id: string;
+          created_by?: string;
+          id?: string;
+          month: string;
+          payer_id: string;
+          receiver_id: string;
+          settled_at?: string;
+        };
+        Update: {
+          amount?: number;
+          couple_id?: string;
+          created_by?: string;
+          id?: string;
+          month?: string;
+          payer_id?: string;
+          receiver_id?: string;
+          settled_at?: string;
+        };
+        Relationships: [];
+      };
       transactions: {
         Row: {
           amount: number;
@@ -273,7 +363,15 @@ export type Database = {
           division: string;
           goal_id: string | null;
           id: string;
+          is_recurring: boolean;
+          generated_for_month: string | null;
+          notes: string | null;
+          recurrence_day: number | null;
+          recurrence_parent_id: string | null;
+          recurrence_rule: string | null;
+          recurrence_status: string;
           responsible: string;
+          responsible_id: string | null;
           type: string;
           user_id: string;
         };
@@ -289,7 +387,15 @@ export type Database = {
           division: string;
           goal_id?: string | null;
           id?: string;
+          is_recurring?: boolean;
+          generated_for_month?: string | null;
+          notes?: string | null;
+          recurrence_day?: number | null;
+          recurrence_parent_id?: string | null;
+          recurrence_rule?: string | null;
+          recurrence_status?: string;
           responsible: string;
+          responsible_id?: string | null;
           type: string;
           user_id: string;
         };
@@ -305,7 +411,15 @@ export type Database = {
           division?: string;
           goal_id?: string | null;
           id?: string;
+          is_recurring?: boolean;
+          generated_for_month?: string | null;
+          notes?: string | null;
+          recurrence_day?: number | null;
+          recurrence_parent_id?: string | null;
+          recurrence_rule?: string | null;
+          recurrence_status?: string;
           responsible?: string;
+          responsible_id?: string | null;
           type?: string;
           user_id?: string;
         };

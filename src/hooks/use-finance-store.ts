@@ -27,6 +27,14 @@ export type Transaction = {
   couple_id: string;
   card_id?: string | null;
   billing_date?: string | null;
+  notes?: string | null;
+  responsible_id?: string | null;
+  is_recurring?: boolean;
+  recurrence_rule?: string | null;
+  recurrence_day?: number | null;
+  recurrence_status?: string;
+  recurrence_parent_id?: string | null;
+  generated_for_month?: string | null;
   profiles?: {
     display_name: string;
     avatar_url: string;
@@ -39,20 +47,17 @@ type FinanceStore = {
   updateTransaction: (id: string, tx: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   setTransactions: (txs: Transaction[] | ((prev: Transaction[]) => Transaction[])) => void;
-  incomeJorge: number;
-  incomeLilian: number;
-  setIncomes: (jorge: number, lilian: number) => void;
-  userNames: { Jorge: string; Lilian: string };
-  userAvatars: { Jorge: string; Lilian: string };
-  updateUserProfile: (user: "Jorge" | "Lilian", name: string, avatar: string) => void;
+  incomeUser: number;
+  incomePartner: number;
+  setIncomes: (userIncome: number, partnerIncome: number) => void;
 };
 
 export const useFinanceStore = create<FinanceStore>()(
   persist(
     (set) => ({
       transactions: [],
-      incomeJorge: 0,
-      incomeLilian: 0,
+      incomeUser: 0,
+      incomePartner: 0,
 
       addTransaction: (tx) => set((state) => ({ transactions: [tx, ...state.transactions] })),
       updateTransaction: (id, updatedTx) =>
@@ -70,24 +75,13 @@ export const useFinanceStore = create<FinanceStore>()(
           transactions:
             typeof transactions === "function" ? transactions(state.transactions) : transactions,
         })),
-      setIncomes: (jorge, lilian) => set({ incomeJorge: jorge, incomeLilian: lilian }),
-      userNames: { Jorge: "Jorge", Lilian: "Lilian" },
-      userAvatars: {
-        Jorge: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-        Lilian: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
-      },
-      updateUserProfile: (user, name, avatar) =>
-        set((state) => ({
-          userNames: { ...state.userNames, [user]: name },
-          userAvatars: { ...state.userAvatars, [user]: avatar },
-        })),
+      setIncomes: (incomeUser, incomePartner) => set({ incomeUser, incomePartner }),
     }),
     {
       name: "finance-storage",
       partialize: (state) => ({
-        incomeJorge: state.incomeJorge,
-        incomeLilian: state.incomeLilian,
-        userNames: state.userNames,
+        incomeUser: state.incomeUser,
+        incomePartner: state.incomePartner,
       }),
     },
   ),
@@ -120,7 +114,3 @@ export const DIVISION_ICONS: Record<string, LucideIcon> = {
 };
 
 // Removendo AVATARS estáticos para usar os do store dinamicamente
-export const AVATARS_DEFAULT: Record<string, string> = {
-  Jorge: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-  Lilian: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
-};

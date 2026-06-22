@@ -56,7 +56,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useFinanceStore } from "@/hooks/use-finance-store";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
@@ -113,10 +112,8 @@ export function AppSidebar() {
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [isNewRecordOpen, setIsNewRecordOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
-  const { userNames, userAvatars } = useFinanceStore();
   const { user, signOut } = useAuth();
   const { profile, partnerProfile, isLoading: isProfileLoading } = useProfile();
   const [tempName, setTempName] = useState("");
@@ -296,63 +293,21 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                   </TooltipContent>
                 </Tooltip>
 
-                <Dialog open={isNewRecordOpen} onOpenChange={setIsNewRecordOpen}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="hidden md:flex gap-2 rounded-full shadow-md apple-interactive border-white/40 active:scale-95 transition-all">
-                          <Plus size={18} />
-                          Novo Registro
-                        </Button>
-                      </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Adicionar nova transação</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <DialogContent className="apple-card dark:bg-[#1A1A1A] border-border/40">
-                    <DialogHeader>
-                      <DialogTitle className="text-xl font-bold">Novo Registro</DialogTitle>
-                      <DialogDescription>
-                        Adicione uma nova transação rapidamente ou vá para a página detalhada.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-6 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="desc" className="text-right font-medium">Descrição</Label>
-                        <Input id="desc" placeholder="Ex: Mercado" className="col-span-3 rounded-xl apple-interactive dark:bg-black/20" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="valor" className="text-right font-medium">Valor</Label>
-                        <Input id="valor" type="number" placeholder="0,00" className="col-span-3 rounded-xl apple-interactive dark:bg-black/20" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="tipo" className="text-right font-medium">Tipo</Label>
-                        <Select defaultValue="saida">
-                          <SelectTrigger id="tipo" className="col-span-3 rounded-xl apple-interactive dark:bg-black/20">
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent className="apple-card">
-                            <SelectItem value="entrada">Entrada</SelectItem>
-                            <SelectItem value="saida">Saída</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                      <Button variant="ghost" className="rounded-xl active:scale-95 transition-all" onClick={() => navigate({ to: '/transacoes' })}>
-                        Ir para Lançamentos
-                      </Button>
-                      <Button className="rounded-xl apple-interactive border-none px-8 active:scale-95 transition-all" onClick={() => {
-                        toast.success("Registro adicionado!");
-                        setIsNewRecordOpen(false);
-                      }}>
-                        Salvar
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      className="hidden md:flex gap-2 rounded-full shadow-md apple-interactive border-white/40 active:scale-95 transition-all"
+                      onClick={() => navigate({ to: "/transacoes" })}
+                    >
+                      <Plus size={18} />
+                      Novo Lançamento
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ir para lançamentos</p>
+                  </TooltipContent>
+                </Tooltip>
 
                 <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
                   <div className="flex items-center gap-3">

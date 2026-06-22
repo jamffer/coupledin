@@ -16,6 +16,7 @@ import {
   Clock,
   MoreVertical,
   Edit,
+  Trash2,
   FastForward,
   Plus,
   Loader2
@@ -69,11 +70,13 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { AddCardModal } from "@/components/add-card-modal";
 import { EditCardModal } from "@/components/edit-card-modal";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, subMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { calculateBillingMonth } from "@/lib/billing-engine";
+import { useProfile } from "@/hooks/use-profile";
+import { useCardPayments } from "@/hooks/use-card-payments";
 
 export const Route = createFileRoute("/cartoes")({
   head: () => ({
@@ -96,6 +99,10 @@ type CardInfo = {
   totalLimit: number;
   type: "conjunto" | "individual";
   owner?: string;
+  ownerId: string;
+  cardType: string;
+  due_day: number;
+  closing_day: number;
 };
 
 type BillItem = {
@@ -131,7 +138,11 @@ function CartoesPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [cardToEdit, setCardToEdit] = useState<any>(null);
+  const [cardToDelete, setCardToDelete] = useState<CardInfo | null>(null);
   const { user, loading: authLoading } = useAuth();
+  const { profile, partnerProfile } = useProfile();
+  const queryClient = useQueryClient();
+  const { data: cardPayments = [], payInvoice } = useCardPayments();
   const navigate = useNavigate();
 
   const { data: transactions = [] } = useQuery({
@@ -148,7 +159,7 @@ function CartoesPage() {
   });
 
   const { data: cards = [], isLoading: isCardsLoading } = useQuery({
-    queryKey: ["cards"],
+    queryKey: ["cards", selectedMonth, transactions.length],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cards")
@@ -184,8 +195,17 @@ function CartoesPage() {
           currentBill: currentBill,
           limitUsed: currentBill,
           totalLimit: Number(card.limit_amount),
-          type: card.card_type === "Meu Cartão" ? "individual" as const : "conjunto" as const,
-          owner: card.card_type === "Meu Cartão" ? "Eu" : "Casal"
+          type: card.card_type === "Cartão Conjunto" ? "conjunto" as const : "individual" as const,
+          owner:
+            card.card_type === "Cartão Conjunto"
+              ? "Casal"
+              : card.owner_id === profile?.id
+                ? profile?.display_name || "Você"
+                : partnerProfile?.display_name || "Parceiro(a)",
+          ownerId: card.owner_id,
+          cardType: card.card_type,
+          due_day: card.due_day,
+          closing_day: card.closing_day,
         };
       });
     },
@@ -232,14 +252,40 @@ function CartoesPage() {
   const usagePercentage = selectedCard ? (selectedCard.limitUsed / (selectedCard.totalLimit || 1)) * 100 : 0;
   
   // Calcular quebra de responsabilidade
-  const jorgePays = selectedCard ? (selectedCard.type === "conjunto" ? selectedCard.currentBill / 2 : selectedCard.owner === "Jorge" ? selectedCard.currentBill : 0) : 0;
-  const lilianPays = selectedCard ? (selectedCard.type === "conjunto" ? selectedCard.currentBill / 2 : selectedCard.owner === "Lilian" ? selectedCard.currentBill : 0) : 0;
+  const userPays = selectedCard ? (selectedCard.type === "conjunto" ? selectedCard.currentBill / 2 : selectedCard.ownerId === profile?.id ? selectedCard.currentBill : 0) : 0;
+  const partnerPays = selectedCard ? (selectedCard.type === "conjunto" ? selectedCard.currentBill / 2 : selectedCard.ownerId === partnerProfile?.id ? selectedCard.currentBill : 0) : 0;
+  const currentPayment = cardPayments.find(
+    (payment) =>
+      payment.card_id === selectedCardId && payment.billing_month === selectedMonth,
+  );
 
-  const handlePayBill = () => {
+  const handlePayBill = async () => {
     if (!selectedCard) return;
-    toast.success("Fatura paga com sucesso!", {
-      description: `O pagamento de ${formatCurrency(selectedCard.currentBill)} foi registrado.`,
-    });
+    try {
+      await payInvoice.mutateAsync({
+        card_id: selectedCard.id,
+        billing_month: selectedMonth,
+        amount: selectedCard.currentBill,
+      });
+      toast.success("Fatura paga com sucesso!", {
+        description: `O pagamento de ${formatCurrency(selectedCard.currentBill)} foi registrado.`,
+      });
+    } catch (error) {
+      toast.error("Não foi possível registrar o pagamento.");
+    }
+  };
+
+  const handleDeleteCard = async () => {
+    if (!cardToDelete) return;
+    const { error } = await supabase.from("cards").delete().eq("id", cardToDelete.id);
+    if (error) {
+      toast.error("Não foi possível excluir o cartão.", { description: error.message });
+      return;
+    }
+    if (selectedCardId === cardToDelete.id) setSelectedCardId(null);
+    setCardToDelete(null);
+    queryClient.invalidateQueries({ queryKey: ["cards"] });
+    toast.success("Cartão excluído.");
   };
 
   const getCardColorStyle = (colorStr?: string) => {
@@ -304,8 +350,25 @@ function CartoesPage() {
                         </span>
                         <h2 className="text-base font-bold leading-tight">{card.name}</h2>
                       </div>
-                      <div className="bg-white/10 px-2 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm">
-                        {card.brand}
+                      <div className="flex items-center gap-1">
+                        <div className="bg-white/10 px-2 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm">
+                          {card.brand}
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(event) => event.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-white hover:bg-white/20">
+                              <MoreVertical size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+                            <DropdownMenuItem onClick={() => { setCardToEdit(card); setIsEditModalOpen(true); }}>
+                              <Edit size={15} /> Editar cartão
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setCardToDelete(card)}>
+                              <Trash2 size={15} /> Excluir cartão
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
 
@@ -381,8 +444,8 @@ function CartoesPage() {
                           ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      <Badge variant={selectedMonth === format(new Date(), "yyyy-MM-01") ? "outline" : "secondary"}>
-                        {selectedMonth === format(new Date(), "yyyy-MM-01") ? "Fatura Aberta" : "Fatura Paga"}
+                      <Badge variant={currentPayment ? "secondary" : "outline"}>
+                        {currentPayment ? "Fatura Paga" : "Em aberto"}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -393,7 +456,7 @@ function CartoesPage() {
                           <p className="text-sm font-medium text-muted-foreground mb-1">Total da Fatura</p>
                           <h3 className="text-2xl font-bold tracking-tight">{formatCurrency(selectedCard.currentBill)}</h3>
                         </div>
-                        {selectedMonth === currentMonth && (
+                        {!currentPayment && selectedCard.currentBill > 0 && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button className="mt-4 w-full rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all font-bold">
@@ -418,12 +481,12 @@ function CartoesPage() {
                         )}
                       </div>
                       <div className="p-6">
-                        <p className="text-sm font-medium text-muted-foreground mb-1">Jorge paga</p>
-                        <h3 className="text-2xl font-bold tracking-tight text-blue-600">{formatCurrency(jorgePays)}</h3>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">{profile?.display_name || "Você"} paga</p>
+                        <h3 className="text-2xl font-bold tracking-tight text-blue-600">{formatCurrency(userPays)}</h3>
                       </div>
                       <div className="p-6">
-                        <p className="text-sm font-medium text-muted-foreground mb-1">Lilian paga</p>
-                        <h3 className="text-2xl font-bold tracking-tight text-rose-600">{formatCurrency(lilianPays)}</h3>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">{partnerProfile?.display_name || "Parceiro(a)"} paga</p>
+                        <h3 className="text-2xl font-bold tracking-tight text-rose-600">{formatCurrency(partnerPays)}</h3>
                       </div>
                     </div>
 
@@ -472,7 +535,17 @@ function CartoesPage() {
                                   title="Nenhum lançamento nesta fatura"
                                   description="Você ainda não usou este cartão no mês selecionado."
                                   actionLabel="Ir para Transações"
-                                  onAction={() => navigate({ to: "/transacoes" })}
+                                  onAction={() =>
+                                    navigate({
+                                      to: "/transacoes",
+                                      search: {
+                                        month: format(new Date(), "yyyy-MM"),
+                                        category: "all-cats",
+                                        type: "all-types",
+                                        responsible: "both",
+                                      },
+                                    })
+                                  }
                                 />
                               </TableCell>
                             </TableRow>
@@ -512,6 +585,22 @@ function CartoesPage() {
         open={isEditModalOpen} 
         onOpenChange={setIsEditModalOpen} 
       />
+      <AlertDialog open={!!cardToDelete} onOpenChange={(open) => !open && setCardToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir cartão?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O cartão será removido. Os lançamentos existentes permanecerão no histórico sem vínculo com ele.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteCard} className="bg-destructive text-destructive-foreground">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

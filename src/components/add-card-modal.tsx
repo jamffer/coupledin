@@ -55,7 +55,7 @@ export function AddCardModal({ children }: AddCardModalProps) {
   const [open, setOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const { user } = useAuth();
-  const { profile } = useProfile();
+  const { profile, partnerProfile } = useProfile();
   const queryClient = useQueryClient();
 
   const form = useForm<CardFormValues>({
@@ -82,7 +82,10 @@ export function AddCardModal({ children }: AddCardModalProps) {
       const numericLimit = parseCurrencyInput(values.totalLimit);
       
       const { error } = await supabase.from("cards").insert({
-        owner_id: user.id,
+        owner_id:
+          values.cardType === "Cartão do Parceiro(a)" && partnerProfile
+            ? partnerProfile.id
+            : user.id,
         couple_id: profile.couple_id,
         name: values.name,
         limit_amount: numericLimit,
@@ -246,7 +249,9 @@ export function AddCardModal({ children }: AddCardModalProps) {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="Meu Cartão">Meu Cartão</SelectItem>
-                      <SelectItem value="Cartão do Parceiro(a)">Cartão do Parceiro(a)</SelectItem>
+                      <SelectItem value="Cartão do Parceiro(a)" disabled={!partnerProfile}>
+                        Cartão de {partnerProfile?.display_name || "Parceiro(a)"}
+                      </SelectItem>
                       <SelectItem value="Cartão Conjunto">Cartão Conjunto</SelectItem>
                     </SelectContent>
                   </Select>

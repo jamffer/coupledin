@@ -18,6 +18,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +36,9 @@ const editCardSchema = z.object({
   name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
   totalLimit: z.string().min(1, "O limite é obrigatório"),
   closingDay: z.string().min(1, "Obrigatório").refine(v => parseInt(v) >= 1 && parseInt(v) <= 31, "Dia inválido (1-31)"),
+  dueDay: z.string().min(1, "Obrigatório").refine(v => parseInt(v) >= 1 && parseInt(v) <= 31, "Dia inválido (1-31)"),
+  lastDigits: z.string().max(4, "Máximo de 4 dígitos").optional(),
+  color: z.string(),
 });
 
 type EditCardFormValues = z.infer<typeof editCardSchema>;
@@ -49,6 +59,9 @@ export function EditCardModal({ card, open, onOpenChange }: EditCardModalProps) 
       name: "",
       totalLimit: "",
       closingDay: "",
+      dueDay: "",
+      lastDigits: "",
+      color: "#203F9A",
     },
   });
 
@@ -58,6 +71,9 @@ export function EditCardModal({ card, open, onOpenChange }: EditCardModalProps) 
         name: card.name,
         totalLimit: card.totalLimit.toString(),
         closingDay: card.closing_day?.toString() || "5",
+        dueDay: card.due_day?.toString() || "10",
+        lastDigits: card.lastDigits || "",
+        color: card.color || "#203F9A",
       });
     }
   }, [card, open, form]);
@@ -75,6 +91,9 @@ export function EditCardModal({ card, open, onOpenChange }: EditCardModalProps) 
           name: values.name,
           limit_amount: numericLimit,
           closing_day: parseInt(values.closingDay),
+          due_day: parseInt(values.dueDay),
+          last_four: values.lastDigits || null,
+          color: values.color,
         })
         .eq("id", card.id);
 
@@ -138,6 +157,19 @@ export function EditCardModal({ card, open, onOpenChange }: EditCardModalProps) 
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="lastDigits"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Últimos 4 dígitos</FormLabel>
+                    <FormControl>
+                      <Input maxLength={4} {...field} disabled={isUpdating} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -156,6 +188,40 @@ export function EditCardModal({ card, open, onOpenChange }: EditCardModalProps) 
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="dueDay"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dia de Vencimento</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} max={31} {...field} disabled={isUpdating} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cor</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="#203F9A">Azul</SelectItem>
+                        <SelectItem value="#E84797">Rosa</SelectItem>
+                        <SelectItem value="#161616">Preto</SelectItem>
+                        <SelectItem value="#737373">Cinza</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />
