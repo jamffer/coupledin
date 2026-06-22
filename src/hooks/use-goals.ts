@@ -4,6 +4,13 @@ import { useProfile } from "./use-profile";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useEffect } from "react";
+import { Database } from "@/integrations/supabase/types";
+
+type Investment = Database["public"]["Tables"]["investments"]["Row"];
+type GoalInvestmentLink = Database["public"]["Tables"]["goal_investments"]["Row"];
+type GoalInvestmentLinkWithInvestment = GoalInvestmentLink & {
+  investments: Investment | null;
+};
 
 export const goalSchema = z.object({
   title: z.string().min(1, "O título é obrigatório"),
@@ -11,6 +18,7 @@ export const goalSchema = z.object({
   saved_amount: z.coerce.number().min(0, "O valor salvo não pode ser negativo").optional(),
   deadline: z.date().optional().nullable(),
   image_url: z.string().optional().nullable(),
+  investment_ids: z.array(z.string()).optional(),
 });
 
 export type GoalFormValues = z.infer<typeof goalSchema>;
@@ -24,6 +32,7 @@ export interface Goal {
   deadline: string | null;
   image_url: string | null;
   created_at: string;
+  linked_investments?: Investment[];
 }
 
 export function useGoals() {
@@ -42,11 +51,35 @@ export function useGoals() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Goal[];
+      const goals = data as Goal[];
+      const goalIds = goals.map((goal) => goal.id);
+
+      if (goalIds.length === 0) return goals;
+
+      const { data: links, error: linksError } = await supabase
+        .from("goal_investments")
+        .select("*, investments(*)")
+        .eq("couple_id", profile.couple_id)
+        .in("goal_id", goalIds);
+
+      if (linksError) throw linksError;
+
+      const linksByGoal = ((links || []) as GoalInvestmentLinkWithInvestment[]).reduce<
+        Record<string, Investment[]>
+      >((acc, link) => {
+        if (!link.investments) return acc;
+        acc[link.goal_id] = [...(acc[link.goal_id] || []), link.investments];
+        return acc;
+      }, {});
+
+      return goals.map((goal) => ({
+        ...goal,
+        linked_investments: linksByGoal[goal.id] || [],
+      }));
     },
     enabled: !!profile?.couple_id,
     staleTime: 1000 * 60 * 5, // 5 minutes cache validity
-    gcTime: 1000 * 60 * 30,    // 30 minutes garbage collection
+    gcTime: 1000 * 60 * 30, // 30 minutes garbage collection
   });
 
   useEffect(() => {
@@ -64,7 +97,7 @@ export function useGoals() {
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ["goals", profile.couple_id] });
-        }
+        },
       )
       .subscribe();
 
@@ -79,6 +112,64 @@ export function useGoals() {
   };
 }
 
+export function useGoalInvestmentOptions() {
+  const { profile, isProfileLoading } = useProfile();
+
+  const query = useQuery({
+    queryKey: ["goal-investment-options", profile?.couple_id],
+    enabled: !!profile?.couple_id,
+    queryFn: async () => {
+      if (!profile?.couple_id) return [];
+
+      const { data, error } = await supabase
+        .from("investments")
+        .select("*")
+        .eq("couple_id", profile.couple_id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Investment[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  return {
+    ...query,
+    isLoading: query.isLoading || isProfileLoading,
+  };
+}
+
+async function replaceGoalInvestmentLinks({
+  goalId,
+  coupleId,
+  investmentIds,
+}: {
+  goalId: string;
+  coupleId: string;
+  investmentIds?: string[];
+}) {
+  const { error: deleteError } = await supabase
+    .from("goal_investments")
+    .delete()
+    .eq("goal_id", goalId)
+    .eq("couple_id", coupleId);
+
+  if (deleteError) throw deleteError;
+
+  if (!investmentIds || investmentIds.length === 0) return;
+
+  const uniqueInvestmentIds = Array.from(new Set(investmentIds));
+  const { error: insertError } = await supabase.from("goal_investments").insert(
+    uniqueInvestmentIds.map((investmentId) => ({
+      couple_id: coupleId,
+      goal_id: goalId,
+      investment_id: investmentId,
+    })),
+  );
+
+  if (insertError) throw insertError;
+}
+
 export function useCreateGoal() {
   const { profile } = useProfile();
   const queryClient = useQueryClient();
@@ -86,21 +177,28 @@ export function useCreateGoal() {
   return useMutation({
     mutationFn: async (values: GoalFormValues) => {
       if (!profile?.couple_id) throw new Error("Couple ID não encontrado");
+      const { investment_ids, ...goalValues } = values;
 
       const { data, error } = await supabase
         .from("goals")
         .insert({
           couple_id: profile.couple_id,
-          title: values.title,
-          target_amount: values.target_amount,
-          saved_amount: values.saved_amount || 0,
-          deadline: values.deadline ? values.deadline.toISOString().split('T')[0] : null,
-          image_url: values.image_url || null,
+          title: goalValues.title,
+          target_amount: goalValues.target_amount,
+          saved_amount: goalValues.saved_amount || 0,
+          deadline: goalValues.deadline ? goalValues.deadline.toISOString().split("T")[0] : null,
+          image_url: goalValues.image_url || null,
         })
         .select()
         .single();
 
       if (error) throw error;
+      await replaceGoalInvestmentLinks({
+        goalId: data.id,
+        coupleId: profile.couple_id,
+        investmentIds: investment_ids,
+      });
+
       return data as Goal;
     },
     onMutate: async (newGoal) => {
@@ -120,6 +218,7 @@ export function useCreateGoal() {
             deadline: newGoal.deadline ? newGoal.deadline.toISOString() : null,
             image_url: newGoal.image_url || null,
             created_at: new Date().toISOString(),
+            linked_investments: [],
           };
           return [optimisticGoal, ...(old || [])];
         });
@@ -136,6 +235,7 @@ export function useCreateGoal() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["goals", profile?.couple_id] });
+      queryClient.invalidateQueries({ queryKey: ["goal-investment-options", profile?.couple_id] });
     },
     onSuccess: () => {
       toast.success("Meta criada com sucesso!");
@@ -150,15 +250,16 @@ export function useUpdateGoal() {
   return useMutation({
     mutationFn: async ({ id, ...values }: GoalFormValues & { id: string }) => {
       if (!profile?.couple_id) throw new Error("Couple ID não encontrado");
+      const { investment_ids, ...goalValues } = values;
 
       const { data, error } = await supabase
         .from("goals")
         .update({
-          title: values.title,
-          target_amount: values.target_amount,
-          saved_amount: values.saved_amount || 0,
-          deadline: values.deadline ? values.deadline.toISOString().split('T')[0] : null,
-          image_url: values.image_url || null,
+          title: goalValues.title,
+          target_amount: goalValues.target_amount,
+          saved_amount: goalValues.saved_amount || 0,
+          deadline: goalValues.deadline ? goalValues.deadline.toISOString().split("T")[0] : null,
+          image_url: goalValues.image_url || null,
         })
         .eq("id", id)
         .eq("couple_id", profile.couple_id)
@@ -166,6 +267,12 @@ export function useUpdateGoal() {
         .single();
 
       if (error) throw error;
+      await replaceGoalInvestmentLinks({
+        goalId: id,
+        coupleId: profile.couple_id,
+        investmentIds: investment_ids,
+      });
+
       return data as Goal;
     },
     onMutate: async (updatedGoal) => {
@@ -177,7 +284,7 @@ export function useUpdateGoal() {
       if (previousGoals) {
         queryClient.setQueryData<Goal[]>(queryKey, (old) => {
           if (!old) return old;
-          return old.map(goal => {
+          return old.map((goal) => {
             if (goal.id === updatedGoal.id) {
               return {
                 ...goal,
@@ -204,6 +311,7 @@ export function useUpdateGoal() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["goals", profile?.couple_id] });
+      queryClient.invalidateQueries({ queryKey: ["goal-investment-options", profile?.couple_id] });
     },
     onSuccess: () => {
       toast.success("Meta atualizada com sucesso!");
@@ -264,21 +372,27 @@ export function useContributeToGoal() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ goalId, amount, currentSavedAmount }: { goalId: string; amount: number; currentSavedAmount: number }) => {
+    mutationFn: async ({
+      goalId,
+      amount,
+      currentSavedAmount,
+    }: {
+      goalId: string;
+      amount: number;
+      currentSavedAmount: number;
+    }) => {
       if (!profile?.couple_id) throw new Error("Couple ID não encontrado");
 
       // 1. Inserir a transação de aporte
-      const { error: txError } = await supabase
-        .from("transactions")
-        .insert({
-          couple_id: profile.couple_id,
-          goal_id: goalId,
-          type: "aporte_meta",
-          amount: amount,
-          description: "Aporte para meta",
-          date: new Date().toISOString().split('T')[0],
-          category: "Investimentos", // Categoria padrão ou de sistema
-        });
+      const { error: txError } = await supabase.from("transactions").insert({
+        couple_id: profile.couple_id,
+        goal_id: goalId,
+        type: "aporte_meta",
+        amount: amount,
+        description: "Aporte para meta",
+        date: new Date().toISOString().split("T")[0],
+        category: "Investimentos", // Categoria padrão ou de sistema
+      });
 
       if (txError) throw txError;
 
@@ -293,7 +407,7 @@ export function useContributeToGoal() {
         .single();
 
       if (goalError) throw goalError;
-      
+
       return goalData;
     },
     onMutate: async ({ goalId, amount }) => {
@@ -305,11 +419,11 @@ export function useContributeToGoal() {
       if (previousGoals) {
         queryClient.setQueryData<Goal[]>(queryKey, (old) => {
           if (!old) return old;
-          return old.map(goal => {
+          return old.map((goal) => {
             if (goal.id === goalId) {
               return {
                 ...goal,
-                saved_amount: (goal.saved_amount || 0) + amount
+                saved_amount: (goal.saved_amount || 0) + amount,
               };
             }
             return goal;
@@ -335,4 +449,3 @@ export function useContributeToGoal() {
     },
   });
 }
-

@@ -14,6 +14,7 @@ const investment: Investment = {
   id: "investment-1",
   couple_id: "couple-1",
   asset_type: "STOCK",
+  investment_behavior: "ACCUMULATES_VALUE",
   ticker: "PETR4",
   quantity: 10,
   average_price: 30,

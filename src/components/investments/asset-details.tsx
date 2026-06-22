@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ConsolidatedAsset } from "@/hooks/use-investment-portfolio";
 import { Database } from "@/integrations/supabase/types";
+import { getInvestmentBehaviorOption } from "@/lib/investment-behavior";
 import { cn, formatCurrency } from "@/lib/utils";
 
 type RawInvestment = Database["public"]["Tables"]["investments"]["Row"];
@@ -65,6 +66,7 @@ export function AssetDetails({ asset, portfolioTotal, onEdit, onDelete }: AssetD
   const isPositive = asset.profit_loss_percentage > 0;
   const isNegative = asset.profit_loss_percentage < 0;
   const evolution = buildPriceEvolution(asset);
+  const behavior = getInvestmentBehaviorOption(asset.investment_behavior);
   const firstInvestmentDate = asset.history.reduce<Date | null>((oldestDate, investment) => {
     const investmentDate = new Date(investment.purchase_date || investment.created_at);
     return !oldestDate || investmentDate < oldestDate ? investmentDate : oldestDate;
@@ -91,7 +93,12 @@ export function AssetDetails({ asset, portfolioTotal, onEdit, onDelete }: AssetD
               Detalhes do ativo
             </p>
             <h3 className="text-2xl font-black uppercase tracking-tight">{asset.ticker}</h3>
-            <p className="text-sm text-muted-foreground">{asset.asset_type.replace("_", " ")}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">{asset.asset_type.replace("_", " ")}</p>
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                {behavior.shortLabel}
+              </span>
+            </div>
           </div>
         </div>
         <div className="text-left sm:text-right">
@@ -137,6 +144,13 @@ export function AssetDetails({ asset, portfolioTotal, onEdit, onDelete }: AssetD
                 <p className="text-xs text-muted-foreground">Valor atual</p>
                 <strong>{formatCurrency(asset.current_value)}</strong>
               </div>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-muted/20 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Funcionamento
+              </p>
+              <strong className="text-sm">{behavior.label}</strong>
+              <p className="mt-1 text-xs text-muted-foreground">{behavior.description}</p>
             </div>
           </CardContent>
         </Card>

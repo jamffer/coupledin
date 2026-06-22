@@ -26,10 +26,12 @@ vi.mock("@/hooks/use-goals", () => ({
     saved_amount: z.coerce.number().min(0).optional(),
     deadline: z.date().optional().nullable(),
     image_url: z.string().optional().nullable(),
+    investment_ids: z.array(z.string()).optional(),
   }),
   useCreateGoal: () => ({ mutate: mocks.create, isPending: false }),
   useUpdateGoal: () => ({ mutate: mocks.update, isPending: false }),
   useDeleteGoal: () => ({ mutate: mocks.remove, isPending: false }),
+  useGoalInvestmentOptions: () => ({ data: [], isLoading: false }),
 }));
 
 describe("goal modals", () => {

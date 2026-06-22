@@ -2,8 +2,21 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { goalSchema, GoalFormValues, useUpdateGoal, useDeleteGoal, Goal } from "@/hooks/use-goals";
 import { useProfile } from "@/hooks/use-profile";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -22,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { GoalInvestmentSelector } from "@/components/investments/goal-investment-selector";
 
 interface EditGoalModalProps {
   goal: Goal | null;
@@ -33,7 +47,7 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
   const mutation = useUpdateGoal();
   const deleteMutation = useDeleteGoal();
   const { profile, isLoading: isProfileLoading } = useProfile();
-  
+
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +59,7 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
       target_amount: 0,
       saved_amount: 0,
       image_url: null,
+      investment_ids: [],
     },
   });
 
@@ -55,7 +70,11 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
         target_amount: goal.target_amount,
         saved_amount: goal.saved_amount || 0,
         image_url: goal.image_url,
-        deadline: (goal.deadline && !isNaN(new Date(goal.deadline).getTime())) ? new Date(goal.deadline) : null,
+        deadline:
+          goal.deadline && !isNaN(new Date(goal.deadline).getTime())
+            ? new Date(goal.deadline)
+            : null,
+        investment_ids: goal.linked_investments?.map((investment) => investment.id) || [],
       });
       setPreviewUrl(goal.image_url);
     }
@@ -65,8 +84,8 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione uma imagem válida.');
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione uma imagem válida.");
       return;
     }
 
@@ -77,26 +96,26 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
       const localPreview = URL.createObjectURL(file);
       setPreviewUrl(localPreview);
 
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `${profile?.couple_id}/${fileName}`;
 
       const { error: uploadError, data } = await supabase.storage
-        .from('goal_covers')
+        .from("goal_covers")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('goal_covers')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("goal_covers").getPublicUrl(filePath);
 
-      form.setValue('image_url', publicUrl);
+      form.setValue("image_url", publicUrl);
     } catch (error) {
-      console.error('Erro no upload:', error);
-      toast.error('Erro ao fazer upload da imagem.');
+      console.error("Erro no upload:", error);
+      toast.error("Erro ao fazer upload da imagem.");
       setPreviewUrl(null); // Reverter preview em caso de erro
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } finally {
       setIsUploading(false);
     }
@@ -104,18 +123,21 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
 
   const removeImage = () => {
     setPreviewUrl(null);
-    form.setValue('image_url', null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    form.setValue("image_url", null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const onSubmit = (values: GoalFormValues) => {
     if (!goal) return;
-    mutation.mutate({ id: goal.id, ...values }, {
-      onSuccess: () => {
-        form.reset();
-        onClose();
+    mutation.mutate(
+      { id: goal.id, ...values },
+      {
+        onSuccess: () => {
+          form.reset();
+          onClose();
+        },
       },
-    });
+    );
   };
 
   const handleDelete = (e?: React.MouseEvent) => {
@@ -124,27 +146,33 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
     deleteMutation.mutate(goal.id, {
       onSuccess: () => {
         onClose();
-      }
+      },
     });
   };
 
-  const isSubmitDisabled = mutation.isPending || deleteMutation.isPending || isProfileLoading || !profile?.couple_id || isUploading;
+  const isSubmitDisabled =
+    mutation.isPending ||
+    deleteMutation.isPending ||
+    isProfileLoading ||
+    !profile?.couple_id ||
+    isUploading;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        form.reset();
-        setPreviewUrl(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        onClose();
-      }
-    }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          form.reset();
+          setPreviewUrl(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="apple-card sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Editar Meta</DialogTitle>
-          <DialogDescription>
-            Atualize as informações da sua meta ou sonho.
-          </DialogDescription>
+          <DialogDescription>Atualize as informações da sua meta ou sonho.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -161,15 +189,15 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
                   onChange={handleImageUpload}
                   disabled={isUploading}
                 />
-                
+
                 {previewUrl ? (
                   <div className="relative w-full h-32 rounded-xl overflow-hidden group">
                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button 
-                        type="button" 
-                        variant="destructive" 
-                        size="icon" 
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
                         className="rounded-full h-8 w-8"
                         onClick={removeImage}
                       >
@@ -205,7 +233,11 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
                 <FormItem>
                   <FormLabel>Título da Meta</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Viagem para Europa, Reserva de Emergência..." className="apple-interactive rounded-xl" {...field} />
+                    <Input
+                      placeholder="Ex: Viagem para Europa, Reserva de Emergência..."
+                      className="apple-interactive rounded-xl"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -220,7 +252,12 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
                   <FormItem>
                     <FormLabel>Valor Alvo (R$)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" className="apple-interactive rounded-xl" {...field} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        className="apple-interactive rounded-xl"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -234,13 +271,35 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
                   <FormItem>
                     <FormLabel>Já Guardado (R$)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" className="apple-interactive rounded-xl" {...field} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        className="apple-interactive rounded-xl"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="investment_ids"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <GoalInvestmentSelector
+                      value={field.value || []}
+                      onChange={field.onChange}
+                      disabled={isSubmitDisabled}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {!isProfileLoading && !profile?.couple_id && (
               <div className="p-3 text-xs text-red-500 bg-red-500/10 rounded-xl font-medium text-center border border-red-500/20">
@@ -252,13 +311,15 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
               {goal && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button 
-                      type="button" 
+                    <Button
+                      type="button"
                       variant="destructive"
                       className="w-full sm:w-auto rounded-xl font-bold gap-2"
                       disabled={deleteMutation.isPending}
                     >
-                      {deleteMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : null}
+                      {deleteMutation.isPending ? (
+                        <Loader2 className="animate-spin h-4 w-4" />
+                      ) : null}
                       Eliminar Meta
                     </Button>
                   </AlertDialogTrigger>
@@ -266,12 +327,13 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. A meta e todo o histórico associado serão removidos permanentemente.
+                        Esta ação não pode ser desfeita. A meta e todo o histórico associado serão
+                        removidos permanentemente.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
-                      <AlertDialogAction 
+                      <AlertDialogAction
                         onClick={(e) => handleDelete(e as unknown as React.MouseEvent)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
                       >
@@ -282,8 +344,8 @@ export function EditGoalModal({ goal, isOpen, onClose }: EditGoalModalProps) {
                 </AlertDialog>
               )}
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full sm:w-auto rounded-xl font-bold shadow-lg"
                 disabled={isSubmitDisabled}
               >

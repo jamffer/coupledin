@@ -1,27 +1,61 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "sonner";
-import { useProfile } from "@/hooks/use-profile";
-import { Loader2 } from "lucide-react";
 import { TickerCombobox } from "@/components/investments/ticker-combobox";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/use-profile";
+import {
+  getDefaultInvestmentBehaviorByAssetType,
+  INVESTMENT_BEHAVIOR_OPTIONS,
+} from "@/lib/investment-behavior";
+
+const investmentBehaviorSchema = z.enum([
+  "DISTRIBUTES_INCOME",
+  "ACCUMULATES_VALUE",
+  "REINVESTS_AUTOMATICALLY",
+  "FIXED_INCOME_MATURITY",
+  "CRYPTOASSET",
+  "OTHER",
+]);
 
 const assetSchema = z.object({
-  asset_type: z.enum(['STOCK', 'FII', 'CRYPTO', 'FIXED_INCOME']),
-  fixed_income_type: z.enum(['PUBLIC', 'PRIVATE']).optional(),
-  ticker: z.string().min(1, "Obrigatório").toUpperCase(),
+  asset_type: z.enum(["STOCK", "FII", "CRYPTO", "FIXED_INCOME"]),
+  fixed_income_type: z.enum(["PUBLIC", "PRIVATE"]).optional(),
+  investment_behavior: investmentBehaviorSchema,
+  ticker: z.string().min(1, "Obrigatorio").toUpperCase(),
   quantity: z.coerce.number().positive("Deve ser maior que zero"),
   average_price: z.coerce.number().positive("Deve ser maior que zero"),
-  purchase_date: z.string().min(1, "Data obrigatória"),
+  purchase_date: z.string().min(1, "Data obrigatoria"),
   custom_rate: z.coerce.number().optional().default(0),
 });
 
@@ -39,12 +73,13 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
     defaultValues: {
-      asset_type: 'STOCK',
-      fixed_income_type: 'PRIVATE',
-      ticker: '',
+      asset_type: "STOCK",
+      fixed_income_type: "PRIVATE",
+      investment_behavior: getDefaultInvestmentBehaviorByAssetType("STOCK"),
+      ticker: "",
       quantity: 1,
       average_price: 0,
-      purchase_date: new Date().toISOString().split('T')[0],
+      purchase_date: new Date().toISOString().split("T")[0],
       custom_rate: 0,
     },
   });
@@ -52,24 +87,29 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
   const assetType = form.watch("asset_type");
   const fixedIncomeType = form.watch("fixed_income_type");
 
-  // Clear ticker when the user switches asset categories
   useEffect(() => {
     form.setValue("ticker", "");
-  }, [assetType, fixedIncomeType]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [assetType, fixedIncomeType, form]);
+
+  useEffect(() => {
+    form.setValue("investment_behavior", getDefaultInvestmentBehaviorByAssetType(assetType));
+  }, [assetType, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: AssetFormValues) => {
-      if (!profile?.couple_id) throw new Error("Couple ID não encontrado");
+      if (!profile?.couple_id) throw new Error("Couple ID nao encontrado");
 
-      const finalCustomRate = (values.asset_type === 'FIXED_INCOME' && values.fixed_income_type === 'PUBLIC') 
-        ? 0 
-        : values.custom_rate;
+      const finalCustomRate =
+        values.asset_type === "FIXED_INCOME" && values.fixed_income_type === "PUBLIC"
+          ? 0
+          : values.custom_rate;
 
       const { data, error } = await supabase
-        .from('investments')
+        .from("investments")
         .insert({
           couple_id: profile.couple_id,
           asset_type: values.asset_type,
+          investment_behavior: values.investment_behavior,
           ticker: values.ticker,
           quantity: values.quantity,
           average_price: values.average_price,
@@ -86,21 +126,24 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
       await queryClient.cancelQueries({ queryKey: ["investments", profile?.couple_id] });
       const previousInvestments = queryClient.getQueryData(["investments", profile?.couple_id]);
 
-      queryClient.setQueryData(["investments", profile?.couple_id], (old: any) => {
+      queryClient.setQueryData(["investments", profile?.couple_id], (old: unknown) => {
         const optimisticAsset = {
           ...newAsset,
           id: `temp-${Math.random().toString(36).substring(2, 15)}`,
           couple_id: profile?.couple_id,
-          custom_rate: (newAsset.asset_type === 'FIXED_INCOME' && newAsset.fixed_income_type === 'PUBLIC') ? 0 : newAsset.custom_rate,
+          custom_rate:
+            newAsset.asset_type === "FIXED_INCOME" && newAsset.fixed_income_type === "PUBLIC"
+              ? 0
+              : newAsset.custom_rate,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
-        return old ? [optimisticAsset, ...old] : [optimisticAsset];
+        return Array.isArray(old) ? [optimisticAsset, ...old] : [optimisticAsset];
       });
 
       return { previousInvestments };
     },
-    onError: (err, newAsset, context) => {
+    onError: (err, _newAsset, context) => {
       if (context?.previousInvestments) {
         queryClient.setQueryData(["investments", profile?.couple_id], context.previousInvestments);
       }
@@ -125,11 +168,9 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
       <DialogContent className="apple-card sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Novo Aporte</DialogTitle>
-          <DialogDescription>
-            Cadastre um novo ativo ou aporte na sua carteira.
-          </DialogDescription>
+          <DialogDescription>Cadastre um novo ativo ou aporte na sua carteira.</DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -138,15 +179,15 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Ativo</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="apple-interactive rounded-xl">
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="apple-card rounded-xl">
-                      <SelectItem value="STOCK">Ações</SelectItem>
-                      <SelectItem value="FII">Fundos Imobiliários (FIIs)</SelectItem>
+                      <SelectItem value="STOCK">Acoes</SelectItem>
+                      <SelectItem value="FII">Fundos Imobiliarios (FIIs)</SelectItem>
                       <SelectItem value="CRYPTO">Criptomoedas</SelectItem>
                       <SelectItem value="FIXED_INCOME">Renda Fixa</SelectItem>
                     </SelectContent>
@@ -156,24 +197,24 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
               )}
             />
 
-            {assetType === 'FIXED_INCOME' && (
+            {assetType === "FIXED_INCOME" && (
               <FormField
                 control={form.control}
                 name="fixed_income_type"
                 render={({ field }) => (
-                  <FormItem className="space-y-3 p-3 bg-muted/40 rounded-xl border border-border/40">
+                  <FormItem className="space-y-3 rounded-xl border border-border/40 bg-muted/40 p-3">
                     <FormLabel>Qual a natureza da Renda Fixa?</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         className="flex flex-col space-y-1"
                       >
                         <FormItem className="flex items-center space-x-3 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="PUBLIC" />
                           </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
+                          <FormLabel className="cursor-pointer font-normal">
                             Tesouro Direto (Ex: SELIC, IPCA)
                           </FormLabel>
                         </FormItem>
@@ -181,8 +222,8 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
                           <FormControl>
                             <RadioGroupItem value="PRIVATE" />
                           </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Títulos Privados (CDB, LCI com taxa fixa)
+                          <FormLabel className="cursor-pointer font-normal">
+                            Titulos Privados (CDB, LCI com taxa fixa)
                           </FormLabel>
                         </FormItem>
                       </RadioGroup>
@@ -193,6 +234,37 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
               />
             )}
 
+            <FormField
+              control={form.control}
+              name="investment_behavior"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Funcionamento do investimento</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="apple-interactive rounded-xl">
+                        <SelectValue placeholder="Como esse investimento rende?" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="apple-card rounded-xl">
+                      {INVESTMENT_BEHAVIOR_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {
+                      INVESTMENT_BEHAVIOR_OPTIONS.find((option) => option.value === field.value)
+                        ?.description
+                    }
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -200,9 +272,11 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {assetType === 'FIXED_INCOME' && fixedIncomeType === 'PRIVATE' ? 'Nome do Título' : 
-                       assetType === 'FIXED_INCOME' && fixedIncomeType === 'PUBLIC' ? 'Símbolo Tesouro' : 
-                       'Ticker / Símbolo'}
+                      {assetType === "FIXED_INCOME" && fixedIncomeType === "PRIVATE"
+                        ? "Nome do Titulo"
+                        : assetType === "FIXED_INCOME" && fixedIncomeType === "PUBLIC"
+                          ? "Simbolo Tesouro"
+                          : "Ticker / Simbolo"}
                     </FormLabel>
                     <FormControl>
                       <TickerCombobox
@@ -223,7 +297,12 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
                   <FormItem>
                     <FormLabel>Quantidade</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.00000001" className="apple-interactive rounded-xl" {...field} />
+                      <Input
+                        type="number"
+                        step="0.00000001"
+                        className="apple-interactive rounded-xl"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -237,9 +316,14 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
                 name="average_price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preço Médio / Valor</FormLabel>
+                    <FormLabel>Preco Medio / Valor</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" className="apple-interactive rounded-xl" {...field} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        className="apple-interactive rounded-xl"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -260,7 +344,7 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
               />
             </div>
 
-            {assetType === 'FIXED_INCOME' && fixedIncomeType === 'PRIVATE' && (
+            {assetType === "FIXED_INCOME" && fixedIncomeType === "PRIVATE" && (
               <FormField
                 control={form.control}
                 name="custom_rate"
@@ -268,7 +352,13 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
                   <FormItem>
                     <FormLabel>Taxa Mensal (%)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="1.0" className="apple-interactive rounded-xl" {...field} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="1.0"
+                        className="apple-interactive rounded-xl"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -276,12 +366,12 @@ export function NewAssetModal({ isOpen, onClose }: NewAssetModalProps) {
               />
             )}
 
-            <Button 
-              type="submit" 
-              className="w-full h-12 rounded-xl text-base font-bold shadow-lg mt-6"
+            <Button
+              type="submit"
+              className="mt-6 h-12 w-full rounded-xl text-base font-bold shadow-lg"
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? <Loader2 className="animate-spin mr-2" /> : null}
+              {mutation.isPending ? <Loader2 className="mr-2 animate-spin" /> : null}
               {mutation.isPending ? "Salvando..." : "Salvar Aporte"}
             </Button>
           </form>

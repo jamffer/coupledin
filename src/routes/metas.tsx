@@ -1,13 +1,22 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { DashboardLayout } from "@/components/layout-dashboard";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { 
-  Plus, 
+import {
+  CalendarDays,
+  CheckCircle2,
+  GraduationCap,
+  Home,
+  Link2,
+  MoreHorizontal,
+  PiggyBank,
+  Plane,
+  Plus,
   Target,
+  TrendingUp,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -16,9 +25,10 @@ import { useGoals, Goal } from "@/hooks/use-goals";
 import { NewGoalModal } from "@/components/investments/new-goal-modal";
 import { ContributeToGoalModal } from "@/components/investments/contribute-to-goal-modal";
 import { EditGoalModal } from "@/components/investments/edit-goal-modal";
+import { ConsolidatedAsset, useInvestmentPortfolio } from "@/hooks/use-investment-portfolio";
 import { Skeleton } from "@/components/ui/skeleton";
 import confetti from "canvas-confetti";
-import { formatDistanceToNow, differenceInDays, isValid } from "date-fns";
+import { differenceInDays, format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/metas")({
@@ -41,10 +51,234 @@ const itemVariants = {
   visible: { y: 0, opacity: 1 },
 };
 
-function GoalCard({ goal, onContribute, onEdit }: { goal: Goal, onContribute: () => void, onEdit: () => void }) {
+const goalAccentClasses = [
+  {
+    icon: Plane,
+    label: "Viagem",
+    color: "#a3ff5f",
+    bg: "bg-lime-400/15 text-lime-300",
+    progress: "[&>div]:bg-lime-400",
+  },
+  {
+    icon: GraduationCap,
+    label: "Educação",
+    color: "#b9bdff",
+    bg: "bg-indigo-400/15 text-indigo-300",
+    progress: "[&>div]:bg-indigo-300",
+  },
+  {
+    icon: Home,
+    label: "Casa",
+    color: "#ff796d",
+    bg: "bg-rose-400/15 text-rose-300",
+    progress: "[&>div]:bg-rose-300",
+  },
+  {
+    icon: PiggyBank,
+    label: "Reserva",
+    color: "#fff875",
+    bg: "bg-yellow-300/15 text-yellow-200",
+    progress: "[&>div]:bg-yellow-200",
+  },
+  {
+    icon: Target,
+    label: "Sonho",
+    color: "#5eead4",
+    bg: "bg-teal-300/15 text-teal-200",
+    progress: "[&>div]:bg-teal-300",
+  },
+];
+
+function getGoalAccent(goal: Goal, index = 0) {
+  const title = goal.title.toLowerCase();
+
+  if (/(viagem|trip|japan|japão|férias|ferias)/i.test(title)) return goalAccentClasses[0];
+  if (/(educa|curso|faculdade|escola|study|investment|invest)/i.test(title)) {
+    return goalAccentClasses[1];
+  }
+  if (/(casa|apto|apartamento|moradia|reforma)/i.test(title)) return goalAccentClasses[2];
+  if (/(reserva|emergência|emergencia|segurança|seguranca)/i.test(title)) {
+    return goalAccentClasses[3];
+  }
+
+  return goalAccentClasses[index % goalAccentClasses.length];
+}
+
+function getDeadlineText(goal: Goal) {
+  if (!goal.deadline) return "Sem prazo";
+
+  const deadlineDate = new Date(goal.deadline);
+  if (!isValid(deadlineDate)) return "Data inválida";
+
+  const daysLeft = differenceInDays(deadlineDate, new Date());
+  if (daysLeft < 0) return `Atrasada há ${Math.abs(daysLeft)} dias`;
+  if (daysLeft === 0) return "Termina hoje";
+
+  return `Até ${format(deadlineDate, "dd MMM", { locale: ptBR })}`;
+}
+
+function getInvestmentBaseValue(investment: NonNullable<Goal["linked_investments"]>[number]) {
+  return Number(investment.quantity || 0) * Number(investment.average_price || 0);
+}
+
+function getLinkedInvestmentCurrentValue(
+  investment: NonNullable<Goal["linked_investments"]>[number],
+  portfolioInvestments: ConsolidatedAsset[],
+) {
+  const baseValue = getInvestmentBaseValue(investment);
+  const consolidatedAsset = portfolioInvestments.find((asset) =>
+    asset.history.some((historyItem) => historyItem.id === investment.id),
+  );
+
+  if (!consolidatedAsset || consolidatedAsset.total_invested <= 0) return baseValue;
+
+  const proportionalWeight = baseValue / consolidatedAsset.total_invested;
+  return consolidatedAsset.current_value * proportionalWeight;
+}
+
+function getGoalLinkedInvestmentsValue(goal: Goal, portfolioInvestments: ConsolidatedAsset[]) {
+  return (goal.linked_investments || []).reduce(
+    (acc, investment) => acc + getLinkedInvestmentCurrentValue(investment, portfolioInvestments),
+    0,
+  );
+}
+
+function getGoalEffectiveSavedAmount(goal: Goal, portfolioInvestments: ConsolidatedAsset[]) {
+  const manualSaved = Number(goal.saved_amount || 0);
+  const linkedValue = getGoalLinkedInvestmentsValue(goal, portfolioInvestments);
+
+  if (manualSaved > 0 && linkedValue > 0) {
+    const delta = Math.abs(manualSaved - linkedValue);
+    const comparisonBase = Math.max(manualSaved, linkedValue);
+
+    if (delta / comparisonBase <= 0.02) {
+      return Math.max(manualSaved, linkedValue);
+    }
+  }
+
+  return manualSaved + linkedValue;
+}
+
+function getGoalProgress(goal: Goal, portfolioInvestments: ConsolidatedAsset[]) {
+  return Math.min(
+    100,
+    Math.round(
+      (getGoalEffectiveSavedAmount(goal, portfolioInvestments) / (goal.target_amount || 1)) * 100,
+    ),
+  );
+}
+
+function GoalSummary({
+  totalPlanned,
+  totalSaved,
+  overallProgress,
+  activeGoals,
+}: {
+  totalPlanned: number;
+  totalSaved: number;
+  overallProgress: number;
+  activeGoals: number;
+}) {
+  const ringStyle = {
+    background: `conic-gradient(#a3ff5f 0deg ${overallProgress * 3.6}deg, rgba(185, 189, 255, 0.95) ${overallProgress * 3.6}deg ${Math.min(360, overallProgress * 3.6 + 54)}deg, rgba(255, 121, 109, 0.95) ${Math.min(360, overallProgress * 3.6 + 54)}deg ${Math.min(360, overallProgress * 3.6 + 92)}deg, rgba(255, 255, 255, 0.08) ${Math.min(360, overallProgress * 3.6 + 92)}deg 360deg)`,
+  };
+
+  return (
+    <Card className="apple-card overflow-hidden border-none bg-gradient-to-br from-[#111111] via-[#171717] to-primary/10 shadow-2xl dark:from-[#0d0d0d] dark:via-[#171717] dark:to-primary/10">
+      <CardContent className="grid gap-8 p-6 md:grid-cols-[320px,1fr] md:p-8">
+        <div className="flex justify-center">
+          <div
+            className="relative flex h-72 w-72 items-center justify-center rounded-full p-6"
+            style={ringStyle}
+          >
+            <div className="absolute inset-5 rounded-full border-[18px] border-[#111111]" />
+            <div className="absolute inset-0 rounded-full shadow-[inset_0_0_50px_rgba(0,0,0,0.35)]" />
+            <div className="relative z-10 flex h-44 w-44 flex-col items-center justify-center rounded-full bg-[#111111] text-center shadow-2xl">
+              <span className="text-xs font-black uppercase tracking-widest text-white/45">
+                Total acumulado
+              </span>
+              <span className="mt-2 text-3xl font-black text-white">
+                {formatCurrency(totalSaved)}
+              </span>
+              <span className="mt-2 text-sm font-black text-lime-300">
+                {overallProgress.toFixed(0)}% do plano
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-center space-y-5">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.24em] text-primary/70">
+              Painel de economia
+            </p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-foreground md:text-4xl">
+              Seu plano para realizar os próximos sonhos
+            </h2>
+            <p className="mt-3 max-w-xl text-sm text-muted-foreground">
+              Veja rapidamente quanto vocês já juntaram, quanto falta e quais metas estão ativas.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Planejado
+              </p>
+              <p className="mt-2 text-xl font-black text-foreground">
+                {formatCurrency(totalPlanned)}
+              </p>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Acumulado
+              </p>
+              <p className="mt-2 text-xl font-black text-lime-300">{formatCurrency(totalSaved)}</p>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Ativas
+              </p>
+              <p className="mt-2 text-xl font-black text-foreground">{activeGoals}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span className="text-muted-foreground">Progresso geral</span>
+              <span>{overallProgress.toFixed(1)}%</span>
+            </div>
+            <Progress value={overallProgress} className="h-3 bg-white/10 [&>div]:bg-lime-400" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GoalCard({
+  goal,
+  index,
+  onContribute,
+  onEdit,
+  portfolioInvestments,
+}: {
+  goal: Goal;
+  index: number;
+  onContribute: () => void;
+  onEdit: () => void;
+  portfolioInvestments: ConsolidatedAsset[];
+}) {
   const [hasCelebrated, setHasCelebrated] = useState(false);
-  const percentage = Math.min(100, Math.round(((goal?.saved_amount || 0) / (goal?.target_amount || 1)) * 100));
+  const percentage = getGoalProgress(goal, portfolioInvestments);
   const isCompleted = percentage >= 100;
+  const accent = getGoalAccent(goal, index);
+  const Icon = accent.icon;
+  const manualSavedAmount = Number(goal.saved_amount || 0);
+  const linkedInvestmentsValue = getGoalLinkedInvestmentsValue(goal, portfolioInvestments);
+  const linkedInvestments = goal.linked_investments || [];
+  const savedAmount = getGoalEffectiveSavedAmount(goal, portfolioInvestments);
+  const remainingAmount = Math.max(0, (goal.target_amount || 0) - savedAmount);
 
   useEffect(() => {
     if (isCompleted && !hasCelebrated) {
@@ -52,114 +286,125 @@ function GoalCard({ goal, onContribute, onEdit }: { goal: Goal, onContribute: ()
         particleCount: 120,
         spread: 80,
         origin: { y: 0.6 },
-        colors: ['#10b981', '#fbbf24', '#3b82f6']
+        colors: ["#10b981", "#fbbf24", "#3b82f6"],
       });
       setHasCelebrated(true);
     }
   }, [isCompleted, hasCelebrated]);
 
-  let temporalMessage = null;
-  if (goal?.deadline) {
-    try {
-      const deadlineDate = new Date(goal.deadline);
-      if (isValid(deadlineDate)) {
-        const daysLeft = differenceInDays(deadlineDate, new Date());
-        if (daysLeft < 0) {
-          temporalMessage = <span className="text-rose-300 font-semibold drop-shadow-md">Atrasada há {Math.abs(daysLeft)} dias</span>;
-        } else if (daysLeft === 0) {
-          temporalMessage = <span className="text-amber-300 font-semibold drop-shadow-md">Termina hoje!</span>;
-        } else {
-          temporalMessage = <span className="text-white/90 font-medium">Faltam {formatDistanceToNow(deadlineDate, { locale: ptBR })}</span>;
-        }
-      } else {
-        temporalMessage = <span className="text-white/90 font-medium">Data inválida</span>;
-      }
-    } catch (e) {
-      temporalMessage = <span className="text-white/90 font-medium">Data não definida</span>;
-    }
-  }
-
   return (
-    <Card className="relative apple-card apple-card-hover group overflow-hidden border-none shadow-lg flex flex-col hover:scale-[1.02] transition-all duration-300 min-h-[220px]">
-      {/* Background Image or Gradient */}
-      <div 
-        className={cn(
-          "absolute inset-0 z-0",
-          !goal?.image_url && "bg-gradient-to-br from-blue-600 to-indigo-800 dark:from-slate-800 dark:to-slate-900"
-        )}
-        style={goal?.image_url ? {
-          backgroundImage: `url(${goal.image_url})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        } : undefined}
-      />
-      
-      {/* Overlay - Glassmorphism */}
-      <div className={cn(
-        "absolute inset-0 z-10 transition-all duration-300",
-        goal?.image_url ? "bg-black/50 backdrop-blur-md group-hover:bg-black/40" : "bg-black/20"
-      )} />
-
-      <CardHeader className="relative z-20 pb-4">
-        <div className="flex justify-between items-start">
-          <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md shadow-sm text-white">
-            <Target size={24} />
-          </div>
-          <div className="flex items-center gap-2">
-            {isCompleted && (
-              <div className="bg-emerald-500/80 backdrop-blur-md text-white text-[10px] font-bold uppercase px-2 py-1 rounded-full shadow-sm">
-                Concluída
-              </div>
-            )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={cn(
-                "rounded-full opacity-0 group-hover:opacity-100 transition-opacity",
-                goal?.image_url ? "bg-white/20 hover:bg-white/30 text-white backdrop-blur-md" : "text-white/80 hover:text-white hover:bg-white/20"
-              )}
-              onClick={onEdit}
-            >
-              <Plus size={18} className="rotate-45" /> {/* Use plus rotated to act like pencil/close or just a standard edit icon if available */}
-            </Button>
-          </div>
-        </div>
-        <CardTitle className="mt-4 text-xl font-bold text-white drop-shadow-md">
-          {goal?.title}
-        </CardTitle>
-        <CardDescription className="flex flex-col gap-1 mt-1">
-          <div className="flex justify-between items-end">
-            <span className="font-bold text-2xl text-white drop-shadow-md">
-              {formatCurrency(goal?.saved_amount || 0)}
-            </span>
-            <span className="text-xs text-white/80 font-medium">
-              alvo: {formatCurrency(goal?.target_amount || 0)}
-            </span>
-          </div>
-          {temporalMessage && (
-            <div className="text-[10px] mt-1 bg-black/30 self-start px-2.5 py-1 rounded-full backdrop-blur-sm border border-white/10">
-              {temporalMessage}
+    <Card className="apple-card apple-card-hover group overflow-hidden border-none bg-[#181818] shadow-lg transition-all duration-300 hover:-translate-y-1 dark:bg-[#181818]">
+      <CardContent className="space-y-5 p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className={cn("rounded-2xl p-3", accent.bg)}>
+              <Icon size={22} />
             </div>
-          )}
-        </CardDescription>
-      </CardHeader>
-      
-      <CardContent className="relative z-20 space-y-4 flex-1 flex flex-col justify-end pb-5">
-        <div className="space-y-2">
-          <Progress 
-            value={percentage} 
-            className={cn("h-2.5 bg-black/40 overflow-hidden", isCompleted ? "[&>div]:bg-emerald-400" : "[&>div]:bg-white")} 
-          />
-          <p className="text-[10px] text-right font-bold uppercase tracking-wider text-white/80 drop-shadow-sm">
-            {percentage}% concluído
-          </p>
+            <div className="min-w-0">
+              <h3 className="truncate text-lg font-black text-foreground">{goal.title}</h3>
+              <p className="text-sm font-bold text-muted-foreground">{accent.label}</p>
+            </div>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:bg-white/10 hover:text-foreground"
+            onClick={onEdit}
+            aria-label={`Editar meta ${goal.title}`}
+          >
+            <MoreHorizontal size={18} />
+          </Button>
         </div>
 
-        <div className="flex items-center justify-end pt-2">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="h-9 rounded-full text-xs font-bold px-5 border-white/30 text-white bg-white/10 hover:bg-white/20 hover:text-white backdrop-blur-md transition-all shadow-sm"
+        <div className="grid grid-cols-2 gap-3 rounded-3xl bg-black/20 p-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              Atual
+            </p>
+            <p className="mt-1 text-lg font-black text-foreground">{formatCurrency(savedAmount)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              Alvo
+            </p>
+            <p className="mt-1 text-lg font-black text-foreground">
+              {formatCurrency(goal.target_amount || 0)}
+            </p>
+          </div>
+        </div>
+
+        {linkedInvestments.length > 0 && (
+          <div className="space-y-3 rounded-3xl border border-primary/10 bg-primary/5 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm font-black">
+                <Link2 size={16} className="text-primary" />
+                <span>Investimentos vinculados</span>
+              </div>
+              <span className="text-sm font-black text-primary">
+                {formatCurrency(linkedInvestmentsValue)}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {linkedInvestments.slice(0, 3).map((investment) => (
+                <div
+                  key={investment.id}
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-background/60 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-black">{investment.ticker}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      {investment.asset_type}
+                    </p>
+                  </div>
+                  <p className="text-xs font-black">
+                    {formatCurrency(
+                      getLinkedInvestmentCurrentValue(investment, portfolioInvestments),
+                    )}
+                  </p>
+                </div>
+              ))}
+              {linkedInvestments.length > 3 && (
+                <p className="text-xs font-bold text-muted-foreground">
+                  +{linkedInvestments.length - 3} investimentos vinculados
+                </p>
+              )}
+            </div>
+            {manualSavedAmount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Manual: {formatCurrency(manualSavedAmount)} · Investimentos:{" "}
+                {formatCurrency(linkedInvestmentsValue)}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs font-black">
+            <span className="text-muted-foreground">{percentage}% de progresso</span>
+            <span className={isCompleted ? "text-emerald-300" : "text-foreground"}>
+              {isCompleted ? "Concluída" : `Faltam ${formatCurrency(remainingAmount)}`}
+            </span>
+          </div>
+          <Progress
+            value={percentage}
+            className={cn(
+              "h-3 bg-white/10",
+              isCompleted ? "[&>div]:bg-emerald-400" : accent.progress,
+            )}
+          />
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+            {isCompleted ? <CheckCircle2 size={16} /> : <CalendarDays size={16} />}
+            <span>{getDeadlineText(goal)}</span>
+          </div>
+
+          <Button
+            size="sm"
+            className="h-10 rounded-full px-5 font-black shadow-md"
+            style={{ backgroundColor: accent.color, color: "#101010" }}
             onClick={onContribute}
           >
             Aportar
@@ -173,84 +418,145 @@ function GoalCard({ goal, onContribute, onEdit }: { goal: Goal, onContribute: ()
 function MetasPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { data: goals, isLoading } = useGoals();
+  const { data: goals = [], isLoading } = useGoals();
+  const { investments: portfolioInvestments } = useInvestmentPortfolio();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
   const [editGoal, setEditGoal] = useState<Goal | null>(null);
+
+  const goalsSummary = useMemo(() => {
+    const totalPlanned = goals.reduce((acc, goal) => acc + (goal.target_amount || 0), 0);
+    const totalSaved = goals.reduce(
+      (acc, goal) => acc + getGoalEffectiveSavedAmount(goal, portfolioInvestments),
+      0,
+    );
+    const overallProgress = totalPlanned > 0 ? Math.min(100, (totalSaved / totalPlanned) * 100) : 0;
+    const activeGoals = goals.filter(
+      (goal) => getGoalProgress(goal, portfolioInvestments) < 100,
+    ).length;
+
+    return {
+      totalPlanned,
+      totalSaved,
+      overallProgress,
+      activeGoals,
+    };
+  }, [goals, portfolioInvestments]);
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate({ to: "/auth" });
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, navigate]);
 
   return (
     <DashboardLayout>
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="space-y-10 pb-10"
+        className="space-y-8 pb-24 md:pb-10"
       >
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+        >
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Metas e Sonhos</h1>
-            <p className="text-muted-foreground italic">Planejando o futuro passo a passo.</p>
+            <p className="text-sm font-bold uppercase tracking-[0.24em] text-primary/60">
+              Saving Plans
+            </p>
+            <h1 className="text-3xl font-black tracking-tight md:text-4xl">Metas e Sonhos</h1>
+            <p className="mt-2 text-muted-foreground">
+              Um painel simples para acompanhar os planos de economia do casal.
+            </p>
           </div>
-          {goals && goals.length > 0 && (
-            <Button 
-              className="rounded-full shadow-sm gap-2 apple-interactive border-white/20"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <Plus size={18} />
-              Nova Meta
-            </Button>
-          )}
-        </div>
+
+          <Button
+            className="h-12 rounded-full px-6 font-black shadow-lg md:self-auto"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Plus size={18} />
+            Nova meta
+          </Button>
+        </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="apple-card overflow-hidden border-2 border-primary/5 dark:border-white/5 space-y-6 p-6">
-                <div className="flex justify-between items-start">
-                  <Skeleton className="h-12 w-12 rounded-2xl" />
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                </div>
-                <div className="space-y-3">
-                  <Skeleton className="h-6 w-3/4 rounded-lg" />
-                  <div className="flex justify-between items-center pt-2">
-                    <Skeleton className="h-7 w-1/3 rounded-md" />
-                    <Skeleton className="h-4 w-1/4 rounded-md" />
+          <div className="space-y-6">
+            <Card className="apple-card border-none">
+              <CardContent className="grid gap-8 p-6 md:grid-cols-[320px,1fr] md:p-8">
+                <Skeleton className="mx-auto h-72 w-72 rounded-full" />
+                <div className="space-y-4">
+                  <Skeleton className="h-8 w-48 rounded-xl" />
+                  <Skeleton className="h-12 w-3/4 rounded-2xl" />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Skeleton className="h-24 rounded-3xl" />
+                    <Skeleton className="h-24 rounded-3xl" />
+                    <Skeleton className="h-24 rounded-3xl" />
                   </div>
+                  <Skeleton className="h-3 w-full rounded-full" />
                 </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-2 w-full rounded-full" />
-                  <div className="flex justify-end">
-                    <Skeleton className="h-3 w-16 rounded-md" />
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="apple-card border-none p-5">
+                  <div className="space-y-5">
+                    <div className="flex items-start gap-4">
+                      <Skeleton className="h-12 w-12 rounded-2xl" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-3/4 rounded-lg" />
+                        <Skeleton className="h-4 w-1/3 rounded-lg" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-24 rounded-3xl" />
+                    <Skeleton className="h-3 rounded-full" />
+                    <Skeleton className="h-10 rounded-full" />
                   </div>
-                </div>
-                <div className="flex justify-end pt-2 border-t border-border/40">
-                  <Skeleton className="h-8 w-20 rounded-full" />
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : goals && goals.length > 0 ? (
-          <section className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {goals.map((goal) => (
-                <motion.div key={goal?.id} variants={itemVariants}>
-                  <GoalCard 
-                    goal={goal} 
-                    onContribute={() => setContributeGoal(goal)} 
-                    onEdit={() => setEditGoal(goal)}
-                  />
-                </motion.div>
+                </Card>
               ))}
             </div>
-          </section>
+          </div>
+        ) : goals.length > 0 ? (
+          <>
+            <motion.div variants={itemVariants}>
+              <GoalSummary {...goalsSummary} />
+            </motion.div>
+
+            <section className="space-y-4">
+              <motion.div
+                variants={itemVariants}
+                className="flex items-center justify-between gap-4 px-1"
+              >
+                <div>
+                  <h2 className="text-xl font-black">Minhas metas</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Progresso individual de cada plano de economia.
+                  </p>
+                </div>
+                <div className="hidden items-center gap-2 rounded-full bg-muted/60 px-4 py-2 text-xs font-black text-muted-foreground sm:flex">
+                  <TrendingUp size={15} />
+                  Progresso
+                </div>
+              </motion.div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {goals.map((goal, index) => (
+                  <motion.div key={goal.id} variants={itemVariants}>
+                    <GoalCard
+                      goal={goal}
+                      index={index}
+                      onContribute={() => setContributeGoal(goal)}
+                      onEdit={() => setEditGoal(goal)}
+                      portfolioInvestments={portfolioInvestments}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+          </>
         ) : (
-          <EmptyState 
+          <EmptyState
             icon={Target}
             title="Nenhum cofre ou meta ainda"
             description="Crie metas para suas viagens, sonhos ou reserva de emergência."
@@ -258,23 +564,24 @@ function MetasPage() {
             onAction={() => setIsModalOpen(true)}
           />
         )}
-        
-        <NewGoalModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-        />
-        
-        <ContributeToGoalModal 
+
+        <Button
+          className="fixed bottom-6 left-1/2 z-40 h-14 -translate-x-1/2 rounded-full px-8 font-black shadow-2xl md:hidden"
+          onClick={() => setIsModalOpen(true)}
+        >
+          <Plus size={18} />
+          Nova meta
+        </Button>
+
+        <NewGoalModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+        <ContributeToGoalModal
           goal={contributeGoal}
           isOpen={!!contributeGoal}
           onClose={() => setContributeGoal(null)}
         />
 
-        <EditGoalModal
-          goal={editGoal}
-          isOpen={!!editGoal}
-          onClose={() => setEditGoal(null)}
-        />
+        <EditGoalModal goal={editGoal} isOpen={!!editGoal} onClose={() => setEditGoal(null)} />
       </motion.div>
     </DashboardLayout>
   );

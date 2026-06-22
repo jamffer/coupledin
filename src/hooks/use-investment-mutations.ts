@@ -4,12 +4,14 @@ import { useProfile } from "./use-profile";
 import { ConsolidatedAsset } from "./use-investment-portfolio";
 import { toast } from "sonner";
 import { calculateFixedIncomeCurrentValue } from "@/services/api/finance";
+import { InvestmentBehavior } from "@/lib/investment-behavior";
 
 interface UpdatePayload {
   id: string;
   quantity: number;
   average_price: number;
   custom_rate: number;
+  investment_behavior: InvestmentBehavior;
   ticker?: string;
 }
 
@@ -22,15 +24,16 @@ export function useUpdateInvestment() {
       if (!profile?.couple_id) throw new Error("Couple ID não encontrado");
 
       const { data, error } = await supabase
-        .from('investments')
+        .from("investments")
         .update({
           quantity: payload.quantity,
           average_price: payload.average_price,
           custom_rate: payload.custom_rate,
+          investment_behavior: payload.investment_behavior,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', payload.id)
-        .eq('couple_id', profile.couple_id)
+        .eq("id", payload.id)
+        .eq("couple_id", profile.couple_id)
         .select()
         .single();
 
@@ -45,16 +48,17 @@ export function useUpdateInvestment() {
 
       if (previousInvestments && updatedAsset.ticker) {
         queryClient.setQueryData(queryKey, (old: ConsolidatedAsset[]) => {
-          return old.map(asset => {
+          return old.map((asset) => {
             if (asset.ticker === updatedAsset.ticker) {
               // Atualiza o histórico
-              const newHistory = asset.history.map(inv => {
+              const newHistory = asset.history.map((inv) => {
                 if (inv.id === updatedAsset.id) {
                   return {
                     ...inv,
                     quantity: updatedAsset.quantity,
                     average_price: updatedAsset.average_price,
-                    custom_rate: updatedAsset.custom_rate
+                    custom_rate: updatedAsset.custom_rate,
+                    investment_behavior: updatedAsset.investment_behavior,
                   };
                 }
                 return inv;
@@ -63,11 +67,11 @@ export function useUpdateInvestment() {
               // Recalcula totais do ativo consolidado
               let total_quantity = 0;
               let total_invested = 0;
-              newHistory.forEach(inv => {
+              newHistory.forEach((inv) => {
                 const qty = Number(inv.quantity || 0);
                 const price = Number(inv.average_price || 0);
                 total_quantity += qty;
-                total_invested += (qty * price);
+                total_invested += qty * price;
               });
 
               const average_price = total_quantity > 0 ? total_invested / total_quantity : 0;
@@ -81,7 +85,7 @@ export function useUpdateInvestment() {
                     average_price,
                     total_quantity,
                     latest.purchase_date || new Date().toISOString(),
-                    customRate
+                    customRate,
                   );
                   current_price = total_quantity > 0 ? totalVal / total_quantity : 0;
                 }
@@ -89,9 +93,8 @@ export function useUpdateInvestment() {
 
               const current_value = total_quantity * current_price;
               const profit_loss_value = current_value - total_invested;
-              const profit_loss_percentage = total_invested > 0 
-                ? (profit_loss_value / total_invested) * 100 
-                : 0;
+              const profit_loss_percentage =
+                total_invested > 0 ? (profit_loss_value / total_invested) * 100 : 0;
 
               return {
                 ...asset,
@@ -102,7 +105,8 @@ export function useUpdateInvestment() {
                 current_value,
                 profit_loss_value,
                 profit_loss_percentage,
-                history: newHistory
+                investment_behavior: updatedAsset.investment_behavior,
+                history: newHistory,
               };
             }
             return asset;
@@ -136,10 +140,10 @@ export function useDeleteInvestment() {
       if (!profile?.couple_id) throw new Error("Couple ID não encontrado");
 
       const { error } = await supabase
-        .from('investments')
+        .from("investments")
         .delete()
-        .eq('id', id)
-        .eq('couple_id', profile.couple_id);
+        .eq("id", id)
+        .eq("couple_id", profile.couple_id);
 
       if (error) throw error;
       return { id, ticker };
@@ -152,59 +156,60 @@ export function useDeleteInvestment() {
 
       if (previousInvestments) {
         queryClient.setQueryData(queryKey, (old: ConsolidatedAsset[]) => {
-          return old.map(asset => {
-            if (asset.ticker === ticker) {
-              const newHistory = asset.history.filter(inv => inv.id !== id);
-              
-              if (newHistory.length === 0) {
-                return null; // Será filtrado no final
-              }
+          return old
+            .map((asset) => {
+              if (asset.ticker === ticker) {
+                const newHistory = asset.history.filter((inv) => inv.id !== id);
 
-              let total_quantity = 0;
-              let total_invested = 0;
-              newHistory.forEach(inv => {
-                const qty = Number(inv.quantity || 0);
-                const price = Number(inv.average_price || 0);
-                total_quantity += qty;
-                total_invested += (qty * price);
-              });
-
-              const average_price = total_quantity > 0 ? total_invested / total_quantity : 0;
-              let current_price = asset.current_price;
-
-              if (asset.asset_type === "FIXED_INCOME") {
-                const latest = newHistory[0];
-                const customRate = Number(latest?.custom_rate || 0);
-                if (customRate > 0) {
-                  const totalVal = calculateFixedIncomeCurrentValue(
-                    average_price,
-                    total_quantity,
-                    latest.purchase_date || new Date().toISOString(),
-                    customRate
-                  );
-                  current_price = total_quantity > 0 ? totalVal / total_quantity : 0;
+                if (newHistory.length === 0) {
+                  return null; // Será filtrado no final
                 }
+
+                let total_quantity = 0;
+                let total_invested = 0;
+                newHistory.forEach((inv) => {
+                  const qty = Number(inv.quantity || 0);
+                  const price = Number(inv.average_price || 0);
+                  total_quantity += qty;
+                  total_invested += qty * price;
+                });
+
+                const average_price = total_quantity > 0 ? total_invested / total_quantity : 0;
+                let current_price = asset.current_price;
+
+                if (asset.asset_type === "FIXED_INCOME") {
+                  const latest = newHistory[0];
+                  const customRate = Number(latest?.custom_rate || 0);
+                  if (customRate > 0) {
+                    const totalVal = calculateFixedIncomeCurrentValue(
+                      average_price,
+                      total_quantity,
+                      latest.purchase_date || new Date().toISOString(),
+                      customRate,
+                    );
+                    current_price = total_quantity > 0 ? totalVal / total_quantity : 0;
+                  }
+                }
+
+                const current_value = total_quantity * current_price;
+                const profit_loss_value = current_value - total_invested;
+                const profit_loss_percentage =
+                  total_invested > 0 ? (profit_loss_value / total_invested) * 100 : 0;
+
+                return {
+                  ...asset,
+                  total_quantity,
+                  average_price,
+                  total_invested,
+                  current_value,
+                  profit_loss_value,
+                  profit_loss_percentage,
+                  history: newHistory,
+                };
               }
-
-              const current_value = total_quantity * current_price;
-              const profit_loss_value = current_value - total_invested;
-              const profit_loss_percentage = total_invested > 0 
-                ? (profit_loss_value / total_invested) * 100 
-                : 0;
-
-              return {
-                ...asset,
-                total_quantity,
-                average_price,
-                total_invested,
-                current_value,
-                profit_loss_value,
-                profit_loss_percentage,
-                history: newHistory
-              };
-            }
-            return asset;
-          }).filter(Boolean) as ConsolidatedAsset[];
+              return asset;
+            })
+            .filter(Boolean) as ConsolidatedAsset[];
         });
       }
 

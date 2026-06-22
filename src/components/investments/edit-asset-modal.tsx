@@ -2,12 +2,14 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -20,14 +22,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useUpdateInvestment } from "@/hooks/use-investment-mutations";
 import { Database } from "@/integrations/supabase/types";
+import {
+  getDefaultInvestmentBehaviorByAssetType,
+  INVESTMENT_BEHAVIOR_OPTIONS,
+} from "@/lib/investment-behavior";
+
+const investmentBehaviorSchema = z.enum([
+  "DISTRIBUTES_INCOME",
+  "ACCUMULATES_VALUE",
+  "REINVESTS_AUTOMATICALLY",
+  "FIXED_INCOME_MATURITY",
+  "CRYPTOASSET",
+  "OTHER",
+]);
 
 const editAssetSchema = z.object({
   quantity: z.number().positive("Deve ser maior que zero"),
   average_price: z.number().positive("Deve ser maior que zero"),
-  custom_rate: z.number().min(0, "A taxa não pode ser negativa"),
+  custom_rate: z.number().min(0, "A taxa nao pode ser negativa"),
+  investment_behavior: investmentBehaviorSchema,
 });
 
 type EditAssetFormValues = z.infer<typeof editAssetSchema>;
@@ -48,6 +70,9 @@ export function EditAssetModal({ isOpen, onClose, asset }: EditAssetModalProps) 
       quantity: Number(asset?.quantity || 0),
       average_price: Number(asset?.average_price || 0),
       custom_rate: Number(asset?.custom_rate || 0),
+      investment_behavior:
+        asset?.investment_behavior ||
+        getDefaultInvestmentBehaviorByAssetType(asset?.asset_type || "STOCK"),
     },
   });
 
@@ -57,6 +82,8 @@ export function EditAssetModal({ isOpen, onClose, asset }: EditAssetModalProps) 
         quantity: Number(asset.quantity),
         average_price: Number(asset.average_price),
         custom_rate: Number(asset.custom_rate || 0),
+        investment_behavior:
+          asset.investment_behavior || getDefaultInvestmentBehaviorByAssetType(asset.asset_type),
       });
     }
   }, [asset, form]);
@@ -64,14 +91,13 @@ export function EditAssetModal({ isOpen, onClose, asset }: EditAssetModalProps) 
   if (!asset) return null;
 
   const onSubmit = (values: EditAssetFormValues) => {
-    if (!asset) return;
-
     mutation.mutate(
       {
         id: asset.id,
         quantity: values.quantity,
         average_price: values.average_price,
         custom_rate: values.custom_rate,
+        investment_behavior: values.investment_behavior,
       },
       {
         onSuccess: () => {
@@ -89,7 +115,7 @@ export function EditAssetModal({ isOpen, onClose, asset }: EditAssetModalProps) 
         <DialogHeader>
           <DialogTitle>Editar Aporte</DialogTitle>
           <DialogDescription>
-            Ajuste a quantidade e preço médio do ativo{" "}
+            Ajuste a quantidade e preco medio do ativo{" "}
             <strong className="uppercase">{asset.ticker}</strong>.
           </DialogDescription>
         </DialogHeader>
@@ -104,10 +130,41 @@ export function EditAssetModal({ isOpen, onClose, asset }: EditAssetModalProps) 
                 disabled
                 className="apple-interactive rounded-xl bg-muted/50"
               />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                O símbolo do ativo não pode ser alterado.
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                O simbolo do ativo nao pode ser alterado.
               </p>
             </div>
+
+            <FormField
+              control={form.control}
+              name="investment_behavior"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Funcionamento do investimento</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="apple-interactive rounded-xl">
+                        <SelectValue placeholder="Como esse investimento rende?" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="apple-card rounded-xl">
+                      {INVESTMENT_BEHAVIOR_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {
+                      INVESTMENT_BEHAVIOR_OPTIONS.find((option) => option.value === field.value)
+                        ?.description
+                    }
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -134,7 +191,7 @@ export function EditAssetModal({ isOpen, onClose, asset }: EditAssetModalProps) 
                 name="average_price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preço Médio Ajustado</FormLabel>
+                    <FormLabel>Preco Medio Ajustado</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -174,11 +231,11 @@ export function EditAssetModal({ isOpen, onClose, asset }: EditAssetModalProps) 
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl text-base font-bold shadow-lg mt-6"
+              className="mt-6 h-12 w-full rounded-xl text-base font-bold shadow-lg"
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? <Loader2 className="animate-spin mr-2" /> : null}
-              {mutation.isPending ? "Salvando Alterações..." : "Salvar Edição"}
+              {mutation.isPending ? <Loader2 className="mr-2 animate-spin" /> : null}
+              {mutation.isPending ? "Salvando Alteracoes..." : "Salvar Edicao"}
             </Button>
           </form>
         </Form>
