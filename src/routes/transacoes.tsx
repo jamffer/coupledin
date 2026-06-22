@@ -164,7 +164,7 @@ function TransactionsPage() {
       if (!profile?.couple_id) return [];
       const { data, error } = await supabase
         .from("transactions")
-        .select("*, profiles(display_name, avatar_url)")
+        .select("*, profiles!user_id(display_name, avatar_url)")
         .eq("couple_id", profile.couple_id)
         .order("date", { ascending: false });
       if (error) throw error;

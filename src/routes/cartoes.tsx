@@ -150,7 +150,7 @@ function CartoesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("transactions")
-        .select("*, profiles(display_name, avatar_url)")
+        .select("*, profiles!user_id(display_name, avatar_url)")
         .order("date", { ascending: false });
       if (error) throw error;
       return data;

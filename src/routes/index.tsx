@@ -162,7 +162,7 @@ function Dashboard() {
 
         const { data, error } = await supabase
           .from("transactions")
-          .select("*, profiles(display_name, avatar_url)")
+          .select("*, profiles!user_id(display_name, avatar_url)")
           .eq("couple_id", coupleId)
           .order("date", { ascending: false });
 
